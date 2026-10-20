@@ -21,11 +21,36 @@ from __future__ import annotations
 
 import base64
 import os
+import sys
 from dataclasses import dataclass, field
 from hashlib import scrypt
 from typing import Any
 
-from . import criptare
+if sys.platform == "win32":
+    from . import criptare
+else:
+    # Criptarea (AES-256-GCM) folosește Windows CNG (bcrypt.dll) și nu există pe
+    # Linux. Un stub minimal, ca „parola.py" să fie importabil și să dea o eroare
+    # clară la folosire, în loc să pice la import cu un WinDLL inexistent.
+    class _CriptareIndisponibila:
+        class CriptareInvalida(Exception):
+            """Echivalent fără implementare al ``criptare.CriptareInvalida``."""
+
+        @staticmethod
+        def cripteaza_bytes(*args: Any, **kwargs: Any) -> bytes:
+            raise NotImplementedError(
+                "Criptarea fișierelor este specifică Windows (CNG / bcrypt.dll) "
+                "și nu este disponibilă pe Linux."
+            )
+
+        @staticmethod
+        def decripteaza_bytes(*args: Any, **kwargs: Any) -> bytes:
+            raise NotImplementedError(
+                "Criptarea fișierelor este specifică Windows (CNG / bcrypt.dll) "
+                "și nu este disponibilă pe Linux."
+            )
+
+    criptare = _CriptareIndisponibila  # type: ignore[assignment]
 
 # Parametri scrypt (puternici, rapidi ~100 ms): N=2^15, r=8, p=1.
 SCRYPT_N = 32768

@@ -44,8 +44,31 @@ ca funcție de sine stătătoare, și în `linux/suport_linux.py`
 | Instalatorul Inno Setup | `instalator/setup.iss` | Inno Setup este doar Windows |
 
 Aceste părți **nu au fost portate** și **nu au fost modificate**; pe Linux sunt
-marcate ca nefuncționale în `linux/suport_linux.py`. Fișierele Windows nu au fost
-atinse.
+marcate ca nefuncționale în `linux/suport_linux.py`. Modulele strict Windows
+(`criptare.py`, `blocare.py`, `drivere.py`, `instalator/setup.iss`) au rămas
+neatinse. Singura excepție este `parola.py`, care a primit o **gardă de platformă**
+la importul `criptare` (fără schimbare de comportament pe Windows) — vezi mai jos.
+
+### Lanțul de importuri și pornirea interfeței (verificat)
+
+S-a verificat lanțul prin care `criptare.py` (care încarcă `bcrypt.dll` la import,
+`ctypes.WinDLL`, r.39) ar putea bloca pornirea pe Linux:
+
+* `ui_qt/principal.py` importă `securitate` la nivel de modul (r.56).
+* `securitate.py` importă `internet`, `jurnal`, `sisteme` — **nu** `parola`/`criptare`.
+* `parola.py` importă `criptare` (`from . import criptare`, r.28), dar **nimeni** nu
+  importă `parola` la nivel de modul — doar leneș, când se folosește criptarea/parola.
+
+Singurul `ctypes.WinDLL` la **nivel de modul** este în `criptare.py` (r.39); restul
+cuplărilor Windows (`ui_drag`, `ui_comun`, `sisteme`, `blocare`, …) sunt în funcții sau
+deja păzite cu `sys.platform`. Deci **fereastra principală pornește pe Linux**; doar
+folosirea criptării ar pica.
+
+Ca măsură de siguranță, `parola.py` importă acum `criptare` doar pe Windows; pe Linux
+folosește un stub ale cărui funcții (`cripteaza_bytes`, `decripteaza_bytes`) ridică
+`NotImplementedError` cu un mesaj clar. Astfel importul `parola` nu mai pune problema
+nicăieri. Comportamentul pe Windows este neschimbat (verificat cu `teste/test_parola.py`,
+toate cele 6 teste trec).
 
 ## Ce s-a testat efectiv
 
