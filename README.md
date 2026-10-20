@@ -1,3 +1,5 @@
+<p align="center"><img src="dictare_transcriere_romana/iconita_dictare.png" alt="Iconița programului D&TED" width="128"></p>
+
 # D&TED – Dictate & Transcription Express Digital
 
 **Dictare și transcriere în limba română**
