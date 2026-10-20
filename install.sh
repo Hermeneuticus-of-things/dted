@@ -77,6 +77,7 @@ Type=Application
 Name=D&TED – Dictate & Transcription Express Digital
 Comment=Dictare și transcriere în limba română
 Exec=$LANSATOR
+Icon=$APP/dictare_transcriere_romana/iconita_dictare.png
 Terminal=false
 Categories=AudioVideo;Office;
 DESK
