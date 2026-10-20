@@ -49,10 +49,10 @@ marcate ca nefuncționale în `linux/suport_linux.py`. Modulele strict Windows
 neatinse. Singura excepție este `parola.py`, care a primit o **gardă de platformă**
 la importul `criptare` (fără schimbare de comportament pe Windows) — vezi mai jos.
 
-### Lanțul de importuri și pornirea interfeței (verificat)
+### Lanțul de importuri și pornirea interfeței (analiză statică din cod, **nu** rulat pe Linux)
 
-S-a verificat lanțul prin care `criptare.py` (care încarcă `bcrypt.dll` la import,
-`ctypes.WinDLL`, r.39) ar putea bloca pornirea pe Linux:
+S-a **analizat din cod** (nu prin rulare pe Linux) lanțul prin care `criptare.py`
+(care încarcă `bcrypt.dll` la import, `ctypes.WinDLL`, r.39) ar putea bloca pornirea pe Linux:
 
 * `ui_qt/principal.py` importă `securitate` la nivel de modul (r.56).
 * `securitate.py` importă `internet`, `jurnal`, `sisteme` — **nu** `parola`/`criptare`.
@@ -61,8 +61,9 @@ S-a verificat lanțul prin care `criptare.py` (care încarcă `bcrypt.dll` la im
 
 Singurul `ctypes.WinDLL` la **nivel de modul** este în `criptare.py` (r.39); restul
 cuplărilor Windows (`ui_drag`, `ui_comun`, `sisteme`, `blocare`, …) sunt în funcții sau
-deja păzite cu `sys.platform`. Deci **fereastra principală pornește pe Linux**; doar
-folosirea criptării ar pica.
+deja păzite cu `sys.platform`. **După această analiză statică**, fereastra principală
+**ar porni** pe Linux (nepuțut confirmat — nu s-a rulat pe Linux real); doar folosirea
+criptării ar pica.
 
 Ca măsură de siguranță, `parola.py` importă acum `criptare` doar pe Windows; pe Linux
 folosește un stub ale cărui funcții (`cripteaza_bytes`, `decripteaza_bytes`) ridică
@@ -76,10 +77,14 @@ toate cele 6 teste trec).
 * **Teste unitare cross-platform** (fără dependență de hardware sau de Windows),
   rulată pe Windows — raportul exact e în mesajul commit-ului / la sfârșitul
   acestei lucrări.
-* **NU s-a testat rularea efectivă pe Linux.** Pe mașina de dezvoltare nu există
-  un mediu Linux (WSL este dezactivat, Docker lipsește). Prin urmare:
+* **NU s-a testat rularea efectivă pe Linux.** Pe mașina de dezvoltare nu există un
+  mediu Linux funcțional: WSL este **dezactivat** (`Wsl/ERROR_SERVICE_DISABLED`) și
+  Docker lipsește. **Nu le-am activat/instalat** (ar fi cerut confirmare explicită).
+  Prin urmare:
   - comportamentul la rulare pe Linux este **netestat**;
-  - calea CUDA este **netestată pe placă reală**.
+  - calea CUDA este **netestată pe placă reală**;
+  - analiza de mai sus (importuri/pornire) este **statică**, din citirea codului, nu
+    dintr-o rulare Linux.
 
 ## Cum se instalează / rulează (Linux)
 
