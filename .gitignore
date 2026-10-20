@@ -1,0 +1,47 @@
+# Medii Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Rezultate de compilare și instalatoare
+dist*/
+build*/
+output/
+*.exe
+
+# Modele și fișiere mari
+model/
+models/
+*.pt
+*.bin
+*.safetensors
+
+# Copii de siguranță, jurnale, temporare
+*.bak*
+*.log
+tmp/
+temp/
+*.tmp
+
+# Date și setări personale
+.env*
+*.enc
+*.wav
+*.mp3
+teste/capturi/
+
+# Documente interne de lucru
+CERINTE_*.md
+INVENTAR*.md
+STARE_LUCRU.md
+PACHET_*.md
+CERCETARE_*.md
+RAPORT*.md
+PROMPT_*.md
+MASTER_TASKS*.md
+AGENTS.md
+
+# Pachete descărcate (LibreOffice etc.)
+LibreOffice_Install/*.msi
+LibreOffice_Install/*.oxt
