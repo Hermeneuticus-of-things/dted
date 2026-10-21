@@ -734,7 +734,7 @@ class PaginaDictare(tk.Frame):
             text = fara_suprapunere(self._ultimul_text_brut, brut)
             self._ultimul_text_brut = brut
             segmente = [
-                motor.Segment(offset + segment.start, offset + segment.end, segment.text)
+                motor.Segment(offset + segment.start, offset + segment.end, segment.text, [motor.Cuvant(offset + c.start, offset + c.end, c.text) for c in (getattr(segment, 'cuvinte', None) or [])])
                 for segment in (rezultat.segmente or [])
             ]
             self._trimite(self._text_nou, text, segmente)
