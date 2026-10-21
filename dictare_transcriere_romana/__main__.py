@@ -184,6 +184,21 @@ def main(argv: list[str] | None = None) -> int:
     argumente = _argumente(argv)
     _pune_folderele(argumente)
 
+    # Cerinta 44: o singura instanta. Daca programul ruleaza deja, iesim.
+    try:
+        import ctypes
+        _mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "DTED_SingleInstance_Mutex_v1")
+        if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+            try:
+                from . import ui_comun
+                ui_comun.anunta(None, "Programul este deja deschis",
+                                 "D&TED ruleaza deja. Foloseste fereastra existenta.")
+            except Exception:
+                pass
+            return 1
+    except Exception:
+        pass
+
     from . import cai, jurnal
 
     cai.pregateste_directoare()
