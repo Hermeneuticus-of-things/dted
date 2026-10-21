@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import threading
 import time
+try:
+    import winsound
+except ImportError:
+    winsound = None  # type: ignore
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, Qt
@@ -216,6 +220,21 @@ class PaginaDictare(QWidget):
             self._mini.show()
             self._mini.raise_()
 
+    def _sunet(self, fel: str) -> None:
+        """Cerinta 54: sunet scurt la start/stop/eroare (winsound)."""
+        if winsound is None:
+            return
+        try:
+            if fel == 'start':
+                winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS | winsound.SND_ASYNC)
+            elif fel == 'stop':
+                winsound.PlaySound('SystemExit', winsound.SND_ALIAS | winsound.SND_ASYNC)
+            elif fel == 'eroare':
+                winsound.PlaySound('SystemHand', winsound.SND_ALIAS | winsound.SND_ASYNC)
+        except Exception:
+            pass
+
+
     def _porneste(self) -> None:
         from ..inregistrare import Microfon, EroareMicrofon
 
@@ -283,6 +302,7 @@ class PaginaDictare(QWidget):
         self._timer_nivel = QTimer(self)
         self._timer_nivel.timeout.connect(self._actualizeaza_nivel)
         self._timer_nivel.start(60)
+        self._sunet('start')
 
     def _opreste(self) -> None:
         self._anulat.set()
@@ -290,6 +310,7 @@ class PaginaDictare(QWidget):
 
         if hasattr(self, "_timer_nivel"):
             self._timer_nivel.stop()
+        self._sunet('stop')
 
         if self._microfon is not None:
             try:
@@ -387,6 +408,7 @@ class PaginaDictare(QWidget):
                 sunet = microfon.preia()
             except Exception as exc:
                 jurnal.atentionare(f"Microfonul s-a oprit in timpul dictarii: {exc}")
+                self._sunet('eroare')
                 self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
                 self._anulat.set()
                 break
