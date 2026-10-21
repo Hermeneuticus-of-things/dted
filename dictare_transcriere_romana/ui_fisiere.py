@@ -431,6 +431,10 @@ class FereastraFisiere(tk.Toplevel):
             jos, "Mută la Coșul de reciclare", lambda el=element: self._la_gunoi(el),
             latime=300, inaltime=48,
         ).pack(side="left")
+        ui_comun.Buton(
+            jos, "Arhiveaza (Terminate)", lambda el=element: self._muta_la_terminate(el),
+            latime=200, inaltime=48,
+        ).pack(side="left", padx=(0, ui_comun.px(8)))
 
     # ------------------------------------------------------------------ așezare
 
@@ -659,6 +663,16 @@ class FereastraFisiere(tk.Toplevel):
             "Redenumit", f"fișierul se numește acum „{cale_noua.name}”.", "bine"
         )
         self._reincarca()
+
+    def _muta_la_terminate(self, element) -> None:
+        """Muta fisierul in arhiva Terminate (cerinta 41)."""
+        reusit, mesaj = biblioteca.muta_la_terminate(element.cale, self.radacina)
+        if not reusit:
+            ui_comun.anunta(self, "Arhivare esuata", mesaj or "Fisierul nu a putut fi arhivat.")
+            return
+        self.linie_stare.arata("Arhivat", "am mutat fisierul in arhiva Terminate.", "bine")
+        self._reincarca()
+
 
     def _la_gunoi(self, element) -> None:
         """Trimite fișierul la Coșul de reciclare, după ce utilizatorul confirmă."""
