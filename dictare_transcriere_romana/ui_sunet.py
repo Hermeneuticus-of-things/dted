@@ -84,15 +84,15 @@ class FereastraSunet(tk.Toplevel):
         microfoane, iesiri = dispozitive.listeaza()
         casti = dispozitive.casti()
         difuzoare = [dispozitiv for dispozitiv in iesiri if dispozitiv not in casti]
+        self._microfoane = microfoane
+        self._difuzoare = difuzoare
+        self._casti_lista = casti
         self._microfon = microfoane[0] if microfoane else None
         self._difuzor = difuzoare[0] if difuzoare else (iesiri[0] if iesiri else None)
         self._casti = casti[0] if casti else None
-
-        nume_noi = [
-            f"in:{getattr(dispozitiv, 'nume_brut', '')}" for dispozitiv in microfoane
-        ] + [f"out:{getattr(dispozitiv, 'nume_brut', '')}" for dispozitiv in iesiri]
-        if self._dispozitive_vechi and nume_noi != self._dispozitive_vechi:
-            jurnal.info("Dispozitivele de sunet s-au schimbat; lista se reîncarcă.")
+        self._idx_microfon = 0
+        self._idx_difuzor = 0
+        self._idx_casti = 0
         self._dispozitive_vechi = nume_noi
 
         for copil in self.zona.winfo_children():
@@ -130,6 +130,20 @@ class FereastraSunet(tk.Toplevel):
                 fundal=ui_comun.CULORI.galben_fundal,
                 latime_bucati=800,
             ).pack(anchor="w", pady=ui_comun.px(10))
+
+    def _schimba_dispozitiv(self, cheie: str) -> None:
+        """Cerinta 7: schimba dispozitivul activ (ciclu prin lista)."""
+        if cheie == 'microfon' and self._microfoane:
+            self._idx_microfon = (self._idx_microfon + 1) % len(self._microfoane)
+            self._microfon = self._microfoane[self._idx_microfon]
+        elif cheie == 'difuzor' and self._difuzoare:
+            self._idx_difuzor = (self._idx_difuzor + 1) % len(self._difuzoare)
+            self._difuzor = self._difuzoare[self._idx_difuzor]
+        elif cheie == 'casti' and self._casti_lista:
+            self._idx_casti = (self._idx_casti + 1) % len(self._casti_lista)
+            self._casti = self._casti_lista[self._idx_casti]
+        self._reimprospateaza()
+
 
     def _rand(self, cheie: str, titlu: str, dispozitiv, text_buton: str, comanda) -> None:
         C = ui_comun.CULORI
@@ -171,6 +185,7 @@ class FereastraSunet(tk.Toplevel):
             ).pack(anchor="w", pady=(ui_comun.px(2), ui_comun.px(6)))
             buton = ui_comun.Buton(corp, text_buton, comanda, latime=380, inaltime=48)
             buton.pack(anchor="w")
+            ui_comun.Buton(corp, 'Schimba', lambda c=cheie: self._schimba_dispozitiv(c), latime=160, inaltime=48).pack(anchor='w', pady=(ui_comun.px(4), 0))
         else:
             ui_comun.eticheta(
                 corp,
