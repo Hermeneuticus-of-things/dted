@@ -65,6 +65,7 @@ class PaginaDictare(QWidget):
         self._timp_start = 0.0
         self._secunde_audio = 0.0
         self._semnuri: list[str] = []
+        self._dictare_sunet = None  # Inregistrare completă (pentru „Mergi la semn", cerința 38)
         self._mini = None  # FereastraMini mereu deasupra (cerința 40 / D-8)
 
         self._construieste()
@@ -248,6 +249,7 @@ class PaginaDictare(QWidget):
         self._timp_start = time.monotonic()
         self._secunde_audio = 0.0
         self._semnuri = []
+        self._dictare_sunet = None
         self.buton_semn.set_activ(True)
 
         self.buton_start.set_text("◼ Dictează…")
@@ -275,6 +277,8 @@ class PaginaDictare(QWidget):
         if self._microfon is not None:
             try:
                 inreg = self._microfon.opreste()
+                # Păstrează tot sunetul dictării, pentru „Mergi la semn" (cerința 38).
+                self._dictare_sunet = self._microfon.tot()
             except Exception:
                 inreg = None
             self._microfon = None
@@ -292,6 +296,40 @@ class PaginaDictare(QWidget):
         self.aplicatie.bara_stare.arata(
             "Gata", f"Dictarea s-a terminat ({self._secunde_audio:.1f} s).", "succes"
         )
+
+    def _eroare_microfon_qt(self, exc: Exception) -> None:
+        """Cerinta 58: microfon deconectat -> oprire curata + salvare text."""
+        self._activ = False
+        if hasattr(self, "_timer_nivel"):
+            self._timer_nivel.stop()
+        if self._microfon is not None:
+            try:
+                inreg = self._microfon.opreste()
+            except Exception:
+                inreg = None
+            self._microfon = None
+        self.buton_start.set_text("▶ Dictează")
+        self.buton_start._fel = "principal"
+        self.buton_start._aplica_stil()
+        self.buton_start.set_activ(True)
+        self.buton_opreste.set_activ(False)
+        self.buton_semn.set_activ(False)
+        self.nivel_bar.setValue(0)
+        self.eticheta_nivel.setText("Microfonul s-a deconectat.")
+        self.aplicatie.bara_stare.arata(
+            "Eroare microfon",
+            "Microfonul s-a deconectat. Textul transcris pana acum a fost salvat.",
+            "problema",
+        )
+        # Salvare automata a textului (cerinta 58)
+        try:
+            from .. import biblioteca
+            text = self.aplicatie.editor.text() if hasattr(self.aplicatie, "editor") else ""
+            if text.strip():
+                marca = biblioteca.marca_acum()
+                biblioteca.scrie_text(text, marca)
+        except Exception:
+            pass
 
     def _actualizeaza_nivel(self) -> None:
         if self._microfon is None:
@@ -328,7 +366,13 @@ class PaginaDictare(QWidget):
             if self._anulat.is_set():
                 break
 
-            sunet = microfon.preia()
+            try:
+                sunet = microfon.preia()
+            except Exception as exc:
+                jurnal.atentionare(f"Microfonul s-a oprit in timpul dictarii: {exc}")
+                self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
+                self._anulat.set()
+                break
             if len(sunet) < int(0.5 * 16_000):  # puține, sări peste
                 continue
             self._secunde_audio += len(sunet) / 16_000.0
@@ -394,7 +438,7 @@ class PaginaDictare(QWidget):
         self.aplicatie.bara_stare.arata("Semn", f"semn adăugat la {marca}.", "lucru")
 
     def _mergi_la_semn(self) -> None:
-        """Sare la un semn de-a lungul textului (cerința 38)."""
+        """Sare la un semn de-a lungul textului, și în sunet (cerința 38)."""
         if not self._semnuri:
             anunta(self, "Fără semne", "Nu ai adăugat încă niciun semn (Ctrl+B).")
             return
@@ -403,3 +447,24 @@ class PaginaDictare(QWidget):
         )
         if ok and aleasa:
             self.editor.sari_la(f"[{aleasa}]")
+            self._reda_din_semn(aleasa)
+
+    def _reda_din_semn(self, marca: str) -> None:
+        """Redă înregistrarea dictării de la semnul [mm:ss] încolo (cerința 38)."""
+        try:
+            minute, sec = marca.split(":")
+            secunde = int(minute) * 60 + int(sec)
+        except (ValueError, TypeError):
+            return
+        sunet = self._dictare_sunet
+        if sunet is None or not len(sunet.pcm) or sunet.rata <= 0:
+            anunta(self, "Fără redare", "Nu există înregistrarea dictării de redat.")
+            return
+        start = int(secunde * sunet.rata)
+        if start >= len(sunet.pcm):
+            anunta(self, "În afara sunetului", "Semnul este după sfârșitul înregistrării.")
+            return
+        from .. import inregistrare
+        inregistrare.opreste_redarea()
+        inregistrare.reda(sunet.pcm[start:], sunet.rata)
+        self.aplicatie.bara_stare.arata("Redare", f"Redau de la semnul {marca}.", "lucru")
