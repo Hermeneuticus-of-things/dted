@@ -132,7 +132,11 @@ class PaginaTranscriere(tk.Frame):
             rand_alege, "Scoate fișierul ales", self._scoate_fisierul, latime=260, inaltime=64
         )
         self.buton_scoate.pack(side="left")
+        self.buton_reda = ui_comun.Buton(rand_alege, "Reda sunetul", self._reda_sunetul, latime=220, inaltime=64)
+        self.buton_reda.pack(side="left", padx=(ui_comun.px(ui_comun.SPATIU), 0))
+        self.buton_reda.activeaza(False)
         self.buton_scoate.activeaza(False)
+        self.buton_reda.activeaza(False)
 
         self.eticheta_fisier = ui_comun.eticheta(
             corp_1, "Nu ai ales încă niciun fișier audio.", "baza", fundal=C.card, latime_bucati=880
@@ -315,6 +319,7 @@ class PaginaTranscriere(tk.Frame):
         self.zona_drop.configure(background=ui_comun.CULORI.verde_fundal)
         self._cale = cale
         self.buton_scoate.activeaza(True)
+        self.buton_reda.activeaza(True)
         self.eticheta_fisier.configure(text=f"Se transcrie: {cale.name}")
         self.eticheta_estimare.configure(text="Verific fișierul…")
         threading.Thread(target=self._citeste_informatii, args=(cale,), daemon=True).start()
@@ -354,6 +359,28 @@ class PaginaTranscriere(tk.Frame):
         self.eticheta_estimare.configure(
             text=f"Transcrierea va dura {estimare} (estimare, depinde de calculator)."
         )
+
+    def _reda_sunetul(self) -> None:
+        """Cerinta 32: reda sunetul fisierului ales (asculta si corecteaza)."""
+        if self._cale is None:
+            ui_comun.anunta(self, "Niciun fisier", "Alege mai intai un fisier audio.")
+            return
+        try:
+            from . import inregistrare, motor
+            import threading
+            def _reda():
+                try:
+                    pcm = motor._decode_audio(str(self._cale))
+                    inregistrare.reda(pcm, asteapta=True)
+                except Exception as exc:
+                    self._trimite(self._eroare_redare, exc)
+            threading.Thread(target=_reda, name='redare-sunet', daemon=True).start()
+        except Exception as exc:
+            ui_comun.anunta(self, "Redarea a esuat", str(exc))
+
+    def _eroare_redare(self, exc: Exception) -> None:
+        ui_comun.anunta(self, "Redarea a esuat", f"Sunetul nu a putut fi redat: {exc}")
+
 
     def _scoate_fisierul(self) -> None:
         if self._fir is not None and self._fir.is_alive():
