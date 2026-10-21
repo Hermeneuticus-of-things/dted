@@ -45,6 +45,7 @@ SECUNDE_BUCATA = 8.0
 SECUNDE_SUPRAPUNERE = 1.0
 #: Câte secunde de liniște înseamnă „nu te aud”.
 SECUNDE_TACERE = 3.0
+SECUNDE_PAUZA_TACERE = 300.0  # 5 minute de tacere -> pauza automata (cerinta 50)
 #: Sub acest nivel, sunetul este socotit liniște.
 NIVEL_MINIM = 0.015
 #: La cât timp se scrie copia de siguranță în timpul dictării.
@@ -400,6 +401,10 @@ class PaginaDictare(tk.Frame):
             if self.banner_tacere.winfo_ismapped():
                 self.banner_tacere.pack_forget()
 
+        # Cerinta 50: pauza automata dupa 5 minute de tacere.
+        if self._tacere >= SECUNDE_PAUZA_TACERE and not self._pauza.is_set():
+            self._pauza_continua()
+            self.aplicatie.bara_stare.arata("Pauza automata", "5 minute de liniste - dictarea a fost pusa pe pauza.", "atentie")
     def _ceas_internet(self) -> None:
         """Verifică internetul la fiecare 10 secunde (cerința 22)."""
         try:
