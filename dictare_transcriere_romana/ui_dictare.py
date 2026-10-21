@@ -520,6 +520,24 @@ class PaginaDictare(tk.Frame):
             cale_internet = self._indicator.stare.despre("internet")
             self._internet_anterior = bool(cale_internet and cale_internet.deschisa)
 
+        # Cerinta 42: avertisment spatiu pe disc inainte de �nregistrare.
+        try:
+            from . import resurse, constante
+            liber = resurse.spatiu_liber_gb("~")
+            if liber < constante.DISC_MINIM_GB:
+                raspuns = ui_comun.dialog(
+                    self,
+                    "Spatiu pe disc",
+                    f"Mai ai doar {liber:.1f} GB liberi. Pentru dictare si salvare sunt recomandate cel putin {constante.DISC_MINIM_GB:.0f} GB.\n\nContinui?",
+                    [("Continua", "principal"), ("Anuleaza", "secundar")],
+                    implicit=1,
+                    anulare=1,
+                )
+                if raspuns != 0:
+                    return
+        except Exception:
+            pass
+
         # 2. Se poate lucra? (părțile de transcriere trebuie să fie instalate)
         if not motor.biblioteci_disponibile():
             ui_comun.dialog_eroare(
