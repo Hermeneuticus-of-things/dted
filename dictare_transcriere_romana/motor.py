@@ -152,12 +152,22 @@ class Anulat(Exception):
 
 
 @dataclass
+class Cuvant:
+    """Un cuvânt cu timpii lui, pentru legarea textului de sunet."""
+
+    start: float
+    end: float
+    text: str
+
+
+@dataclass
 class Segment:
     """O bucată de text cu timpii ei, folosită la subtitrări."""
 
     start: float
     end: float
     text: str
+    cuvinte: list[Cuvant] = field(default_factory=list)
 
 
 @dataclass
@@ -543,11 +553,22 @@ class MotorWhisper:
         for segment in segmente_rezultat:
             if self._anulat.is_set():
                 raise Anulat()
+            # Cuvintele cu timpi (cerinta 33: text legat de sunet).
+            cuvinte_segment = []
+            for _cuv in (getattr(segment, 'words', None) or []):
+                cuvinte_segment.append(
+                    Cuvant(
+                        float(_cuv.start),
+                        float(_cuv.end),
+                        normalizeaza(str(_cuv.word).strip()),
+                    )
+                )
             segmente.append(
                 Segment(
                     float(segment.start),
                     float(segment.end),
                     normalizeaza(str(segment.text).strip()),
+                    cuvinte_segment,
                 )
             )
         text = normalizeaza(" ".join(s.text for s in segmente).strip())
@@ -606,7 +627,7 @@ class MotorWhisper:
             task="transcribe",
             vad_filter=True,  # detectează pausele în vorbire
             condition_on_previous_text=False,
-            word_timestamps=False,
+            word_timestamps=True,  # cerința 33: text legat de sunet
             initial_prompt=prompt_romana(termeni) if limba == "ro" else None,
         )
 

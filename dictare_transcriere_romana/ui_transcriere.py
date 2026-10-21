@@ -517,7 +517,7 @@ class PaginaTranscriere(tk.Frame):
             text = fara_suprapunere(self._text_brut_anterior, brut)
             self._text_brut_anterior = brut
             segmente = [
-                motor.Segment(offset + segment.start, offset + segment.end, segment.text)
+                motor.Segment(offset + segment.start, offset + segment.end, segment.text, [motor.Cuvant(offset + c.start, offset + c.end, c.text) for c in (getattr(segment, 'cuvinte', None) or [])])
                 for segment in (rezultat.segmente or [])
             ]
             self._procesat = sfarsit / 16_000.0
