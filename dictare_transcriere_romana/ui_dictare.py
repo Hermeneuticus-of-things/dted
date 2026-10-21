@@ -1,4 +1,4 @@
-﻿"""Ecranul de dictare vocală: vorbești, iar textul apare singur în editor.
+"""Ecranul de dictare vocală: vorbești, iar textul apare singur în editor.
 
 Ce face ecranul, pas cu pas (cerințele 5, 6, 12 și 22):
 
@@ -117,6 +117,8 @@ class _AlegeMicrofon(tk.Toplevel):
         ui_comun.Buton(rand, "Renunță", self.destroy, latime=200, inaltime=56).pack(side="left")
 
         self.bind("<Escape>", lambda _e: self.destroy())
+        self.bind("<KeyPress-F9>", lambda _e: self._porneste_daca_posibil())
+        self.bind("<KeyRelease-F9>", lambda _e: self._opreste_daca_push_to_talk())
         self.update_idletasks()
         ui_comun.centrat(self, latime=760, inaltime=560)
         self.grab_set()
@@ -203,6 +205,7 @@ class PaginaDictare(tk.Frame):
         self._secunde = 0.0
         self._nivel = 0.0
         self._tacere = 0.0
+        self._push_to_talk = False  # cerinta 49: tine apasat pentru a dicta
         self._pornita = False
         self._se_termina = False
         self._erori_la_transcriere = 0
@@ -506,6 +509,18 @@ class PaginaDictare(tk.Frame):
             self._opreste()
         else:
             self._porneste()
+
+    def _porneste_daca_posibil(self) -> None:
+        if self._pornita or self._se_termina:
+            return
+        self._push_to_talk = True
+        self._porneste()
+
+    def _opreste_daca_push_to_talk(self) -> None:
+        if self._push_to_talk and self._pornita and not self._se_termina:
+            self._push_to_talk = False
+            self._opreste()
+
 
     def _porneste(self) -> None:
         try:
