@@ -17,10 +17,10 @@
 #define MyAppPublisher "D&TED"
 #define MyAppExeName "DTED.exe"
 #define MyDistDir "..\dist\DTED"
-; Iconița programului (microfon auriu, unde care vin spre microfon).
+; Iconița programului (microfon auriu, unde care vin spre microfon, litere argintii).
 ; Se copiază separat lângă program, ca scurtăturile să o arate chiar dacă DTED.exe
 ; a fost construit cu o iconiță mai veche.
-#define MyAppIconName "iconita_dictare.ico"
+#define MyAppIconName "iconita_dted_text.ico"
 ; Același identificator e setat și în program (ui_qt\principal.py), ca bara de activități
 ; să grupeze fereastra cu scurtătura și să arate iconița programului.
 #define MyAppUserModelID "DTED.DictareTranscriere"
@@ -39,10 +39,10 @@ DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppIconName}
 UninstallDisplayName={#MyAppName}
 OutputDir=..\output
-OutputBaseFilename=Setup DTED
+OutputBaseFilename=Setup.DTED
 ; Pictograma fără cadrul de 512 px (ISCC refuză resursa prea mare: „File is too large”).
 ; Iconița nouă a instalatorului (aceeași imagine ca a programului, fără cadrul de 512 px).
-SetupIconFile=iconita_setup.ico
+SetupIconFile=iconita_setup_text.ico
 Compression=lzma2
 SolidCompression=yes
 ; GitHub limitează fișierele la 2 GB ⇒ instalatorul se împarte în bucăți < 2 GB.
