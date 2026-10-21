@@ -677,6 +677,24 @@ class Aplicatie(QMainWindow):
         QTimer.singleShot(300, self._intreaba_de_text_recuperat)
         QTimer.singleShot(600, self._intreaba_de_lucrul_neterminat)
         QTimer.singleShot(1200, self._verifica_driverele_la_pornire)
+        QTimer.singleShot(1500, self._verifica_microfonul_la_pornire)
+
+    def _verifica_microfonul_la_pornire(self) -> None:
+        """Cerinta 52: asistent microfon - verifica daca exista microfon."""
+        try:
+            from .. import dispozitive
+            microfoane = dispozitive.microfoane()
+            if not microfoane:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self,
+                    "Microfonul nu a fost gasit",
+                    "Nu am gasit niciun microfon pe acest calculator.\n\n"
+                    "Conecteaza un microfon (USB sau Bluetooth) si redeschide programul, "
+                    "sau verifica in Setari -> Sunet.",
+                )
+        except Exception:
+            pass
         if not getattr(self.configurare, "tur_vazut", False):
             QTimer.singleShot(1500, lambda: self._porneste_tur())
 
