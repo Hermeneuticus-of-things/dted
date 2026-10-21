@@ -808,6 +808,10 @@ class PaginaDictare(tk.Frame):
         self.buton_mare.seteaza_fel("principal")
         self.buton_mare.activeaza(True)
         self.buton_pauza.activeaza(False)
+        try:
+            self._salveaza_automat(forțat=True)
+        except Exception:
+            pass
         ui_comun.dialog_eroare(self, erori.din_exceptie(exc, "citirea de la microfon"))
 
     def _dupa_oprire(self, durata: float, cale_audio) -> None:
