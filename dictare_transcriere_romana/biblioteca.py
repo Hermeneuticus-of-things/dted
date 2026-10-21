@@ -23,7 +23,8 @@ from . import cai, jurnal, sisteme, text_ro
 FOLDER_AUDIO = "Audio"
 FOLDER_TEXT = "Text transcris"
 FOLDER_DOCUMENTE = "Documente finale"
-SUBFOLDERE = (FOLDER_AUDIO, FOLDER_TEXT, FOLDER_DOCUMENTE)
+FOLDER_TERMINATE = "Terminate"
+SUBFOLDERE = (FOLDER_AUDIO, FOLDER_TEXT, FOLDER_DOCUMENTE, FOLDER_TERMINATE)
 
 #: Numele folosite când programul nu poate scrie în „Documente”.
 SUFIX_CADERE = " - nesalvat"
@@ -76,6 +77,7 @@ def folder(fel: str, radacina_aleasa: Path | None = None) -> Path:
         "text": FOLDER_TEXT,
         "document": FOLDER_DOCUMENTE,
         "documente": FOLDER_DOCUMENTE,
+        "terminate": FOLDER_TERMINATE,
     }
     nume = perechi.get(fel, FOLDER_AUDIO)
     baza = Path(radacina_aleasa) if radacina_aleasa else radacina()
@@ -358,6 +360,29 @@ def la_gunoi(cale: Path) -> tuple[bool, str]:
     )
 
 
+def muta_la_terminate(cale: Path, radacina_aleasa: Path | None = None) -> tuple[bool, str]:
+    """Mută un fișier terminat în arhiva „Terminate" (nu se șterge).
+
+    Fișierele terminate se arhivează în folderul „Terminate", ca să nu mai stea
+    printre cele în lucru, dar fără să se șteargă definitiv (cerința 41).
+    """
+    cale = Path(cale)
+    if not cale.exists():
+        return False, "Fișierul nu mai există."
+    arhiva = folder("terminate", radacina_aleasa)
+    try:
+        destinatie = nume_unic(arhiva, cale.name)
+    except OSError as exc:
+        return False, f"Nu am putut crea arhiva „Terminate”: {exc}"
+    try:
+        shutil.move(str(cale), str(destinatie))
+        jurnal.info(f"Arhivat: {cale.name} → {destinatie.name}")
+        return True, ""
+    except OSError as exc:
+        jurnal.atentionare(f"Nu am putut arhiva {cale}: {exc}")
+        return False, "Fișierul nu a putut fi mutat în arhiva „Terminate”."
+
+
 # --------------------------------------------------------------------------- copie de siguranță
 
 
@@ -435,3 +460,23 @@ def ora_salvarii(scris_la: dt.datetime | None = None) -> str:
     """Textul afișat lângă editor: „Salvat automat la 10:42”."""
     moment = scris_la or dt.datetime.now()
     return moment.strftime("%H:%M")
+
+def copiaza_siguranta_zip(cale_text: Path, destinatie: Path | None = None) -> tuple[Path | None, str]:
+    """Creeaza o copie de siguranta ZIP a unui fisier de text (cerinta 59).
+
+    Arhiva contine fisierul de text sub numele lui original, astfel incat
+    sa poata fi recuperat oricand. Returneaza (calea arhivei, mesaj).
+    """
+    import zipfile
+    cale_text = Path(cale_text)
+    if not cale_text.exists():
+        return None, "Fisierul nu mai exista."
+    if destinatie is None:
+        destinatie = cale_text.with_suffix(cale_text.suffix + ".zip")
+    destinatie = Path(destinatie)
+    try:
+        with zipfile.ZipFile(destinatie, "w", zipfile.ZIP_DEFLATED) as arhiva:
+            arhiva.write(cale_text, cale_text.name)
+        return destinatie, ""
+    except (OSError, zipfile.BadZipFile) as exc:
+        return None, f"Copia de siguranta nu a putut fi creata: {exc}"
