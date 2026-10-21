@@ -223,6 +223,23 @@ class PaginaDictare(QWidget):
             # Nu avem avertizare (totul e închis) sau utilizatorul a continuat.
             pass
 
+        # Cerinta 42: avertisment spatiu pe disc inainte de dictare.
+        try:
+            from .. import resurse, constante
+            liber = resurse.spatiu_liber_gb(str(Path.home()))
+            if liber < constante.DISC_MINIM_GB:
+                from PySide6.QtWidgets import QMessageBox
+                raspuns = QMessageBox.question(
+                    self,
+                    "Spatiu pe disc",
+                    f"Mai ai doar {liber:.1f} GB liberi. Pentru dictare si salvare sunt recomandate cel putin {constante.DISC_MINIM_GB:.0f} GB.\n\nContinui?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
+                if raspuns != QMessageBox.StandardButton.Yes:
+                    return
+        except Exception:
+            pass
+
         if motor.biblioteci_disponibile() is False:
             dialog_eroare(
                 self,
