@@ -21,6 +21,10 @@ from __future__ import annotations
 
 import threading
 import time
+try:
+    import winsound
+except ImportError:
+    winsound = None  # type: ignore
 import tkinter as tk
 from queue import Queue
 
@@ -526,6 +530,21 @@ class PaginaDictare(tk.Frame):
             self._opreste()
 
 
+    def _sunet(self, fel: str) -> None:
+        """Cerinta 54: sunet scurt la start/stop/eroare (winsound)."""
+        if winsound is None:
+            return
+        try:
+            if fel == 'start':
+                winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS | winsound.SND_ASYNC)
+            elif fel == 'stop':
+                winsound.PlaySound('SystemExit', winsound.SND_ALIAS | winsound.SND_ASYNC)
+            elif fel == 'eroare':
+                winsound.PlaySound('SystemHand', winsound.SND_ALIAS | winsound.SND_ASYNC)
+        except Exception:
+            pass
+
+
     def _porneste(self) -> None:
         try:
             self.buton_mare.pulseaza(True)
@@ -534,6 +553,7 @@ class PaginaDictare(tk.Frame):
             pass
         # 1. Internetul: se verifică înainte de a începe lucrul (cerința 22).
         self.aplicatie.avertizeaza_internet()
+        self._sunet('start')
         if self._indicator is not None:
             self._indicator.actualizeaza()
             cale_internet = self._indicator.stare.despre("internet")
@@ -690,6 +710,7 @@ class PaginaDictare(tk.Frame):
         if not self._pornita or self._se_termina:
             return
         self._se_termina = True
+        self._sunet('stop')
         self._pornita = False
         try:
             self.buton_mare.pulseaza(False)
@@ -844,6 +865,7 @@ class PaginaDictare(tk.Frame):
 
     def _eroare_microfon(self, exc: Exception) -> None:
         jurnal.eroare(f"Microfonul s-a oprit în timpul dictării: {exc}")
+        self._sunet('eroare')
         self._pornita = False
         self._se_termina = True
         self.buton_mare.seteaza_text("● Pornește dictarea")
