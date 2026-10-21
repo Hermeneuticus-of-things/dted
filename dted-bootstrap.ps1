@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference    = "SilentlyContinue"   # descărcare mai iute în PowerShell 5.1
 
 # Etichetă de versiune FIXĂ (nu „ultima versiune" — fiecare publicare are eticheta ei).
-$Tag  = "v0.1.0"
+$Tag  = "v0.1.1"
 $Repo = "Hermeneuticus-of-things/dted"
 $Base = "https://github.com/$Repo/releases/download/$Tag"
 $Dest = Join-Path $env:TEMP "dted-install"
@@ -34,9 +34,9 @@ $Dest = Join-Path $env:TEMP "dted-install"
 # bucățile .bin în ordine (Setup DTED-1.bin, -2.bin, ...).
 # ----------------------------------------------------------------------------
 $Pachete = [ordered]@{
-    "Setup DTED.exe"   = "BB37804C501B2E8E3F4A0ED5745C382884147E8B275CD2F1E8DAD568F0315C73"
-    "Setup DTED-1.bin" = "7AC09697E35BB97423F427192B19862253B22807C06C4FD6A187AD88AAF97C51"
-    "Setup DTED-2.bin" = "9040C9B313ACDAF869990E6ADFB1D65C5DC58ABE5B2FFF0FC6F0228DCD342154"
+    "Setup.DTED.exe"   = "E9ED819214ABA23C880265D5183B7FC98D02F92249CF5F112983E7EAAFC5DA04"
+    "Setup.DTED-1.bin" = "B2FE96FD1643DA193A74FF730EBC58E8B36F41774BD3AA320537125C06ECCBCC"
+    "Setup.DTED-2.bin" = "81081FCAF4B110C224011523B1D4D1F4AD9578724084F2D1F96C6ADF2BCDEE9E"
 }
 
 function Format-Amprenta { param([string]$s) ($s -replace '[^0-9a-fA-F]', '').ToUpper() }
@@ -62,10 +62,10 @@ foreach ($num in $Pachete.Keys) {
     $real = (Get-FileHash -Path $out -Algorithm SHA256).Hash.ToUpper()
     if ($real -ne $asteptat) {
         Remove-Item $out -Force -ErrorAction SilentlyContinue
-        throw ("VERIFICAREA AMPRENTEI SHA-256 A EȘUAT pentru '{0}':`n" + `
+        throw (("VERIFICAREA AMPRENTEI SHA-256 A EȘUAT pentru '{0}':`n" + `
                "  așteptat: {1}`n" + `
                "  primit:   {2}`n" + `
-               "Instalarea a fost REFUZATĂ (fișier stricat ori alterat)." -f $num, $asteptat, $real)
+               "Instalarea a fost REFUZATĂ (fișier stricat ori alterat).") -f $num, $asteptat, $real)
     }
     Write-Host ("  în regulă  {0}  (amprenta SHA-256 se potrivește)" -f $num) -ForegroundColor Green
 }
