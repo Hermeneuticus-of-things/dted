@@ -137,6 +137,7 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+0"), self, self.reseteaza_scrisul)
         QShortcut(QKeySequence("Ctrl+,"), self, lambda: self.arata_ecran_setari())
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
+        QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
 
@@ -486,7 +487,9 @@ class Aplicatie(QMainWindow):
             f"Despre {NUME_SCURT}",
             f"<div style='font-size:15pt; font-weight:bold'>{escape(NUME_AFISAT)} ({escape(NUME_SCURT)})</div>"
             f"<div style='font-size:10pt'>{escape(SUBTITLU_RO)}</div>"
-            "<br>"
+            "<div style='font-size:8pt; color:gray'>Inspirat de Express Dictate și Express Scribe "
+            "(NCH Software). D&amp;TED nu este afiliat cu NCH Software; mărcile aparțin "
+            "proprietarilor lor.</div><br>"
             "Versiunea 1.0.0<br><br>"
             "Program de dictare și transcriere text, 100% local,<br>"
             "cu modelul Whisper large-v3-turbo.<br><br>"
@@ -1087,10 +1090,23 @@ class Aplicatie(QMainWindow):
 
 def ruleaza(optiuni=None) -> int:
     """Pornește programul: fereastra principală, apoi curățenie la închidere."""
+    # Pe Windows, un identificator propriu face ca bara de activități să arate iconița
+    # programului, nu pe cea a lui Python (contează mai ales la pornirea cu pythonw.exe).
+    # Trebuie setat înainte să apară vreo fereastră; e același ca în instalator\setup.iss.
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DTED.DictareTranscriere")
+    except Exception:
+        pass
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
     app.setApplicationName(NUME_AFISAT)
+    # Iconița pentru toate ferestrele programului (și dialogurile), nu doar pentru cea principală.
+    ico = Path(__file__).parent.parent / "iconita_dictare.ico"
+    if ico.exists():
+        app.setWindowIcon(QIcon(str(ico)))
     aplicatie = Aplicatie(optiuni)
     aplicatie.show()
     return app.exec()
