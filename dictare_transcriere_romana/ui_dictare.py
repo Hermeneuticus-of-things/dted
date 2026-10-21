@@ -300,6 +300,10 @@ class PaginaDictare(tk.Frame):
             bd=0,
         )
         self.bara_nivel.pack(fill="x")
+        # Cerinta 59: copie de siguranta ZIP.
+        rand_backup = tk.Frame(corp_vorba, background=C.card)
+        rand_backup.pack(fill="x", pady=(ui_comun.px(8), 0))
+        ui_comun.Buton(rand_backup, "Copie de siguranta (ZIP)", self._copiaza_siguranta, latime=260, inaltime=44).pack(side="left")
         self._bucata_nivel = None
 
         # Bannerul „Nu te aud” și bannerul pentru microfon scos.
@@ -888,6 +892,23 @@ class PaginaDictare(tk.Frame):
             "bine",
         )
         self.aplicatie.reimprospateaza_aspectul()
+
+    def _copiaza_siguranta(self) -> None:
+        text = self.editor.text_ecran()
+        if not text.strip():
+            ui_comun.anunta(self, "Nimic de salvat", "Nu exista text pe ecran pentru copia de siguranta.")
+            return
+        marca = self.stare.marca or biblioteca.marca_acum()
+        cale_text = biblioteca.scrie_text(text, marca)
+        if cale_text is None:
+            ui_comun.anunta(self, "Eroare", "Textul nu a putut fi salvat pentru copia de siguranta.")
+            return
+        cale_zip, mesaj = biblioteca.copiaza_siguranta_zip(cale_text)
+        if cale_zip is None:
+            ui_comun.anunta(self, "Copie de siguranta", mesaj)
+            return
+        self.linie_stare.arata("Copie de siguranta", "arhiva creata: " + cale_zip.name, "bine")
+
 
     def _salveaza_automat(self, forțat: bool = False) -> None:
         self._ultima_salvare = time.monotonic()
