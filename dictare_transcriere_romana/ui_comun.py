@@ -25,7 +25,7 @@ from pathlib import Path
 from tkinter import font as tkfont
 
 from . import jurnal
-from .constante import NUME_APLICATIE
+from .constante import NUME_APLICATIE, FORMATE_AUDIO
 
 # --------------------------------------------------------------------------- DPI
 
@@ -1316,7 +1316,7 @@ class _AlegeFisier(tk.Toplevel):
         self,
         parinte: tk.Misc,
         titlu: str = "Alege fișierul audio",
-        extensii: tuple[str, ...] = (".mp3", ".wav", ".m4a", ".ogg", ".flac"),
+    extensii: tuple[str, ...] = FORMATE_AUDIO,
         folder: Path | None = None,
     ):
         super().__init__(parinte)
@@ -1360,7 +1360,7 @@ class _AlegeFisier(tk.Toplevel):
             side="left", padx=(px(SPATIU), 0)
         )
 
-        eticheta(cadru, "Fișiere audio (mp3, wav, m4a, ogg, flac)", "mica").pack(
+        eticheta(cadru, "Fi?iere audio/video (mp3, wav, m4a, ogg, flac, opus, webm, mp4, aac, wma)", "mica").pack(
             anchor="w", pady=(px(10), px(4))
         )
         cadru_lista = tk.Frame(cadru, background=CULORI.card, highlightthickness=px(1), highlightbackground=CULORI.chenar)
