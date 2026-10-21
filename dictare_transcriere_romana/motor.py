@@ -628,6 +628,7 @@ class MotorWhisper:
             vad_filter=True,  # detectează pausele în vorbire
             condition_on_previous_text=False,
             word_timestamps=True,  # cerința 33: text legat de sunet
+            hotwords=termeni if termeni else None,  # cerinta 55: nume si termeni
             initial_prompt=prompt_romana(termeni) if limba == "ro" else None,
         )
 
