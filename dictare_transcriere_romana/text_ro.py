@@ -192,3 +192,32 @@ def timp_subtitrare(secunde: float, separator: str = ",") -> str:
     if milli == 1000:
         milli, sec = 0, sec + 1
     return f"{ore:02d}:{minute:02d}:{sec:02d}{separator}{milli:03d}"
+
+# ---------------------------------------------------------------------------
+# Comenzi vocale (cerinta 57)
+
+COMENZI_Vocale = {
+    "rand nou": "\n",
+    "rând nou": "\n",
+    "paragraf nou": "\n\n",
+    "punct": ".",
+    "virgula": ",",
+    "virgulă": ",",
+    "semn de intrebare": "?",
+    "semn de exclamare": "!",
+    "doua puncte": ":",
+    "punct si virgula": ";",
+}
+
+
+def proceseaza_comenzi_vocale(text: str) -> str:
+    """Recunoaste comenzi vocale (rând nou, paragraf nou, punct, virgula etc.)
+    si le converteste in formatare (cerinta 57)."""
+    import re
+    if not text:
+        return text
+    rezultat = text
+    for comanda in sorted(COMENZI_Vocale, key=len, reverse=True):
+        pattern = r"(?i)\b" + re.escape(comanda) + r"\b"
+        rezultat = re.sub(pattern, COMENZI_Vocale[comanda], rezultat)
+    return rezultat
