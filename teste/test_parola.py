@@ -5,6 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+if sys.platform != "win32":
+    import unittest
+
+    raise unittest.SkipTest("criptare folosește CNG (bcrypt.dll), disponibil doar pe Windows")
+
 from dictare_transcriere_romana import criptare, parola
 
 
