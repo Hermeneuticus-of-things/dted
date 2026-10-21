@@ -1,4 +1,4 @@
-"""Ecranul de dictare vocală: vorbești, iar textul apare singur în editor.
+﻿"""Ecranul de dictare vocală: vorbești, iar textul apare singur în editor.
 
 Ce face ecranul, pas cu pas (cerințele 5, 6, 12 și 22):
 
@@ -520,7 +520,7 @@ class PaginaDictare(tk.Frame):
             cale_internet = self._indicator.stare.despre("internet")
             self._internet_anterior = bool(cale_internet and cale_internet.deschisa)
 
-        # Cerinta 42: avertisment spatiu pe disc inainte de �nregistrare.
+        # Cerinta 42: avertisment spatiu pe disc înainte de înregistrare.
         try:
             from . import resurse, constante
             liber = resurse.spatiu_liber_gb("~")
