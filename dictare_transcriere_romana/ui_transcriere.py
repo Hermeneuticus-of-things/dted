@@ -181,10 +181,6 @@ class PaginaTranscriere(tk.Frame):
             rand_limba, "Română", lambda: self._seteaza_limba("ro"), fel="principal", latime=200, inaltime=56
         )
         self.buton_ro.pack(side="left", padx=(ui_comun.px(ui_comun.SPATIU), 0))
-        self.buton_auto = ui_comun.Buton(
-            rand_limba, "Detectează singur", lambda: self._seteaza_limba("auto"), latime=240, inaltime=56
-        )
-        self.buton_auto.pack(side="left", padx=(ui_comun.px(ui_comun.SPATIU), 0))
 
         # ---------- pasul 3: transcrierea
         card_3, corp_3 = ui_comun.card(corp, "3. Transcrie")
@@ -389,7 +385,6 @@ class PaginaTranscriere(tk.Frame):
     def _seteaza_limba(self, limba: str) -> None:
         self._limba = limba
         self.buton_ro.seteaza_fel("principal" if limba == "ro" else "secundar")
-        self.buton_auto.seteaza_fel("secundar" if limba == "ro" else "principal")
 
     # ------------------------------------------------------------------ pasul 3
 
