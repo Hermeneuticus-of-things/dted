@@ -212,6 +212,7 @@ class FereastraFisiere(tk.Toplevel):
         self.radacina = self._radacina_aleasa()
         self._butoane_file: dict[str, _ButonFila] = {}
         self._etichete_de_asezat: list[tk.Label] = []
+        self._element_curent = None  # ultimul element selectat (pentru F2 redenumire)
         self.latime, self.inaltime = self._dimensiunea()
 
         ui_comun.seteaza_titlu(self, "Fișierele mele")
@@ -226,6 +227,7 @@ class FereastraFisiere(tk.Toplevel):
 
         self.bind("<Escape>", lambda _e: self._inchide())
         self.bind("<F1>", lambda _e: self._ajutor())
+        self.bind("<F2>", lambda _e: self._redenumeste(self._element_curent) if self._element_curent is not None else None)
         self.bind("<MouseWheel>", self._roata, add="+")
         try:
             self.lift()
@@ -390,6 +392,7 @@ class FereastraFisiere(tk.Toplevel):
         C = ui_comun.CULORI
         exterior, corp = ui_comun.card(self.corp, "")
         exterior.pack(fill="x", padx=ui_comun.px(8), pady=ui_comun.px(5))
+        exterior.bind("<Button-1>", lambda _e, el=element: setattr(self, "_element_curent", el))
 
         latime = self._latime_randuri()
         nume = ui_comun.eticheta(corp, element.nume, "buton", fundal=C.card, latime_bucati=latime)
