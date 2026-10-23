@@ -54,7 +54,11 @@ def _argumente(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--verifica", action="store_true", help="scrie în consolă ce are calculatorul")
     parser.add_argument("--pregateste", action="store_true", help="descarcă modelul (și CUDA, cu placă NVIDIA), fără ferestre")
     parser.add_argument("--transcrie", metavar="FIȘIER", help="transcrie un fișier audio, fără interfață")
-    parser.add_argument("--format", default="docx", help="în ce format se salvează (docx, odt, txt, srt, vtt)")
+    parser.add_argument(
+        "--format",
+        default="docx",
+        help="în ce format se salvează (docx, odt, txt, rtf, html, srt, vtt; PDF doar din interfață)",
+    )
     parser.add_argument("--limba", default="", help="limba vorbită în înregistrare (implicit: cea din setări)")
     parser.add_argument("--folder", default="", help="folderul în care se salvează documentele")
     parser.add_argument("--folder-instalare", default="", help="folderul în care se instalează programul")
