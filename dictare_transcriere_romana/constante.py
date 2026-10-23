@@ -260,10 +260,13 @@ TORCH_INDEX_CUDA = "https://download.pytorch.org/whl/cu130"
 #: Înlocuim torch + openai-whisper cu faster-whisper (CTranslate2), de câteva
 #: ori mai rapid și mai ușor pe memoria video.
 PACHET_FASTER_WHISPER = "faster-whisper==1.2.1"
+# faster-whisper 1.2.1 încă pasează metadata_errors, eliminat în PyAV 18.
+PACHET_PYAV = "av==17.1.0"
 
 #: Pachetele programului, cu versiuni fixe (se instalează în mediul propriu,
 #: nu în Windows). Versiunile au fost verificate că există oficial.
 PACHETE = [
+    PACHET_PYAV,
     "numpy==2.2.6",
     "sounddevice==0.5.2",
     "imageio-ffmpeg==0.6.0",
