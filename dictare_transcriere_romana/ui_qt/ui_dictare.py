@@ -48,8 +48,15 @@ from .ui_internet import avertizeaza
 
 #: Cât de des se transcriere (secunde).
 SECUNDE_BUCATA = 4.0
+#: Fragmentele mai scurte se păstrează la oprire, dacă au suficientă vorbire.
+SECUNDE_MINIME_LA_OPRIRE = 0.5
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
+
+
+def _gata_de_transcris(secunde: float, oprita: bool) -> bool:
+    """La oprire, descarcă și coada mai scurtă decât o bucată normală."""
+    return secunde >= SECUNDE_BUCATA or (oprita and secunde >= SECUNDE_MINIME_LA_OPRIRE)
 
 
 class PaginaDictare(QWidget):
@@ -305,13 +312,8 @@ class PaginaDictare(QWidget):
         self._sunet('start')
 
     def _opreste(self) -> None:
-        self._anulat.set()
-        self._activ = False
-
-        if hasattr(self, "_timer_nivel"):
-            self._timer_nivel.stop()
-        self._sunet('stop')
-
+        # Oprim captarea înaintea semnalului, ca firul de dictare să poată
+        # transcrie apoi tot ce a rămas în coada microfonului.
         if self._microfon is not None:
             try:
                 inreg = self._microfon.opreste()
@@ -322,6 +324,12 @@ class PaginaDictare(QWidget):
             self._microfon = None
             if inreg is not None:
                 self._secunde_audio = inreg.secunde
+
+        self._anulat.set()
+        self._activ = False
+        if hasattr(self, "_timer_nivel"):
+            self._timer_nivel.stop()
+        self._sunet('stop')
 
         self.buton_start.set_text("● Dictează")
         self.buton_start._fel = "principal"
@@ -397,12 +405,16 @@ class PaginaDictare(QWidget):
             return
         text_acum = ""
 
-        while not self._anulat.is_set():
-            # Așteaptă să se adune suficient sunet.
+        while True:
+            # Așteaptă o bucată completă, dar la oprire descarcă și restul scurt.
             while microfon.scurgere() < SECUNDE_BUCATA and not self._anulat.is_set():
                 time.sleep(0.1)
-            if self._anulat.is_set():
-                break
+            secunde_buffer = microfon.scurgere()
+            oprita = self._anulat.is_set()
+            if not _gata_de_transcris(secunde_buffer, oprita):
+                if oprita:
+                    break
+                continue
 
             try:
                 sunet = microfon.preia()
@@ -412,7 +424,9 @@ class PaginaDictare(QWidget):
                 self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
                 self._anulat.set()
                 break
-            if len(sunet) < int(0.5 * 16_000):  # puține, sări peste
+            if len(sunet) < int(SECUNDE_MINIME_LA_OPRIRE * 16_000):  # prea puțin pentru recunoaștere
+                if self._anulat.is_set():
+                    break
                 continue
             self._secunde_audio += len(sunet) / 16_000.0
 
