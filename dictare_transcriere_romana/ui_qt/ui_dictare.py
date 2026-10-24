@@ -402,7 +402,9 @@ class PaginaDictare(QWidget):
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
         self.buton_semn.set_activ(False)
-        self.nivel_bar.setValue(0)
+        from .. import nivele as _nivele
+
+        self.nivel_bar.pune_db(_nivele.DB_MINIM)
         self.eticheta_nivel.setText("Dictarea s-a oprit.")
         self.aplicatie.bara_stare.arata(
             "Gata", f"Dictarea s-a terminat ({self._secunde_audio:.1f} s).", "succes"
@@ -425,7 +427,9 @@ class PaginaDictare(QWidget):
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
         self.buton_semn.set_activ(False)
-        self.nivel_bar.setValue(0)
+        from .. import nivele as _nivele
+
+        self.nivel_bar.pune_db(_nivele.DB_MINIM)
         self.eticheta_nivel.setText("Microfonul s-a deconectat.")
         self.aplicatie.bara_stare.arata(
             "Eroare microfon",
