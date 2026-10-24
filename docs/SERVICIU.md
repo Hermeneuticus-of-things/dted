@@ -18,3 +18,10 @@ Codul e în `dictare_transcriere_romana/serviciu.py`, iar testele, cu motor și 
 - [x] modul serviciu + teste
 - [ ] proba pe Windows cu `DTED.exe` construit (`dictare.spec`): canale prin handle-uri, model real, microfon real
 - [ ] opțional: `--serviciu --port` (HTTP local), pentru programe care nu pot porni procese
+
+
+## Modelul de transcriere (din v0.4.1)
+
+- `{"cmd":"model","nume":"auto"|"whisper-turbo-ro-en-ct2"|…}` alege modelul; se încarcă la cererea următoare (refuzat în timpul unei dictări sau transcrieri).
+- `stare` mai are `model` (alegerea), `model_folosit` (folderul încărcat efectiv) și `modele`: `[{nume, descriere, instalat}]`.
+- „auto” înseamnă preferința din setările D&TED; implicit eek (`whisper-turbo-ro-en-ct2`, WER 5,8%) dacă e instalat, altfel modelul standard.

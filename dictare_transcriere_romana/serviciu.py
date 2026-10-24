@@ -15,6 +15,8 @@ Comenzi (``id`` e ales de programul care cere și se întoarce în răspunsuri):
   ``{"ev": "fragment", "id", "text"}`` la fiecare bucată de vorbire (≈ 4 s) și ``{"ev": "nivel"}``
 * ``{"cmd": "dictare_stop", "id"}`` → ultimul fragment, apoi ``{"ev": "dictare_oprita", "id", "text"}``
 * ``{"cmd": "anuleaza", "id"}`` oprește o transcriere sau o dictare fără rezultat
+* ``{"cmd": "model", "nume"}`` alege modelul („auto” sau un folder din ``MODELE_TRANSCRIBERE``);
+  se încarcă la cererea următoare. ``stare`` spune modelul ales și modelele instalate.
 * ``{"cmd": "iesire"}`` închide serviciul (la fel și închiderea intrării standard)
 
 Erori: ``{"ev": "eroare", "id", "mesaj", "ce_fac"}``, cu mesaje în română simplă.
@@ -46,6 +48,7 @@ class Serviciu:
         self._scrie_brut = scrie
         self._scriere = threading.Lock()
         self._motor_fabrica = motor_fabrica or _motor_implicit
+        self._model = None  # None = preferința din setările D&TED (implicit „auto”: eek, dacă e instalat)
         self._microfon_fabrica = microfon_fabrica or _microfon_implicit
         self._motor = None
         self._creare_motor = threading.Lock()  # un singur model, chiar cu două cereri simultane
@@ -69,7 +72,7 @@ class Serviciu:
     def motor(self):
         with self._creare_motor:
             if self._motor is None:
-                self._motor = self._motor_fabrica()
+                self._motor = self._motor_fabrica(self._model) if self._model else self._motor_fabrica()
             return self._motor
 
     def _anuleaza_calculul(self, id_=None) -> None:
@@ -123,6 +126,17 @@ class Serviciu:
                 self._porneste_dictarea(id_, comanda.get("limba") or "ro", comanda.get("termeni") or "")
         elif cmd == "dictare_stop":
             self._opreste_dictarea(anulat=False)
+        elif cmd == "model":
+            nume = str(comanda.get("nume") or "auto")
+            if nume != "auto" and nume not in _modele():
+                self._eroare(id_, f"Model necunoscut: {nume}", "Alege unul dintre modelele din „stare”.")
+            elif self._dictare is not None or self._curent is not None:
+                self._eroare(id_, "Modelul nu se poate schimba în timpul unei dictări sau transcrieri.", "Oprește-o, apoi alege modelul.")
+            else:
+                with self._creare_motor:
+                    self._model = None if nume == "auto" else nume
+                    self._motor = None  # modelul nou se încarcă la cererea următoare
+                self.scrie(self._stare())
         elif cmd == "anuleaza":
             semnal = self._transcrieri.get(str(id_))
             if semnal is not None:
@@ -144,6 +158,9 @@ class Serviciu:
             "versiune": versiune,
             "model_incarcat": bool(motor is not None and getattr(motor, "incarcat", False)),
             "dispozitiv": getattr(motor, "dispozitiv", "") if motor is not None else "",
+            "model": self._model or "auto",
+            "model_folosit": _model_folosit(self._model),
+            "modele": [{"nume": n, "descriere": d, "instalat": i} for n, (d, i) in _modele().items()],
         }
 
     # ------------------------------------------------------------------ transcriere fișier
@@ -260,10 +277,42 @@ class _Anulat(Exception):
     pass
 
 
-def _motor_implicit():
+def _motor_implicit(model: str | None = None):
     from .motor import MotorWhisper  # noqa: PLC0415
 
-    return MotorWhisper()
+    if model is None:
+        try:
+            from . import config  # noqa: PLC0415
+
+            model = getattr(config.incarca(), "model_preferat", "auto")
+        except Exception:  # noqa: BLE001 — setări ilizibile: alegerea automată
+            model = "auto"
+    return MotorWhisper(model=model)
+
+
+def _modele() -> dict:
+    """Modelele cunoscute: nume → (descriere, instalat)."""
+    from . import cai  # noqa: PLC0415
+    from .constante import MODELE_TRANSCRIBERE  # noqa: PLC0415
+
+    out = {}
+    for nume, descriere in MODELE_TRANSCRIBERE.items():
+        try:
+            instalat = cai.fisier_model(nume).name == nume and (cai.fisier_model(nume) / "model.bin").is_file()
+        except Exception:  # noqa: BLE001
+            instalat = False
+        out[nume] = (descriere, bool(instalat))
+    return out
+
+
+def _model_folosit(preferat: str | None) -> str:
+    """Folderul de model care se încarcă efectiv pentru preferința dată."""
+    try:
+        from . import cai  # noqa: PLC0415
+
+        return cai.fisier_model(preferat or "auto").name
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def _microfon_implicit():
