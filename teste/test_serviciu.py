@@ -102,6 +102,30 @@ class TestServiciu(unittest.TestCase):
         self.assertEqual(mesaje[0]["protocol"], serviciu.PROTOCOL)
         self.assertFalse(mesaje[0]["model_incarcat"])
 
+    def test_stare_spune_modelele(self):
+        s, mesaje = porneste(motor_fabrica=MotorFals)
+        s.executa({"cmd": "stare"})
+        st = mesaje[0]
+        self.assertEqual(st["model"], "auto")
+        nume = [m["nume"] for m in st["modele"]]
+        self.assertIn("whisper-turbo-ro-en-ct2", nume)  # eek, modelul recomandat
+
+    def test_alege_modelul(self):
+        create = []
+
+        def fabrica(model=None):
+            create.append(model)
+            return MotorFals()
+
+        s, mesaje = porneste(motor_fabrica=fabrica)
+        s.executa({"cmd": "model", "nume": "whisper-turbo-ro-en-ct2"})
+        self.assertEqual(mesaje[-1]["model"], "whisper-turbo-ro-en-ct2")
+        s.executa({"cmd": "transcrie", "id": "t1", "cale": "a.mp3"})
+        asteapta(mesaje, "rezultat")
+        self.assertEqual(create, ["whisper-turbo-ro-en-ct2"])
+        s.executa({"cmd": "model", "nume": "nu-exista"})
+        self.assertEqual(mesaje[-1]["ev"], "eroare")
+
     def test_transcrie_fisier(self):
         s, mesaje = porneste(motor_fabrica=MotorFals)
         s.executa({"cmd": "transcrie", "id": "t1", "cale": "interviu.mp3"})
