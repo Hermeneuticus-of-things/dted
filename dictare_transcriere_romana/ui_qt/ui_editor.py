@@ -89,6 +89,19 @@ class Editor(QWidget):
         self._timer_corecturi.setInterval(800)
         self._timer_corecturi.timeout.connect(self._invata_corecturi)
 
+    def wheelEvent(self, eveniment) -> None:
+        """Ctrl + rotița mouse-ului: scris mai mare sau mai mic (mai ușor decât butoanele)."""
+        from PySide6.QtCore import Qt
+
+        if eveniment.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if eveniment.angleDelta().y() > 0:
+                self._mărește()
+            else:
+                self._micșorează()
+            eveniment.accept()
+            return
+        super().wheelEvent(eveniment)
+
     def _dupa_modificare(self) -> None:
         self._timer_corecturi.start()
         if self._la_actiune:
