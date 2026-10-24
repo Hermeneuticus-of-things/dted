@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from pathlib import Path
@@ -713,6 +714,66 @@ class Aplicatie(QMainWindow):
             culoare = "#15803D"
         self.btn_retea.setStyleSheet(f"QToolButton {{ color: {culoare}; font-weight: 600; }}")
 
+    # ------------------------------------------------------------------ scurtături globale (53)
+
+    def _porneste_scurtaturile_globale(self, pornite: bool | None = None) -> None:
+        """Ctrl+Alt+D pornește/oprește dictarea din orice program.
+
+        Înregistrată DOAR dacă utilizatorul a bifat-o în Setări — oprită implicit.
+        """
+        if sys.platform != "win32":
+            return
+        import ctypes
+
+        if pornite is None:
+            pornite = bool(getattr(self.configurare, "scurtaturi_globale", False))
+        if pornite and getattr(self, "_hotkey_id", None) is None:
+            # MOD_ALT (1) + MOD_CONTROL (2), tasta virtuală „D” (0x44), id 1.
+            if ctypes.windll.user32.RegisterHotKey(None, 1, 0x0003, 0x44):
+                self._hotkey_id = 1
+                self._instaleaza_filtru_hotkey()
+        elif not pornite and getattr(self, "_hotkey_id", None) is not None:
+            try:
+                ctypes.windll.user32.UnregisterHotKey(None, self._hotkey_id)
+            except Exception:
+                pass
+            self._hotkey_id = None
+
+    def _instaleaza_filtru_hotkey(self) -> None:
+        """Prinde mesajul WM_HOTKEY din coada ferestrei și apelează comanda."""
+        from PySide6.QtCore import QAbstractNativeEventFilter
+
+        class _FiltruHotkey(QAbstractNativeEventFilter):
+            def __init__(self, la_apasare):
+                super().__init__()
+                self._la_apasare = la_apasare
+
+            def nativeEventFilter(self, tip, mesaj):
+                try:
+                    if int(mesaj):
+                        import ctypes.wintypes
+
+                        structura = ctypes.wintypes.MSG.from_address(int(mesaj))
+                        if structura.message == 0x0312 and structura.wParam == 1:
+                            self._la_apasare()
+                except Exception:
+                    pass
+                return False
+
+        if getattr(self, "_filtru_hotkey", None) is None:
+            self._filtru_hotkey = _FiltruHotkey(self._la_scurtatura_globala)
+            aplicatie = QApplication.instance()
+            if aplicatie is not None:
+                aplicatie.installNativeEventFilter(self._filtru_hotkey)
+
+    def _la_scurtatura_globala(self) -> None:
+        """Ctrl+Alt+D, apăsat în orice program: adu fereastra și comută dictarea."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.arata_ecran("dictare")
+        self._toggle_dictare()
+
     def _la_confidentialitate(self) -> None:
         """Click pe iconiță: dacă e blocat, oferă oprirea; altfel deschide avertizarea."""
         try:
@@ -755,6 +816,7 @@ class Aplicatie(QMainWindow):
             self._timer_retea.timeout.connect(self._actualizeaza_indicator_retea)
             self._timer_retea.start(60000)
         self._actualizeaza_indicator_retea()
+        self._porneste_scurtaturile_globale()
         QTimer.singleShot(800, self._anuleaza_blocari_vechi_lapornire)
 
     def _anuleaza_blocari_vechi_lapornire(self) -> None:
@@ -1117,6 +1179,9 @@ class Aplicatie(QMainWindow):
         comun.mareste_scris(getattr(config, "marire_scris", 100) / 100.0)
         self.editor.actualizeaza_font()
         self.editor.actualizeaza_etichete()
+        self._porneste_scurtaturile_globale(
+            bool(getattr(config, "scurtaturi_globale", False))
+        )
 
     def _reimprospateaza_ultimele(self) -> None:
         """Reîmprospătează submeniul „Recente” cu ultimele documente."""

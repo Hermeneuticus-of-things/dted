@@ -105,6 +105,37 @@ class FereastraInstalare(QWidget):
         ca.addLayout(rand_act)
         layout.addWidget(card_act)
 
+        # Curățenie (cerința 3): modelul vechi de PyTorch, dacă mai există pe disc.
+        self._cale_model_vechi = cai.director_model() / "large-v3-turbo.pt"
+        card_curat = QFrame()
+        card_curat.setObjectName("card")
+        cc = QVBoxLayout(card_curat)
+        cc.setContentsMargins(16, 12, 16, 12)
+        cc.setSpacing(6)
+        et_curat = QLabel("Curățenie")
+        et_curat.setFont(fonturi("buton"))
+        cc.addWidget(et_curat)
+        self.et_model_vechi = QLabel(
+            "Modelul vechi (large-v3-turbo.pt, ~1,6 GB) mai ocupă loc pe disc, "
+            "deși programul folosește modelul nou. Îl poți șterge de aici."
+            if self._cale_model_vechi.exists()
+            else "Modelul vechi de PyTorch nu mai există pe disc: totul e în ordine."
+        )
+        self.et_model_vechi.setFont(fonturi("mica"))
+        seteaza_rol(self.et_model_vechi, "secundar")
+        self.et_model_vechi.setWordWrap(True)
+        cc.addWidget(self.et_model_vechi)
+        self.btn_sterge_vechi = Buton(
+            self,
+            "Șterge modelul vechi (eliberează ~1,6 GB)",
+            self._sterge_model_vechi,
+            latime=320,
+            inaltime=40,
+        )
+        self.btn_sterge_vechi.setVisible(self._cale_model_vechi.exists())
+        cc.addWidget(self.btn_sterge_vechi)
+        layout.addWidget(card_curat)
+
         layout.addStretch(1)
 
         self._verifica()
@@ -158,6 +189,34 @@ class FereastraInstalare(QWidget):
     def _pune(eticheta: QLabel, ok: bool) -> None:
         eticheta.setText(("✔  instalat" if ok else "✘  lipsește"))
         seteaza_rol(eticheta, "verde" if ok else "pericol")
+
+    def _sterge_model_vechi(self) -> None:
+        """Cerința 3: șterge large-v3-turbo.pt, cu confirmare (operație unică)."""
+        cale = self._cale_model_vechi
+        try:
+            gabarit = cale.stat().st_size / (1024 * 1024 * 1024)
+        except OSError:
+            gabarit = 1.5
+        raspuns = QMessageBox.question(
+            self,
+            "Șterg modelul vechi?",
+            f"Se șterge definitiv {cale.name} ({gabarit:.1f} GB).\n\n"
+            "Programul folosește modelul nou (CT2), deci dictarea și transcrierea "
+            "merg în continuare. Modelul vechi NU se poate readuce decât reinstalând.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if raspuns != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            cale.unlink(missing_ok=True)
+        except OSError as exc:
+            self.et_model_vechi.setText(f"✘ Nu am putut șterge fișierul: {exc}")
+            seteaza_rol(self.et_model_vechi, "pericol")
+            return
+        self.btn_sterge_vechi.setVisible(False)
+        self.et_model_vechi.setText("✔ Modelul vechi a fost șters. Locul e eliberat.")
+        seteaza_rol(self.et_model_vechi, "verde")
 
     # ------------------------------------------------------------- actualizări (N-2)
 

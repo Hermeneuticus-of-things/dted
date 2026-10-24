@@ -85,8 +85,8 @@ AUTOMAT = "Automat (cel ales de Windows)"
 #: Fiecare secțiune e o listă de metode ``_rand_*`` care îi construiesc rândurile.
 SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Documente", ("_rand_folder",)),
-    ("Limbă și termeni", ("_rand_limba", "_rand_termeni")),
-    ("Sunet", ("_rand_microfon", "_rand_difuzor")),
+    ("Limbă și termeni", ("_rand_limba", "_rand_termeni", "_rand_dictionar")),
+    ("Sunet", ("_rand_microfon", "_rand_difuzor", "_rand_dictare")),
     ("Transcriere și salvare", ("_rand_transcriere", "_rand_salvare", "_rand_program")),
     ("Parolă și criptare", ("_rand_parola",)),
     ("Confidențialitate", ("_rand_blocare",)),
@@ -314,6 +314,83 @@ class FereastraSetari(QDialog):
         self.edit_termeni.setFont(fonturi("baza"))
         card.layout().addWidget(self.edit_termeni)
 
+    def _rand_dictionar(self) -> None:
+        card = self._card(
+            "Dicționar de corecturi",
+            "Când corectezi un cuvânt greșit scris de program (îl ștergi și scrii "
+            "corect), perechea se reține singură și se aplică de la următoarea "
+            "transcriere. Lista poate fi adusă și dintr-un fișier (import).",
+        )
+        self.eticheta_dictionar = self._valoare(card, "")
+        rand = QHBoxLayout()
+        rand.addWidget(Buton(card, "Import din fișier…", self._importa_dictionar, latime=220, inaltime=40))
+        rand.addWidget(Buton(card, "Export în fișier…", self._exporta_dictionar, latime=220, inaltime=40))
+        rand.addStretch(1)
+        card.layout().addLayout(rand)
+        self._arata_dictionar()
+
+    def _arata_dictionar(self) -> None:
+        from .. import inlocuiri
+
+        try:
+            numar = len(inlocuiri.incarca())
+        except Exception:
+            numar = 0
+        if numar:
+            self.eticheta_dictionar.setText(f"Corecturi învățate: {numar}.")
+        else:
+            self.eticheta_dictionar.setText(
+                "Corecturi învățate: niciuna încă — apar singure când corectezi textul."
+            )
+
+    def _importa_dictionar(self) -> None:
+        from PySide6.QtWidgets import QFileDialog
+
+        from .. import inlocuiri
+
+        cale, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import dicționar de corecturi",
+            "",
+            "Dicționar (*.txt *.json *.csv);;Toate fișierele (*.*)",
+        )
+        if not cale:
+            return
+        puse, respinse = inlocuiri.importa_din_fisier(Path(cale))
+        self._arata_dictionar()
+        mesaj = f"{puse} perechi au fost puse în dicționar."
+        if respinse:
+            mesaj += (
+                f"\n\n{respinse} rânduri au fost ignorate: nu erau perechi simple "
+                "de un cuvânt (se acceptă „greșit -> corect”, JSON sau CSV)."
+            )
+        anunta(self, "Import terminat", mesaj)
+
+    def _exporta_dictionar(self) -> None:
+        from PySide6.QtWidgets import QFileDialog
+
+        from .. import inlocuiri
+
+        perechi = inlocuiri.incarca()
+        if not perechi:
+            anunta(
+                self,
+                "Dicționarul e gol",
+                "Nu ai încă nicio corectură învățată, deci nu e nimic de exportat.",
+            )
+            return
+        cale, _ = QFileDialog.getSaveFileName(
+            self, "Export dicționar de corecturi", "dictionar-dted.txt", "Text (*.txt);;JSON (*.json)"
+        )
+        if not cale:
+            return
+        try:
+            Path(cale).write_text(inlocuiri.exporta_text(perechi), encoding="utf-8")
+        except OSError:
+            anunta(self, "Nu am putut scrie fișierul", "Fișierul nu s-a putut salva pe disc.")
+            return
+        anunta(self, "Export terminat", f"{len(perechi)} perechi au fost scrise în {Path(cale).name}.")
+
     def _rand_microfon(self) -> None:
         card = self._card(
             "Microfonul folosit",
@@ -331,6 +408,34 @@ class FereastraSetari(QDialog):
         self.eticheta_difuzor = self._valoare(card, "")
         btn = Buton(card, "Alege difuzorul", self._schimba_difuzor, latime=250, inaltime=40)
         card.layout().addWidget(btn)
+
+    def _rand_dictare(self) -> None:
+        card = self._card(
+            "Cum se aude dictarea",
+            "Ajustări opționale pentru sunetul dictat; toate sunt oprite la început, "
+            "ca textul să rămână întocmai ce s-a auzit.",
+        )
+        self.var_pauze = bool(getattr(self.config, "scurteaza_pauze", False))
+        self._rand_da_nu(
+            card,
+            "var_pauze",
+            "Sare peste pauzele lungi de peste 2 secunde (cerința 52)",
+            self.var_pauze,
+        )
+        self.var_pregateste = bool(getattr(self.config, "pregateste_audio", False))
+        self._rand_da_nu(
+            card,
+            "var_pregateste",
+            "Aduce volumul la un nivel potrivit, dacă s-a vorbit prea încet (cerința 51)",
+            self.var_pregateste,
+        )
+        self.var_scurtaturi = bool(getattr(self.config, "scurtaturi_globale", False))
+        self._rand_da_nu(
+            card,
+            "var_scurtaturi",
+            "Scurtătură globală Ctrl+Alt+D pornește/oprește dictarea din orice program (cerința 53)",
+            self.var_scurtaturi,
+        )
 
     # ------------------------------------------------------- parolă și criptare
 
@@ -1166,6 +1271,18 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.blocare_dictare = self.var_blocare
+        except (AttributeError,):
+            pass
+        try:
+            self.config.scurteaza_pauze = self.var_pauze
+        except (AttributeError,):
+            pass
+        try:
+            self.config.pregateste_audio = self.var_pregateste
+        except (AttributeError,):
+            pass
+        try:
+            self.config.scurtaturi_globale = self.var_scurtaturi
         except (AttributeError,):
             pass
 
