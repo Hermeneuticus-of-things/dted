@@ -626,9 +626,9 @@ class PaginaTranscriere(QWidget):
         return callback
 
     def _adauga_text(self, fragment: str) -> None:
-        from .. import inlocuiri
+        from .. import inlocuiri, text_ro
 
-        fragment = inlocuiri.aplica(fragment)
+        fragment = text_ro.curata_repetari(inlocuiri.aplica(fragment))
         curent = self.editor.text()
         if curent:
             nou = curent + " " + fragment

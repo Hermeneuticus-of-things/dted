@@ -584,9 +584,12 @@ class PaginaDictare(QWidget):
     def _adauga_text(self, fragment: str) -> None:
         # Textul dictat se inserează la cursor, cu un singur Ctrl+Z per fragment
         # (cerința 48): nu mai înlocuim tot textul prin set_text.
-        from .. import inlocuiri
+        from .. import inlocuiri, text_ro
 
-        self.editor.insereaza(inlocuiri.aplica(fragment))
+        fragment = text_ro.curata_repetari(inlocuiri.aplica(fragment))
+        if not fragment:
+            return
+        self.editor.insereaza(fragment)
         self.stare.text = self.editor.text()
 
     # ------------------------------------------------------------------ comenzi
