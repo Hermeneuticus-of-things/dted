@@ -512,6 +512,11 @@ class PaginaDictare(QWidget):
                     sunet = codecuri.scurteaza_pauzele(sunet, rate=16_000)
 
             try:
+                # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
+                try:
+                    self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
+                except Exception:
+                    pass
                 motor_local = self.aplicatie._motor
                 rezultat = motor_local.transcrie(
                     sunet,
@@ -532,6 +537,13 @@ class PaginaDictare(QWidget):
                 self.aplicatie.coada.trimite(self._adauga_text, fragment)
 
         self.aplicatie.coada.trimite(self._opreste)
+
+    def _spune_procesare(self, secunde: float) -> None:
+        """Arată în bara de stare că ultimele secunde se transformă în text."""
+        if self._activ:
+            self.aplicatie.bara_stare.arata(
+                "Scriu…", f"Scriu ultimele {secunde:.0f} secunde spuse. Poți vorbi mai departe.", "lucru"
+            )
 
     def _adauga_text(self, fragment: str) -> None:
         # Textul dictat se inserează la cursor, cu un singur Ctrl+Z per fragment

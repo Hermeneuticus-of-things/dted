@@ -1,8 +1,8 @@
 {
   "program": {
-    "versiune": "1.0.0"
+    "versiune": "0.1.2"
   },
   "model": {
-    "versiune": "large-v3-turbo-ct2"
+    "versiune": "large-v3-turbo-ro-ct2"
   }
 }

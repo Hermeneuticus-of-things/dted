@@ -623,6 +623,21 @@ class FereastraSetari(QDialog):
         seteaza_rol(nota, "secundar")
         nota.setWordWrap(True)
         card.layout().addWidget(nota)
+        self.var_avertizari = all(
+            bool(getattr(self.config, cheie, True))
+            for cheie in (
+                "avertizeaza_internet",
+                "avertizeaza_wifi",
+                "avertizeaza_bluetooth",
+                "avertizeaza_stick",
+            )
+        )
+        self._rand_da_nu(
+            card,
+            "var_avertizari",
+            "Avertizarea roșie când internetul e pornit (o poți opri și din fereastra ei)",
+            self.var_avertizari,
+        )
 
     def _seteaza_blocare(self, cod: str, checked: bool) -> None:
         if not checked:
@@ -674,7 +689,47 @@ class FereastraSetari(QDialog):
         self.buton_cuda.setFont(fonturi("baza"))
         self.buton_cuda.clicked.connect(self._descarca_cuda)
         card.layout().addWidget(self.buton_cuda)
+        # Modelul de transcriere (v0.1.2): cel îmbunătățit pentru română, dacă există.
+        rand_model = QHBoxLayout()
+        et_model = QLabel("Modelul de transcriere:")
+        et_model.setFont(fonturi("baza"))
+        rand_model.addWidget(et_model)
+        self.combo_model = QComboBox()
+        self.combo_model.setFont(fonturi("baza"))
+        self._umple_modele()
+        rand_model.addWidget(self.combo_model, 1)
+        card.layout().addLayout(rand_model)
         self.actualizeaza_placa_video()
+
+    def _umple_modele(self) -> None:
+        """Populează lista de modele instalate (kitul sau folderul de instalare)."""
+        import sys as _sys
+
+        from .. import cai
+        from ..constante import MODELE_TRANSCRIBERE
+
+        radacini = []
+        ambalat = getattr(_sys, "_MEIPASS", None)
+        if ambalat:
+            radacini.append(Path(ambalat))
+        radacini.append(cai.director_model())
+
+        def instalat(nume: str) -> bool:
+            return any(
+                (radacina / "model" / nume / "model.bin").is_file() for radacina in radacini
+            )
+
+        self.combo_model.addItem("Automat — românescul, dacă există", "auto")
+        for nume, descriere in MODELE_TRANSCRIBERE.items():
+            self.combo_model.addItem(descriere if instalat(nume) else f"{descriere} (lipsește)", nume)
+            if not instalat(nume):
+                model_index = self.combo_model.count() - 1
+                self.combo_model.model().item(model_index).setEnabled(False)
+        preferat = getattr(self.config, "model_preferat", "auto") or "auto"
+        for index in range(self.combo_model.count()):
+            if self.combo_model.itemData(index) == preferat:
+                self.combo_model.setCurrentIndex(index)
+                break
 
     def _aplicatia_principala(self):
         widget = self.parent()
@@ -1217,6 +1272,10 @@ class FereastraSetari(QDialog):
         except (AttributeError,):
             pass
         try:
+            self.config.model_preferat = self.combo_model.currentData() or "auto"
+        except (AttributeError,):
+            pass
+        try:
             if self.var_salvare_auto:
                 try:
                     cat = int(getattr(self.config, "salvare_automata_secunde", 0))
@@ -1283,6 +1342,17 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.scurtaturi_globale = self.var_scurtaturi
+        except (AttributeError,):
+            pass
+        try:
+            avertizari = self.var_avertizari
+            for cheie in (
+                "avertizeaza_internet",
+                "avertizeaza_wifi",
+                "avertizeaza_bluetooth",
+                "avertizeaza_stick",
+            ):
+                setattr(self.config, cheie, avertizari)
         except (AttributeError,):
             pass
 
