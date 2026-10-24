@@ -46,6 +46,31 @@ MODEL_FISIERE: dict[str, tuple[int, str]] = {
     "model.bin": (1_617_884_929, "e76620f83d5f5b69efd3d87e3dc180c1bd21df9fbebacfd4335e5e1efcc018da"),
 }
 
+
+#: Modelul optimizat pentru română (v0.4.0): mărime + SHA-256 per fișier.
+MODEL_EEK_FISIERE: dict[str, tuple[int, str]] = {
+    "config.json": (2_238, "323f514961672d9279a718725f0df33645b49e8a02796e63c2507f8a0135652d"),
+    "preprocessor_config.json": (357, "654cf18d3e163b948ceaf9766da56ce0b52de265d58673cf61c9376f126bd499"),
+    "tokenizer.json": (3_930_645, "5c1bf30c9e716e1477bedef846b01be0013daecb89e9e3ef7ab89b23c178df1b"),
+    "vocabulary.json": (1_068_114, "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1"),
+    "model.bin": (820_316_291, "2ad5bcb5491f232eb2b3363ef69eba486dc8b68079df7d4e3f1b9eca432efdc8"),
+}
+
+#: Manifestele modelelor cunoscute: folder → (fișiere, adresă de descărcare).
+#: Folderul din kit NU se descarcă niciodată; adresa e doar pentru refacere.
+_MANIFESTE: dict[str, tuple[dict, str]] = {}
+
+
+def _manifest(folder: Path):
+    """Manifestul modelului din folderul dat (None dacă nu e unul cunoscut)."""
+    from .constante import WHISPER_NUME, WHISPER_NUME_EEK
+
+    if not _MANIFESTE:
+        _MANIFESTE[WHISPER_NUME] = (MODEL_FISIERE, "")
+        _MANIFESTE[WHISPER_NUME_EEK] = (MODEL_EEK_FISIERE, _MODEL_EEK_REPO)
+    return _MANIFESTE.get(folder.name)
+
+
 # --------------------------------------------------------------------------- CUDA
 
 #: (pachet, versiune, {platformă: (fișier wheel, SHA-256)}).
@@ -116,13 +141,18 @@ def fisiere_model_gresite(complet: bool = False) -> dict[str, str]:
             verificate = {}
     gresite: dict[str, str] = {}
     bune: dict[str, list] = {}
-    for nume, (marime, suma) in MODEL_FISIERE.items():
+    manifest = _manifest(folder)
+    asteptari = manifest[0] if manifest else {nume: (0, "") for nume in MODEL_FISIERE}
+    for nume, (marime, suma) in asteptari.items():
         cale = folder / nume
         if not cale.is_file():
             gresite[nume] = "lipsește"
             continue
         info = cale.stat()
         semnatura = [info.st_size, int(info.st_mtime)]
+        if manifest is None:
+            bune[nume] = semnatura  # model necunoscut: fișierul există, e bine
+            continue
         if info.st_size != marime:
             gresite[nume] = f"are {info.st_size} B în loc de {marime} B"
             continue
@@ -299,11 +329,14 @@ def asigura_model(progres: Progres | None = None, baza: float = 0.0, spatiu: flo
     if not lipsa:
         _anunta(progres, "Modelul de transcriere este gata.", baza + spatiu)
         return folder
+    manifest = _manifest(folder)
+    fisiere_model = manifest[0] if manifest else MODEL_FISIERE
+    adresa_model = manifest[1] if manifest else ""
     sursa_locala = os.environ.get("DTED_SURSA_MODEL", "")
-    total = sum(MODEL_FISIERE[n][0] for n in lipsa) or 1
+    total = sum(fisiere_model[n][0] for n in lipsa) or 1
     facut = 0
     for nume in lipsa:
-        marime, suma = MODEL_FISIERE[nume]
+        marime, suma = fisiere_model[nume]
         dest = folder / nume
         inceput = facut
 
@@ -324,7 +357,10 @@ def asigura_model(progres: Progres | None = None, baza: float = 0.0, spatiu: flo
                 raise SumaGresita(nume, suma, gasit)
             temporar.replace(dest)
         else:
-            url = f"https://huggingface.co/{MODEL_REPO}/resolve/{MODEL_REVIZIE}/{nume}?download=true"
+            if adresa_model:
+                url = f"{adresa_model}/{nume}?download=true"
+            else:
+                url = f"https://huggingface.co/{MODEL_REPO}/resolve/{MODEL_REVIZIE}/{nume}?download=true"
             _anunta(progres, f"Descarc modelul de transcriere ({nume})…", baza + spatiu * facut / total)
             descarca(url, dest, arata, suma_asteptata=suma)
         facut += marime
