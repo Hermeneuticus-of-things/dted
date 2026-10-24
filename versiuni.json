@@ -1,8 +1,8 @@
 {
   "program": {
-    "versiune": "0.3.0"
+    "versiune": "0.4.0"
   },
   "model": {
-    "versiune": "large-v3-turbo-ct2"
+    "versiune": "whisper-turbo-ro-en-ct2"
   }
 }

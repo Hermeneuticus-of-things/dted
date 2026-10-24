@@ -256,14 +256,14 @@ def fisier_model(preferat: str | None = None) -> Path:
     din ``MODELE_TRANSCRIBERE`` forțează acel model. Preferința are prioritate
     față de loc (kitul sau folderul de instalare).
     """
-    from .constante import MODELE_TRANSCRIBERE, WHISPER_NUME, WHISPER_NUME_RO
+    from .constante import MODELE_TRANSCRIBERE, WHISPER_NUME, WHISPER_NUME_EEK, WHISPER_NUME_RO
 
     if preferat in (None, "", "auto"):
-        candidate = [WHISPER_NUME, WHISPER_NUME_RO]
+        candidate = [WHISPER_NUME_EEK, WHISPER_NUME, WHISPER_NUME_RO]
     elif preferat in MODELE_TRANSCRIBERE:
         candidate = [preferat, WHISPER_NUME_RO, WHISPER_NUME]
     else:
-        candidate = [WHISPER_NUME, WHISPER_NUME_RO]
+        candidate = [WHISPER_NUME_EEK, WHISPER_NUME, WHISPER_NUME_RO]
 
     radacini = []
     ambalat = getattr(sys, "_MEIPASS", None)

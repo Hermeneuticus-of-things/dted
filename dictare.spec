@@ -24,6 +24,7 @@ _LOCALAPPDATA = os.environ.get("LOCALAPPDATA", "")
 # măsurat WER 15% vs 37% pentru fine-tunatul RO); dacă lipsește pe disc,
 # se împachetează fine-tunatul românesc.
 _MODELE_KIT = [
+    ("whisper-turbo-ro-en-ct2", "whisper-turbo-ro-en-ct2"),
     ("large-v3-turbo-ct2", "large-v3-turbo-ct2"),
     ("large-v3-turbo-ro-ct2", "large-v3-turbo-ro-ct2"),
 ]

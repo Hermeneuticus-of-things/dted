@@ -1,6 +1,18 @@
 # Modelele de transcriere pentru limba română — măsurători și recomandări
 
-## Ce am măsurat (24.10.2026, placă video NVIDIA dedicată (NVIDIA, CUDA))
+## REZULTAT FINAL (24.10.2026): eek câștigă — model implicit din v0.4.0
+
+| Model | Carte (30 s) | Total | Viteză | Dimensiune |
+|---|---|---|---|---|
+| **eek whisper-turbo-ro-en (ales)** | **5,4%** | **5,8%** | 1,3 s | 788 MB |
+| standard large-v3-turbo | 12,2% | 10,9% | 1,6 s | 1,6 GB |
+| TransferRapid turbo_ro | 47,3% | 37,0% | 0,7 s | 1,6 GB |
+
+Accesul la eek (gated) a fost aprobat la 24.10 seara; modelul e instalat în
+`%LOCALAPPDATA%\Dictare&Transcriere Română\model\whisper-turbo-ro-en-ct2`
+și e **implicit** (config `model_preferat=auto` îl alege primul).
+
+## Măsurătorile inițiale (24.10.2026, placă video NVIDIA dedicată (NVIDIA, CUDA))
 
 Mostre: voce românească sintetizată cu [XTTS-v2-romanian-v2](https://huggingface.co/eduardem/xtts-v2-romanian-v2)
 (vocile Georgel/Costel, cele mai bune), un pasaj de carte de 30 s + 3 propoziții scurte.

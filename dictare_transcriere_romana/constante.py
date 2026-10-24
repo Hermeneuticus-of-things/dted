@@ -26,7 +26,7 @@ NUME_SCURTATURA = f"{NUME_SCURT} – {NUME_AFISAT}"
 NUME_EXE = "DTED"
 NUME_PACHET = "dictare_transcriere_romana"  # numele tehnic (fără diacritice)
 NUME_PUBLICATOR = "D&TED"
-VERSIUNE = "0.3.1"
+VERSIUNE = "0.4.0"
 VERSIUNE_COMPLETA = f"{VERSIUNE}-beta (2026-10)"
 
 #: Variabila de mediu care poate muta instalarea în alt folder.
@@ -51,12 +51,17 @@ WHISPER_NUME_RO = "large-v3-turbo-ro-ct2"
 #: Repository Hugging Face care găzduiește modelul CTranslate2 gata convertit.
 WHISPER_CT2_REPO = "deepdml/faster-whisper-large-v3-turbo-ct2"
 
+#: Modelul optimizat pentru română vorbită (v0.4.0): Whisper large-v3-turbo
+#: fine-tunat de eek pe română conversațională; WER 5,8% vs 10,9% pentru
+#: standard, măsurat pe mostre de carte; MIT; 788 MB.
+#: Sursă: https://huggingface.co/eek/whisper-turbo-ro-en
+WHISPER_NUME_EEK = "whisper-turbo-ro-en-ct2"
+
 #: Modelele de transcriere cunoscute (folder → descriere pentru utilizator).
-#: Măsurat pe voce românească de carte (XTTS-v2-ro, WER): standard 15% vs
-#: fine-tunat 37% — fine-tunatul taie textul lung (antrenat pe clipuri de 5 s).
 MODELE_TRANSCRIBERE = {
-    WHISPER_NUME: "Standard — recomandat pentru text lung (cărți)",
-    WHISPER_NUME_RO: "Fine-tunat RO — doar pentru clipuri scurte (taie textul lung)",
+    WHISPER_NUME_EEK: "Optimizat pentru română (recomandat — WER 5,8%)",
+    WHISPER_NUME: "Standard multilingv (cadou dacă schimbi limba)",
+    WHISPER_NUME_RO: "Fine-tunat RO — doar clipuri scurte (taie textul lung)",
 }
 
 #: Fișierele care compun modelul CTranslate2 (descărcate la instalare).
