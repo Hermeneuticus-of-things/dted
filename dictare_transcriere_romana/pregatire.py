@@ -47,6 +47,8 @@ MODEL_FISIERE: dict[str, tuple[int, str]] = {
 }
 
 
+_MODEL_EEK_REPO = "https://huggingface.co/eek/whisper-turbo-ro-en/resolve/main/ctranslate2-int8"
+
 #: Modelul optimizat pentru română (v0.4.0): mărime + SHA-256 per fișier.
 MODEL_EEK_FISIERE: dict[str, tuple[int, str]] = {
     "config.json": (2_238, "323f514961672d9279a718725f0df33645b49e8a02796e63c2507f8a0135652d"),

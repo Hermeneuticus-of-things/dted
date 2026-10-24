@@ -720,14 +720,13 @@ class Aplicatie(QMainWindow):
         db = nivele.amplitudine_in_db(amplitudine)
         self.vumetru_bar.pune_db(db)
         self.vumetru_text.setText(nivele.text_db(db))
-        text, chunk = comun.text_nivel(int(amplitudine * 1000))
+        chunk = {"verde": "verde", "galben": "galben", "roșu": "roșu"}[nivele.zona_db(db)]
         if self.vumetru_bar.property("chunk") != chunk:
             self.vumetru_bar.setProperty("chunk", chunk)
             stil = self.vumetru_bar.style()
             if stil is not None:
                 stil.unpolish(self.vumetru_bar)
                 stil.polish(self.vumetru_bar)
-        self.vumetru_text.setText(f"● {text}" if nivel > 0 else "")
 
     # ------------------------------------------------------------------ confidențialitate (5/9)
 
