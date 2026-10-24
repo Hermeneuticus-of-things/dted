@@ -682,6 +682,37 @@ class Aplicatie(QMainWindow):
             f"QToolButton {{ color: {culoare}; font-weight: 600; }}"
         )
 
+    def _actualizeaza_indicator_retea(self) -> None:
+        """UX-31: indicatorul de rețea arată starea REALĂ (verificarea în fundal)."""
+        def lucru() -> None:
+            from .. import internet
+
+            try:
+                conectat = internet.are_internet()
+            except Exception:
+                conectat = None
+            self.coada.trimite(self._pune_indicator_retea, conectat)
+
+        threading.Thread(target=lucru, name="stare-retea", daemon=True).start()
+
+    def _pune_indicator_retea(self, conectat) -> None:
+        if conectat is None:
+            self.btn_retea.setText("🔌 Rețea neprecizată")
+            self.btn_retea.setToolTip("Nu am putut verifica starea internetului chiar acum.")
+            culoare = "#6B7280"
+        elif conectat:
+            self.btn_retea.setText("🌐 Internet pornit")
+            self.btn_retea.setToolTip(
+                "Internetul este pornit. Programul NU trimite nimic pe internet; "
+                "dacă lucrezi cu informații sensibile, îl poți opri."
+            )
+            culoare = "#B45309"
+        else:
+            self.btn_retea.setText("🔌 Fără internet")
+            self.btn_retea.setToolTip("Nicio legătură cu internetul — lucrezi în siguranță.")
+            culoare = "#15803D"
+        self.btn_retea.setStyleSheet(f"QToolButton {{ color: {culoare}; font-weight: 600; }}")
+
     def _la_confidentialitate(self) -> None:
         """Click pe iconiță: dacă e blocat, oferă oprirea; altfel deschide avertizarea."""
         try:
@@ -717,6 +748,13 @@ class Aplicatie(QMainWindow):
             self._timer_confidentialitate = QTimer(self)
             self._timer_confidentialitate.timeout.connect(self._actualizeaza_bara_confidentialitate)
             self._timer_confidentialitate.start(5000)
+        # UX-31: indicatorul de rețea se citește la pornire și apoi din minut în minut
+        # (verificarea atinge rețeaua, deci nu se face la fiecare 5 secunde).
+        if not hasattr(self, "_timer_retea"):
+            self._timer_retea = QTimer(self)
+            self._timer_retea.timeout.connect(self._actualizeaza_indicator_retea)
+            self._timer_retea.start(60000)
+        self._actualizeaza_indicator_retea()
         QTimer.singleShot(800, self._anuleaza_blocari_vechi_lapornire)
 
     def _anuleaza_blocari_vechi_lapornire(self) -> None:
