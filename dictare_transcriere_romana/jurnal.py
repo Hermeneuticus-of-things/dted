@@ -86,6 +86,11 @@ def eroare(mesaj: str) -> None:
     _scrie(cai.fisier_jurnal_aplicatie(), linie)
     _scrie(cai.fisier_jurnal_instalare(), linie)
     _anunta(mesaj)
+    for functie in list(_observatori_eroare):
+        try:
+            functie(mesaj)
+        except Exception:
+            pass
 
 
 def instalare(mesaj: str) -> None:
@@ -94,6 +99,38 @@ def instalare(mesaj: str) -> None:
     _scrie(cai.fisier_jurnal_instalare(), linie)
     _scrie(cai.fisier_jurnal_aplicatie(), linie)
     _anunta(mesaj)
+
+
+_observatori_eroare: list[Callable[[str], None]] = []
+
+
+def adauga_observator_eroare(functie: Callable[[str], None]) -> None:
+    """Funcție chemată când programul prinde singur o eroare (pt. „Trimite raportul?”)."""
+    if functie not in _observatori_eroare:
+        _observatori_eroare.append(functie)
+
+
+def scoate_observator_eroare(functie: Callable[[str], None]) -> None:
+    if functie in _observatori_eroare:
+        _observatori_eroare.remove(functie)
+
+
+def ultimele_erori(cate: int = 5) -> list[str]:
+    """Ultimele linii de EROARE/ATENȚIE din jurnalul aplicației (cea mai nouă la sfârșit).
+
+    Sunt detaliile tehnice cu care se deschide fereastra „Raportează o problemă”.
+    """
+    try:
+        linii = cai.fisier_jurnal_aplicatie().read_text(
+            encoding="utf-8", errors="replace"
+        ).splitlines()
+    except OSError:
+        return []
+    erori = [
+        linie for linie in linii
+        if "] EROARE " in linie or "] ATENȚIE " in linie
+    ]
+    return erori[-cate:]
 
 
 def ultimele_linii(cate: int = 200) -> list[str]:

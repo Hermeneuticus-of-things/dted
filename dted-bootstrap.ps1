@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference    = "SilentlyContinue"   # descărcare mai iute în PowerShell 5.1
 
 # Etichetă de versiune FIXĂ (nu „ultima versiune" — fiecare publicare are eticheta ei).
-$Tag  = "v0.1.1"
+$Tag  = "v0.2.1"
 $Repo = "Hermeneuticus-of-things/dted"
 $Base = "https://github.com/$Repo/releases/download/$Tag"
 $Dest = Join-Path $env:TEMP "dted-install"
@@ -34,9 +34,9 @@ $Dest = Join-Path $env:TEMP "dted-install"
 # bucățile .bin în ordine (Setup DTED-1.bin, -2.bin, ...).
 # ----------------------------------------------------------------------------
 $Pachete = [ordered]@{
-    "Setup.DTED.exe"   = "E9ED819214ABA23C880265D5183B7FC98D02F92249CF5F112983E7EAAFC5DA04"
+    "Setup.DTED-0.2.1.exe"   = "AAAB0E90D231E833FC7C4CAC141864DB5FC355E65C45275CEF0E325831BF764F"
     "Setup.DTED-1.bin" = "B2FE96FD1643DA193A74FF730EBC58E8B36F41774BD3AA320537125C06ECCBCC"
-    "Setup.DTED-2.bin" = "81081FCAF4B110C224011523B1D4D1F4AD9578724084F2D1F96C6ADF2BCDEE9E"
+    "Setup.DTED-0.2.1-2.bin" = "C9B575FB8B61B3517A889401C382E586565577CF8419E583C060E00A9B689C18"
 }
 
 function Format-Amprenta { param([string]$s) ($s -replace '[^0-9a-fA-F]', '').ToUpper() }

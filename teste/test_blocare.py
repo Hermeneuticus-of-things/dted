@@ -51,6 +51,11 @@ def test_script_anulare():
 
 
 def test_proces_viu():
+    if sys.platform != "win32":
+        import pytest
+
+        # proces_viu se bazează pe tasklist (comandă doar din Windows).
+        pytest.skip("proces_viu folosește tasklist (doar Windows)")
     assert blocare.proces_viu(os.getpid()) is True
     assert blocare.proces_viu(999999999) is False
     print("proces_viu OK")

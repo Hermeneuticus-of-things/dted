@@ -17,6 +17,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -55,6 +56,52 @@ SECUNDE_SUPRAPUNERE = 2.0
 #: Extensiile acceptate.
 FORMATE = "MP3, WAV, M4A, OGG sau FLAC"
 
+#: Extensiile pe care le primește zona de drag & drop (aceleași ca la buton).
+EXTENSII_DROP = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".opus"}
+
+
+def _are_audio(mime) -> bool:
+    """``True`` dacă printre fișierele trase există măcar unul audio."""
+    if not mime.hasUrls():
+        return False
+    return any(
+        url.toLocalFile() and Path(url.toLocalFile()).suffix.lower() in EXTENSII_DROP
+        for url in mime.urls()
+    )
+
+
+class _ZonaDrop(QFrame):
+    """Zona „trage fișierul aici” (UX-28): primește cu adevărat fișiere trase cu mausul."""
+
+    def __init__(self, parinte: QWidget | None = None):
+        super().__init__(parinte)
+        self.setAcceptDrops(True)
+        self.la_primire = None      # apelat cu Path când se dă drumul unui fișier audio
+        self.la_traversare = None   # apelat cu True/False la intrarea/ieșirea mausului
+
+    def dragEnterEvent(self, eveniment):
+        if _are_audio(eveniment.mimeData()):
+            eveniment.acceptProposedAction()
+            if self.la_traversare:
+                self.la_traversare(True)
+
+    def dragLeaveEvent(self, eveniment):
+        if self.la_traversare:
+            self.la_traversare(False)
+
+    def dropEvent(self, eveniment):
+        if self.la_traversare:
+            self.la_traversare(False)
+        primite = [
+            Path(url.toLocalFile())
+            for url in eveniment.mimeData().urls()
+            if url.toLocalFile() and Path(url.toLocalFile()).suffix.lower() in EXTENSII_DROP
+        ]
+        if primite:
+            eveniment.acceptProposedAction()
+            if self.la_primire:
+                self.la_primire(primite)
+
 
 class PaginaTranscriere(QWidget):
     """Ecranul „Transcriere fișier audio”."""
@@ -68,6 +115,8 @@ class PaginaTranscriere(QWidget):
 
         self._cale: Path | None = None
         self._info = None
+        self._coada: list[Path] = []      # fișierele care așteaptă la rând (35)
+        self._auto_continua = False       # pornește singur următorul din coadă
         self._fir: threading.Thread | None = None
         self._anulat = threading.Event()
         self._motor_local: motor.MotorWhisper | None = None
@@ -115,10 +164,12 @@ class PaginaTranscriere(QWidget):
         card_1, corp_1 = self._card(corp, "1. Alege fișierul audio")
         corp_layout.addWidget(card_1)
 
-        # Zona drop (simplificată: etichetă cu border).
-        self.zona_drop = QFrame()
+        # Zona drop: primește fișierele trase cu mausul (UX-28 + coada, 35).
+        self.zona_drop = _ZonaDrop()
         self.zona_drop.setObjectName("drop")
         self.zona_drop.setMinimumHeight(120)
+        self.zona_drop.la_primire = self._primeste_fisiere
+        self.zona_drop.la_traversare = self._la_traversare_drop
         drop_layout = QVBoxLayout(self.zona_drop)
         self.eticheta_drop = QLabel(
             "Trage fișierul audio aici, sau folosește butonul „Alege fișierul audio“."
@@ -161,26 +212,14 @@ class PaginaTranscriere(QWidget):
         card_2, corp_2 = self._card(corp, "2. Spune ce se face cu textul")
         corp_layout.addWidget(card_2)
 
-        rand_text = QHBoxLayout()
-        self.buton_inlocuieste = Buton(
-            corp_2,
-            "Înlocuiește textul de pe ecran",
-            lambda: self._seteaza_mod_text(False),
-            fel="principal",
-            latime=320,
-            inaltime=40,
+        # Redesign UX: o singură bifă în loc de două butoane mari.
+        self.bifa_adauga = QCheckBox(
+            "Adaugă textul nou la cel de pe ecran (debifat: îl înlocuiește)"
         )
-        rand_text.addWidget(self.buton_inlocuieste)
-        self.buton_adauga = Buton(
-            corp_2,
-            "Adaugă la textul de pe ecran",
-            lambda: self._seteaza_mod_text(True),
-            latime=320,
-            inaltime=40,
-        )
-        rand_text.addWidget(self.buton_adauga)
-        rand_text.addStretch(1)
-        corp_2.layout().addLayout(rand_text)
+        self.bifa_adauga.setFont(fonturi("baza"))
+        self.bifa_adauga.setChecked(bool(self._adauga_la_text))
+        self.bifa_adauga.toggled.connect(self._seteaza_mod_text)
+        corp_2.layout().addWidget(self.bifa_adauga)
 
         et_mod = eticheta(
             corp_2,
@@ -321,18 +360,15 @@ class PaginaTranscriere(QWidget):
             stil.unpolish(self.zona_drop)
             stil.polish(self.zona_drop)
 
+    def _la_traversare_drop(self, deasupra: bool) -> None:
+        """Evidențierea zonei cât timp un fișier e tras deasupra ei."""
+        if deasupra:
+            self._pune_stare_drop("verde")
+        elif self._cale is None:
+            self._pune_stare_drop("")
+
     def _seteaza_mod_text(self, adauga: bool) -> None:
         self._adauga_la_text = bool(adauga)
-        self.buton_adauga.set_activ(adauga)
-        self.buton_inlocuieste.set_activ(not adauga)
-        if adauga:
-            self.buton_adauga._fel = "principal"
-            self.buton_inlocuieste._fel = "secundar"
-        else:
-            self.buton_adauga._fel = "secundar"
-            self.buton_inlocuieste._fel = "principal"
-        self.buton_adauga._aplica_stil()
-        self.buton_inlocuieste._aplica_stil()
 
     def _seteaza_limba(self, limba: str) -> None:
         # Româna e implicită și forțată; nu există opțiune de detectare automată
@@ -345,10 +381,50 @@ class PaginaTranscriere(QWidget):
     # ------------------------------------------------------------------ pasul 1
 
     def _alege_fisier(self) -> None:
-        cale = alege_fisier_audio(self, titlu="Alege fișierul audio de transcris")
-        if cale is None:
+        caile = alege_fisier_audio(
+            self, titlu="Alege fișierul audio de transcris (poți bifă mai multe)", multiple=True
+        )
+        if not caile:
             return
-        self._ia_fisierul(cale)
+        self._primeste_fisiere(caile)
+
+    def _primeste_fisiere(self, fisiere) -> None:
+        """Coadă (cerința 35): mai multe fișiere la rând; cele deja transcrise
+        se sar singure (cerința 47)."""
+        from .. import biblioteca
+
+        noi: list[Path] = []
+        sarite = 0
+        for cale in fisiere:
+            try:
+                deja = biblioteca.a_fost_transcris(cale)
+            except Exception:
+                deja = False
+            if deja:
+                sarite += 1
+            else:
+                noi.append(Path(cale))
+        if not noi:
+            anunta(
+                self,
+                "Nimic nou de transcris",
+                f"Toate fișierele alese ({sarite}) au fost deja transcrise.\n\n"
+                "Ca să retranscrii unul anume, alege doar fișierul acela și apasă "
+                "„Începe transcrierea”.",
+            )
+            return
+        primul, *restul = noi
+        self._coada = restul
+        self._auto_continua = False
+        self._ia_fisierul(primul)
+        if restul:
+            self.eticheta_drop.setText(
+                f"Fișier ales: {primul.name} (+{len(restul)} în coadă)"
+            )
+        if sarite:
+            self.eticheta_estimare.setText(
+                f"{sarite} fișier(e) sărite: fuseseră deja transcrise."
+            )
 
     def _ia_fisierul(self, cale: Path) -> None:
         self._cale = cale
@@ -381,6 +457,10 @@ class PaginaTranscriere(QWidget):
             return
         self._secunde_audio = float(info.secunde or 0.0)
         self._arata_estimarea()
+        # Din coadă: fișierul următor pornește singur după ce e gata citit.
+        if getattr(self, "_auto_continua", False):
+            self._auto_continua = False
+            self._incepe()
 
     def _arata_estimarea(self) -> None:
         durata = text_ro.durata_text(self._secunde_audio) if self._secunde_audio else "puțin"
@@ -546,6 +626,9 @@ class PaginaTranscriere(QWidget):
         return callback
 
     def _adauga_text(self, fragment: str) -> None:
+        from .. import inlocuiri, text_ro
+
+        fragment = text_ro.curata_repetari(inlocuiri.aplica(fragment))
         curent = self.editor.text()
         if curent:
             nou = curent + " " + fragment
@@ -569,6 +652,24 @@ class PaginaTranscriere(QWidget):
         )
         self.stare.text = text_complet
         self.editor.set_text(text_complet)
+        # Reține fișierul ca transcris (47) și pornește următorul din coadă (35).
+        from .. import biblioteca
+
+        if self._cale is not None:
+            try:
+                biblioteca.noteaza_transcris(self._cale)
+            except Exception:
+                pass
+        if self._coada:
+            urmatorul = self._coada.pop(0)
+            self._auto_continua = True
+            self.zona_finala.setVisible(False)
+            self.aplicatie.bara_stare.arata(
+                "În coadă",
+                f"Urmează: {urmatorul.name} (încă {len(self._coada)} după el).",
+                "lucru",
+            )
+            QTimer.singleShot(700, lambda: self._ia_fisierul(urmatorul))
 
     def _termina_anulat(self) -> None:
         """După „Anulează”: butoanele redevin active, textul scris rămâne."""

@@ -6,7 +6,7 @@ se păstrează; controlul este QTextEdit în locul tk.Text.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QKeySequence, QShortcut, QTextCursor
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -81,9 +81,47 @@ class Editor(QWidget):
 
         self._diacritice_activ = False
 
+        # Corecturile învățate: la 0,8 s după ce tastarea se oprește, comparăm
+        # textul cu cel dinainte și reținem cuvintele rescrise de mână.
+        self._text_ultim = self._control.toPlainText()
+        self._timer_corecturi = QTimer(self)
+        self._timer_corecturi.setSingleShot(True)
+        self._timer_corecturi.setInterval(800)
+        self._timer_corecturi.timeout.connect(self._invata_corecturi)
+
+    def wheelEvent(self, eveniment) -> None:
+        """Ctrl + rotița mouse-ului: scris mai mare sau mai mic (mai ușor decât butoanele)."""
+        from PySide6.QtCore import Qt
+
+        if eveniment.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if eveniment.angleDelta().y() > 0:
+                self._mărește()
+            else:
+                self._micșorează()
+            eveniment.accept()
+            return
+        super().wheelEvent(eveniment)
+
     def _dupa_modificare(self) -> None:
+        self._timer_corecturi.start()
         if self._la_actiune:
             self._la_actiune()
+
+    def _invata_corecturi(self) -> None:
+        """Un cuvânt rescris de mână se salvează ca înlocuire pentru viitor."""
+        from .. import inlocuiri
+
+        curent = self._control.toPlainText()
+        try:
+            perechi = inlocuiri.diferente_cuvinte(self._text_ultim, curent)
+        except Exception:
+            perechi = []
+        self._text_ultim = curent
+        for gresit, corect in perechi:
+            try:
+                inlocuiri.adauga(gresit, corect)
+            except Exception:
+                pass
 
     def _toggle_diacritice(self) -> None:
         self._diacritice_activ = not self._diacritice_activ
@@ -156,6 +194,8 @@ class Editor(QWidget):
 
     def set_text(self, text: str) -> None:
         self._control.setPlainText(text)
+        # Schimbarea integrală (text nou transcris) nu se învață ca „corecturi”.
+        self._text_ultim = self._control.toPlainText()
 
     def insereaza(self, text: str, spatiu_auto: bool = True) -> None:
         """Inserează text la poziția cursorului, cu un singur pas de anulare (Ctrl+Z).
@@ -195,6 +235,10 @@ class Editor(QWidget):
         self._control.setTextCursor(cursor)
         self._control.find(text)
         self._control.setFocus()
+
+    def cursor_pozitie(self) -> int:
+        """Poziția cursorului în text (pentru redarea de la semnul de lângă el)."""
+        return self._control.textCursor().position()
 
     def text(self) -> str:
         return self._control.toPlainText()

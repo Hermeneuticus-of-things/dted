@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import biblioteca, erori, jurnal, motor, stare as stare_modul, text_ro
+from . import comun
 from .comun import (
     BaraStare,
     Buton,
@@ -48,8 +49,15 @@ from .ui_internet import avertizeaza
 
 #: Cât de des se transcriere (secunde).
 SECUNDE_BUCATA = 4.0
+#: Fragmentele mai scurte se păstrează la oprire, dacă au suficientă vorbire.
+SECUNDE_MINIME_LA_OPRIRE = 0.5
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
+
+
+def _gata_de_transcris(secunde: float, oprita: bool) -> bool:
+    """La oprire, descarcă și coada mai scurtă decât o bucată normală."""
+    return secunde >= SECUNDE_BUCATA or (oprita and secunde >= SECUNDE_MINIME_LA_OPRIRE)
 
 
 class PaginaDictare(QWidget):
@@ -102,13 +110,7 @@ class PaginaDictare(QWidget):
         cl.addWidget(titlu)
 
         # Nivel microfon (animatie): bară vizibilă, cu trei culori și text.
-        self.nivel_bar = QProgressBar()
-        self.nivel_bar.setObjectName("nivel")
-        self.nivel_bar.setProperty("chunk", "verde")
-        self.nivel_bar.setRange(0, 1000)
-        self.nivel_bar.setValue(0)
-        self.nivel_bar.setTextVisible(False)
-        self.nivel_bar.setMinimumHeight(18)
+        self.nivel_bar = comun.VumetruDb()
         self.nivel_bar.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
@@ -280,6 +282,17 @@ class PaginaDictare(QWidget):
             dialog_eroare(self, "Microfonul nu poate fi deschis", exc)
             return
 
+        # Cerința 52: la prima dictare, un mic asistent arată cum se aude microfonul.
+        if not getattr(self.config, "asistent_microfon_vazut", False):
+            self._asistent_microfon()
+            try:
+                from .. import config as config_modul
+
+                self.config.asistent_microfon_vazut = True
+                config_modul.salveaza(self.config)
+            except Exception:
+                pass
+
         self._activ = True
         self._anulat.clear()
         self._timp_start = time.monotonic()
@@ -287,6 +300,23 @@ class PaginaDictare(QWidget):
         self._semnuri = []
         self._dictare_sunet = None
         self.buton_semn.set_activ(True)
+
+        # N-3/cerința 5: blocarea căilor de ieșire cât timp se dictează.
+        self._blocat_de_noi = False
+        mod_blocare = getattr(self.aplicatie.configurare, "blocare_dictare", "nimic") or "nimic"
+        if mod_blocare in ("program", "tot"):
+            from .. import blocare as modul_blocare
+
+            try:
+                self._blocat_de_noi = modul_blocare.blocheaza(mod_blocare)
+            except Exception:
+                self._blocat_de_noi = False
+            if self._blocat_de_noi:
+                self.aplicatie.bara_stare.arata(
+                    "Blocat",
+                    "căile de ieșire sunt tăiate cât timp dictezi.",
+                    "lucru",
+                )
 
         self.buton_start.set_text("◼ Dictează…")
         self.buton_start.set_activ(True)
@@ -304,14 +334,41 @@ class PaginaDictare(QWidget):
         self._timer_nivel.start(60)
         self._sunet('start')
 
-    def _opreste(self) -> None:
-        self._anulat.set()
-        self._activ = False
+    def _asistent_microfon(self) -> None:
+        """Cerința 52: prima dată când se dictează, arată cum se aude microfonul."""
+        from PySide6.QtWidgets import QDialog, QProgressBar
 
-        if hasattr(self, "_timer_nivel"):
-            self._timer_nivel.stop()
-        self._sunet('stop')
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Să vedem microfonul")
+        dialog.setMinimumWidth(460)
+        layout = QVBoxLayout(dialog)
+        eticheta_text = QLabel(
+            "Spune ceva natural, de exemplu:\n„Azi este o zi frumoasă.\"\n\n"
+            "Bara de mai jos arată cât de tare te aude programul. Dacă stă jos "
+            "în loc să se miște, apropie-te de microfon."
+        )
+        eticheta_text.setFont(fonturi("baza"))
+        eticheta_text.setWordWrap(True)
+        layout.addWidget(eticheta_text)
+        bara = QProgressBar()
+        bara.setRange(0, 100)
+        layout.addWidget(bara)
+        microfon = self._microfon
 
+        def citeste() -> None:
+            try:
+                bara.setValue(min(100, int((microfon.nivel or 0.0) * 120)))
+            except Exception:
+                pass
+
+        timer = QTimer(dialog)
+        timer.timeout.connect(citeste)
+        timer.start(80)
+        QTimer.singleShot(6000, dialog.accept)
+        dialog.exec()
+
+    def _opreste(self) -> None:        # Oprim captarea înaintea semnalului, ca firul de dictare să poată
+        # transcrie apoi tot ce a rămas în coada microfonului.
         if self._microfon is not None:
             try:
                 inreg = self._microfon.opreste()
@@ -322,6 +379,27 @@ class PaginaDictare(QWidget):
             self._microfon = None
             if inreg is not None:
                 self._secunde_audio = inreg.secunde
+            # 32/34/35: sunetul rămâne disponibil pentru „▶ Ascultă” din editor
+            try:
+                self.aplicatie.primeste_inregistrarea(self._dictare_sunet)
+            except Exception:
+                pass
+
+        self._anulat.set()
+        self._activ = False
+        if hasattr(self, "_timer_nivel"):
+            self._timer_nivel.stop()
+        self._sunet('stop')
+
+        # N-3: dacă am blocat căile de ieșire la pornirea dictării, le aducem înapoi.
+        if getattr(self, "_blocat_de_noi", False):
+            from .. import blocare as modul_blocare
+
+            self._blocat_de_noi = False
+            try:
+                modul_blocare.deblocheaza_acum()
+            except Exception:
+                pass
 
         self.buton_start.set_text("● Dictează")
         self.buton_start._fel = "principal"
@@ -329,7 +407,9 @@ class PaginaDictare(QWidget):
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
         self.buton_semn.set_activ(False)
-        self.nivel_bar.setValue(0)
+        from .. import nivele as _nivele
+
+        self.nivel_bar.pune_db(_nivele.DB_MINIM)
         self.eticheta_nivel.setText("Dictarea s-a oprit.")
         self.aplicatie.bara_stare.arata(
             "Gata", f"Dictarea s-a terminat ({self._secunde_audio:.1f} s).", "succes"
@@ -352,7 +432,9 @@ class PaginaDictare(QWidget):
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
         self.buton_semn.set_activ(False)
-        self.nivel_bar.setValue(0)
+        from .. import nivele as _nivele
+
+        self.nivel_bar.pune_db(_nivele.DB_MINIM)
         self.eticheta_nivel.setText("Microfonul s-a deconectat.")
         self.aplicatie.bara_stare.arata(
             "Eroare microfon",
@@ -370,20 +452,61 @@ class PaginaDictare(QWidget):
             pass
 
     def _actualizeaza_nivel(self) -> None:
+        from .. import nivele
+
         if self._microfon is None:
             return
-        nivel = min(1000, int(self._microfon.nivel * 1000))
-        self.nivel_bar.setValue(nivel)
-        text, rol = text_nivel(nivel)
-        if self.nivel_bar.property("chunk") != rol:
-            self.nivel_bar.setProperty("chunk", rol)
-            self.nivel_bar.style().unpolish(self.nivel_bar)
-            self.nivel_bar.style().polish(self.nivel_bar)
-        # Textul de stare („Te aud” / „Prea încet” / „Prea tare” / „Doar zgomot”).
+        amplitudine = min(1.0, float(self._microfon.nivel))
+        db = nivele.amplitudine_in_db(amplitudine)
+        self.nivel_bar.pune_db(db)
+        text, rol = text_nivel(int(amplitudine * 1000))
+        # Textul de stare („Te aud” / „Prea încet” / „Prea tare” / „Doar zgomot”) + dB.
         self.eticheta_nivel.setText(f"● {text}")
         rol_eticheta = {"verde": "verde", "galben": "atentie", "rosu": "pericol"}[rol]
         seteaza_rol(self.eticheta_nivel, rol_eticheta)
-        self.eticheta_nivel_cifra.setText(f"{nivel // 10}%")
+        self.eticheta_nivel_cifra.setText(nivele.text_db(db))
+        self._auto_volum(db)
+
+    def _auto_volum(self, db: float) -> None:
+        """Aduce SINGURĂ volumul microfonului când e risc de distorsiune (0 dB)
+        sau când abia se aude — cerința utilizatorului: anti-distorsiune automată."""
+        from .. import nivele
+
+        self._varf_fereastra = max(getattr(self, "_varf_fereastra", -99.0), db)
+        # Distorsiunea se oprește IMEDIAT (nu așteptăm fereastra).
+        if self._varf_fereastra >= nivele.DB_ATENTIE:
+            self._varf_fereastra = -99.0
+            self._regleaza_volumul("coboara")
+            return
+        acum = time.monotonic()
+        if acum - getattr(self, "_ultima_evaluare_auto", 0.0) < 2.0:
+            return
+        self._ultima_evaluare_auto = acum
+        decizie = nivele.decizie_volum(self._varf_fereastra)
+        self._varf_fereastra = -99.0
+        if decizie:
+            self._regleaza_volumul(decizie)
+
+    def _regleaza_volumul(self, decizie: str) -> None:
+        """Schimbă efectiv volumul Windows al microfonului (cu limite și pauze)."""
+        from .. import nivele
+
+        if not getattr(self.config, "auto_volum", True):
+            return
+        if time.monotonic() - getattr(self, "_ultimul_reglaj_volum", 0.0) < 3.0:
+            return
+        self._ultimul_reglaj_volum = time.monotonic()
+        nou = nivele.aplica_decizia(decizie)
+        if nou is None:
+            return
+        mesaj = (
+            "am coborât nivelul microfonului ca să nu se distorsioneze"
+            if decizie == "coboara"
+            else "am urcat nivelul microfonului — abia se auzea"
+        )
+        self.aplicatie.bara_stare.arata(
+            "Microfon", f"Automat: {mesaj} (acum {int(round(nou * 100))}%).", "lucru"
+        )
 
     # ------------------------------------------------------------------ bucla dictare
 
@@ -397,12 +520,16 @@ class PaginaDictare(QWidget):
             return
         text_acum = ""
 
-        while not self._anulat.is_set():
-            # Așteaptă să se adune suficient sunet.
+        while True:
+            # Așteaptă o bucată completă, dar la oprire descarcă și restul scurt.
             while microfon.scurgere() < SECUNDE_BUCATA and not self._anulat.is_set():
                 time.sleep(0.1)
-            if self._anulat.is_set():
-                break
+            secunde_buffer = microfon.scurgere()
+            oprita = self._anulat.is_set()
+            if not _gata_de_transcris(secunde_buffer, oprita):
+                if oprita:
+                    break
+                continue
 
             try:
                 sunet = microfon.preia()
@@ -412,11 +539,29 @@ class PaginaDictare(QWidget):
                 self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
                 self._anulat.set()
                 break
-            if len(sunet) < int(0.5 * 16_000):  # puține, sări peste
+            if len(sunet) < int(SECUNDE_MINIME_LA_OPRIRE * 16_000):  # prea puțin pentru recunoaștere
+                if self._anulat.is_set():
+                    break
                 continue
             self._secunde_audio += len(sunet) / 16_000.0
 
+            # Pregătirea sunetului, opțională (51/52): întâi volumul, apoi pauzele.
+            if getattr(self.config, "pregateste_audio", False) or getattr(
+                self.config, "scurteaza_pauze", False
+            ):
+                from .. import codecuri
+
+                if getattr(self.config, "pregateste_audio", False):
+                    sunet = codecuri.normalizeaza(sunet)
+                if getattr(self.config, "scurteaza_pauze", False):
+                    sunet = codecuri.scurteaza_pauzele(sunet, rate=16_000)
+
             try:
+                # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
+                try:
+                    self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
+                except Exception:
+                    pass
                 motor_local = self.aplicatie._motor
                 rezultat = motor_local.transcrie(
                     sunet,
@@ -438,9 +583,21 @@ class PaginaDictare(QWidget):
 
         self.aplicatie.coada.trimite(self._opreste)
 
+    def _spune_procesare(self, secunde: float) -> None:
+        """Arată în bara de stare că ultimele secunde se transformă în text."""
+        if self._activ:
+            self.aplicatie.bara_stare.arata(
+                "Scriu…", f"Scriu ultimele {secunde:.0f} secunde spuse. Poți vorbi mai departe.", "lucru"
+            )
+
     def _adauga_text(self, fragment: str) -> None:
         # Textul dictat se inserează la cursor, cu un singur Ctrl+Z per fragment
         # (cerința 48): nu mai înlocuim tot textul prin set_text.
+        from .. import inlocuiri, text_ro
+
+        fragment = text_ro.curata_repetari(inlocuiri.aplica(fragment))
+        if not fragment:
+            return
         self.editor.insereaza(fragment)
         self.stare.text = self.editor.text()
 

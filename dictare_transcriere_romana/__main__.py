@@ -28,6 +28,9 @@ import sys
 from pathlib import Path
 
 
+FORMATE_TRANSCRIERE = ("docx", "odt", "txt", "rtf", "html", "htm", "srt", "vtt", "pdf")
+
+
 def _pregateste_consola() -> None:
     """Aduce consola Windows pe UTF-8, ca diacriticele să se vadă corect."""
     if os.name == "nt":
@@ -58,7 +61,11 @@ def _argumente(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pregateste", action="store_true", help="descarcă modelul (și CUDA, cu placă NVIDIA), fără ferestre")
     parser.add_argument("--serviciu", action="store_true", help="lucrează pentru alt program (Scribner): comenzi JSON pe intrarea standard")
     parser.add_argument("--transcrie", metavar="FIȘIER", help="transcrie un fișier audio, fără interfață")
-    parser.add_argument("--format", default="docx", help="în ce format se salvează (docx, odt, txt, srt, vtt)")
+    parser.add_argument(
+        "--format",
+        default="docx",
+        help="format de ieșire (docx, odt, txt, rtf, html, htm, srt, vtt, pdf; PDF se salvează ca ODT)",
+    )
     parser.add_argument("--limba", default="", help="limba vorbită în înregistrare (implicit: cea din setări)")
     parser.add_argument("--folder", default="", help="folderul în care se salvează documentele")
     parser.add_argument("--folder-instalare", default="", help="folderul în care se instalează programul")
@@ -130,10 +137,18 @@ def _transcrie(argumente: argparse.Namespace) -> int:
     if not cale.exists():
         print(f"Nu găsesc fișierul „{cale}”.")
         return 1
+    format_cerut = documente.extensie_potrivita(argumente.format) or "docx"
+    if format_cerut not in FORMATE_TRANSCRIERE:
+        formate = ", ".join(extensie.upper() for extensie in FORMATE_TRANSCRIERE)
+        print(f"Formatul „{argumente.format}” nu este acceptat. Alege unul dintre: {formate}.")
+        return 2
     setari = config_modul.incarca()
     limba = argumente.limba or setari.limba or "ro"
     print(f"Transcriu „{cale.name}” (limba: {limba}). Durează în funcție de lungimea înregistrării.")
-    motor = motor_mod.MotorWhisper(getattr(setari, "dispozitiv", "auto"))
+    motor = motor_mod.MotorWhisper(
+        getattr(setari, "dispozitiv", "auto"),
+        getattr(setari, "model_preferat", "auto"),
+    )
 
     def progres(fractiune: float) -> None:
         print(f"\r  {int(round(max(0.0, min(1.0, fractiune)) * 100)):3d}%", end="", flush=True)
@@ -156,7 +171,6 @@ def _transcrie(argumente: argparse.Namespace) -> int:
         print("Nu am auzit nicio vorbă în acest fișier. Textul este gol.")
         return 1
     marca = biblioteca.marca_din_nume(cale)
-    format_cerut = documente.extensie_potrivita(argumente.format) or "docx"
     if format_cerut == "pdf":
         print("PDF-ul se face din interfață (are nevoie de LibreOffice). Salvez ca ODT.")
         format_cerut = "odt"

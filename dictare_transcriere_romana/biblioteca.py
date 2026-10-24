@@ -480,3 +480,63 @@ def copiaza_siguranta_zip(cale_text: Path, destinatie: Path | None = None) -> tu
         return destinatie, ""
     except (OSError, zipfile.BadZipFile) as exc:
         return None, f"Copia de siguranta nu a putut fi creata: {exc}"
+
+
+# ------------------------------------------------------------------ fișiere deja transcrise (47)
+
+
+def fisier_transcrise() -> Path:
+    """Registrul fișierelor audio deja transcrise (ca să nu se repete)."""
+    return cai.director_instalare() / "transcrise.json"
+
+
+def _registru_transcrise() -> dict[str, int]:
+    try:
+        date = json.loads(fisier_transcrise().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(date, dict):
+        return {}
+    return {str(cheie): int(valoare) for cheie, valoare in date.items()
+            if isinstance(valoare, int)}
+
+
+def a_fost_transcris(cale: Path) -> bool:
+    """``True`` dacă acest fișier (aceeași cale și dimensiune) a fost transcris."""
+    cale = Path(cale)
+    try:
+        octeti = cale.stat().st_size
+    except OSError:
+        return False
+    return _registru_transcrise().get(str(cale).lower()) == octeti
+
+
+def noteaza_transcris(cale: Path) -> bool:
+    """Reține fișierul ca transcris (cale + dimensiune, fără ora)."""
+    cale = Path(cale)
+    try:
+        octeti = cale.stat().st_size
+    except OSError:
+        return False
+    registru = _registru_transcrise()
+    registru[str(cale).lower()] = octeti
+    try:
+        fisier_transcrise().parent.mkdir(parents=True, exist_ok=True)
+        fisier_transcrise().write_text(
+            json.dumps(registru, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return True
+    except OSError:
+        return False
+
+
+def uita_transcris(cale: Path) -> None:
+    """Scoate fișierul din registru (când utilizatorul vrea să-l retranscriască)."""
+    registru = _registru_transcrise()
+    if registru.pop(str(Path(cale)).lower(), None) is not None:
+        try:
+            fisier_transcrise().write_text(
+                json.dumps(registru, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+        except OSError:
+            pass

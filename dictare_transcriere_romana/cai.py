@@ -244,20 +244,37 @@ def director_model() -> Path:
     return director_instalare() / "model"
 
 
-def fisier_model() -> Path:
+def fisier_model(preferat: str | None = None) -> Path:
     """Folderul cu modelul CTranslate2 (faster-whisper citește un folder).
 
     În kitul offline (program construit cu PyInstaller onedir), modelul este
     împachetat lângă program (``_internal/model/...``); dacă există acolo, se
     folosește direct, fără nicio descărcare la prima pornire.
-    """
-    from .constante import WHISPER_NUME
 
-    radacina = getattr(sys, "_MEIPASS", None)
-    if radacina:
-        ambalat = Path(radacina) / "model" / WHISPER_NUME
-        if (ambalat / "model.bin").is_file() and (ambalat / "tokenizer.json").is_file():
-            return ambalat
+    ``preferat`` spune care model se alege (v0.1.2): „auto” ia modelul
+    standard (cel mai bun pe text lung de carte, măsurat), un nume explicit
+    din ``MODELE_TRANSCRIBERE`` forțează acel model. Preferința are prioritate
+    față de loc (kitul sau folderul de instalare).
+    """
+    from .constante import MODELE_TRANSCRIBERE, WHISPER_NUME, WHISPER_NUME_RO
+
+    if preferat in (None, "", "auto"):
+        candidate = [WHISPER_NUME, WHISPER_NUME_RO]
+    elif preferat in MODELE_TRANSCRIBERE:
+        candidate = [preferat, WHISPER_NUME_RO, WHISPER_NUME]
+    else:
+        candidate = [WHISPER_NUME, WHISPER_NUME_RO]
+
+    radacini = []
+    ambalat = getattr(sys, "_MEIPASS", None)
+    if ambalat:
+        radacini.append(Path(ambalat))
+    radacini.append(director_model())
+    for nume in candidate:
+        for radacina in radacini:
+            cale = radacina / "model" / nume
+            if (cale / "model.bin").is_file() and (cale / "tokenizer.json").is_file():
+                return cale
     return director_model() / WHISPER_NUME
 
 

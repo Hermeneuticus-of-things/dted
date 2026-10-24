@@ -529,3 +529,71 @@ def biblioteci_audio_ok() -> bool:
     except Exception:
         return False
     return verifica().ok
+
+
+# ------------------------------------------------------------------ pregătirea sunetului (51/52)
+
+#: Nivelul (0..1) sub care un moment de sunet se consideră tăcere.
+PRAG_TACERE = 0.015
+
+
+def normalizeaza(sunet) -> "numpy.ndarray":
+    """Aduce volumul la un nivel potrivit (51): vârful se scalează la 0,95.
+
+    Sunetul foarte încet devine clar, cel tare nu se schimbă (deja e sus).
+    Nu face nimic dacă sunetul e gol sau prea încet ca să conteze.
+    """
+    import numpy as np
+
+    tablou = np.asarray(sunet, dtype=np.float32)
+    if tablou.size == 0:
+        return tablou
+    varf = float(np.max(np.abs(tablou)))
+    if varf < 0.05 or varf > 0.99:
+        return tablou
+    return (tablou * (0.95 / varf)).astype(np.float32)
+
+
+def scurteaza_pauzele(sunet, rate: int = 16000, prag: float = PRAG_TACERE,
+                      minim_secunde: float = 2.0, fereastra: float = 0.1):
+    """Sare peste pauzele lungi (52): tăcerile de peste ``minim_secunde`` se taie.
+
+    Sunetul se împarte în ferestre de 0,1 s; ferestrele tăcute care formează
+    un răstimp mai lung de ``minim_secunde`` se scot, iar pauzele scurte
+    rămân (acolo respirația face parte din vorbire). Întoarce sunetul scurtat
+    (sau originalul dacă nu are rost să se taie).
+    """
+    import numpy as np
+
+    tablou = np.asarray(sunet, dtype=np.float32)
+    if tablou.size == 0:
+        return tablou
+    lungime_fereastra = max(1, int(rate * fereastra))
+    if tablou.size <= lungime_fereastra:
+        return tablou
+    ferestre = tablou[: (tablou.size // lungime_fereastra) * lungime_fereastra].reshape(
+        -1, lungime_fereastra
+    )
+    nivele = np.sqrt(np.mean(ferestre ** 2, axis=1))
+    linistite = nivele < prag
+
+    # Grupurile de ferestre tăcute mai lungi decât limita se taie.
+    de_pastrat = np.ones(len(ferestre), dtype=bool)
+    minim_ferestre = max(1, int(round(minim_secunde / fereastra)))
+    start = None
+    for i, linistit in enumerate(linistite):
+        if linistit and start is None:
+            start = i
+        elif not linistit and start is not None:
+            if i - start >= minim_ferestre:
+                de_pastrat[start:i] = False
+            start = None
+    if start is not None and len(linistite) - start >= minim_ferestre:
+        de_pastrat[start:] = False
+
+    if de_pastrat.all():
+        return tablou
+    pastrate = ferestre[de_pastrat].reshape(-1)
+    # Coada nefracționată (sub o fereastră) se pune înapoi, să nu se piardă.
+    rest = tablou[(tablou.size // lungime_fereastra) * lungime_fereastra:]
+    return np.concatenate([pastrate, rest]).astype(np.float32)

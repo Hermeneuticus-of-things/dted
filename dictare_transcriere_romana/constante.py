@@ -26,8 +26,8 @@ NUME_SCURTATURA = f"{NUME_SCURT} – {NUME_AFISAT}"
 NUME_EXE = "DTED"
 NUME_PACHET = "dictare_transcriere_romana"  # numele tehnic (fără diacritice)
 NUME_PUBLICATOR = "D&TED"
-VERSIUNE = "1.0.0"
-VERSIUNE_COMPLETA = f"{VERSIUNE} (2026-10)"
+VERSIUNE = "0.3.0"
+VERSIUNE_COMPLETA = f"{VERSIUNE}-beta (2026-10)"
 
 #: Variabila de mediu care poate muta instalarea în alt folder.
 VAR_MEDIU_FOLDER = "DICTARE_DIR"
@@ -42,8 +42,22 @@ VAR_MEDIU_IESIRI = "DICTARE_IESIRI"
 #: nu un fișier .pt). Modelul este convertit din openai/whisper-large-v3-turbo.
 WHISPER_NUME = "large-v3-turbo-ct2"
 
+#: Modelul îmbunătățit pentru română (v0.1.2): Whisper large-v3-turbo
+#: fine-tunat pe Common Voice 20 (41 431 de înregistrări românești),
+#: WER 4,69% vs 20,72% la modelul de bază; licență CC-BY-NC-4.0.
+#: Sursă: https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro
+WHISPER_NUME_RO = "large-v3-turbo-ro-ct2"
+
 #: Repository Hugging Face care găzduiește modelul CTranslate2 gata convertit.
 WHISPER_CT2_REPO = "deepdml/faster-whisper-large-v3-turbo-ct2"
+
+#: Modelele de transcriere cunoscute (folder → descriere pentru utilizator).
+#: Măsurat pe voce românească de carte (XTTS-v2-ro, WER): standard 15% vs
+#: fine-tunat 37% — fine-tunatul taie textul lung (antrenat pe clipuri de 5 s).
+MODELE_TRANSCRIBERE = {
+    WHISPER_NUME: "Standard — recomandat pentru text lung (cărți)",
+    WHISPER_NUME_RO: "Fine-tunat RO — doar pentru clipuri scurte (taie textul lung)",
+}
 
 #: Fișierele care compun modelul CTranslate2 (descărcate la instalare).
 WHISPER_CT2_FISIERE = (
@@ -256,14 +270,28 @@ PYTHON_JSON_SUME = f"{PYTHON_FOLDER}/windows-{PYTHON_VERSIUNE}.json"
 TORCH_INDEX_CPU = "https://download.pytorch.org/whl/cpu"
 TORCH_INDEX_CUDA = "https://download.pytorch.org/whl/cu130"
 
+#: Manifestul actualizărilor pe componente (cerința 8 / N-2): aceeași formă ca
+#: „versiuni.json” din folderul de instalare (versiune, dimensiune, adresă,
+#: sumă SHA-256). Se citește DOAR la apăsarea butonului „Caută actualizări”.
+URL_MANIFEST_ACTUALIZARI = (
+    "https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/versiuni.json"
+)
+
+#: Parola implicită a programului, scrisă și în Ajutor. Se precompletează la
+#: punerea parolei; utilizatorul o poate schimba oricând cu a lui.
+PAROLA_IMPLICITA = "Dictare"
+
 #: Versiunea bibliotecii de transcriere (aceeași pe procesor și pe placă video).
 #: Înlocuim torch + openai-whisper cu faster-whisper (CTranslate2), de câteva
 #: ori mai rapid și mai ușor pe memoria video.
 PACHET_FASTER_WHISPER = "faster-whisper==1.2.1"
+# faster-whisper 1.2.1 încă pasează metadata_errors, eliminat în PyAV 18.
+PACHET_PYAV = "av==17.1.0"
 
 #: Pachetele programului, cu versiuni fixe (se instalează în mediul propriu,
 #: nu în Windows). Versiunile au fost verificate că există oficial.
 PACHETE = [
+    PACHET_PYAV,
     "numpy==2.2.6",
     "sounddevice==0.5.2",
     "imageio-ffmpeg==0.6.0",
