@@ -48,6 +48,17 @@
 - **Protejezi o înregistrare și textul ei** cu AES-256-GCM, parolă și cheie de recuperare. Parola nu este salvată.
 - **Verifici calculatorul** pentru memorie, spațiu pe disc, drivere, placă video și codecuri, cu explicații în română.
 
+### Noi în v0.1.2-beta
+
+- 🎚 **Vumetru cu gradații în dB** — 0 dB înseamnă distorsiune; zona verde (-30…-6 dB) e cea bună pentru dictare, iar programul **aduce singur volumul microfonului** ca să nu se taie sunetul.
+- ✅ **Setări cu bife simple** — fiecare opțiune e o singură casuță de bifat.
+- 📚 **Dicționar de corecturi învățate** — corectezi un cuvânt o dată, programul îl repară singur de acum încolo (cu import/export).
+
+<p align="center">
+  <img src="docs/img/vumetru-db.png" alt="Vumetrul cu gradații dB" width="360"><br>
+  <img src="docs/img/setari-sunet.png" alt="Setări → Sunet: bife + reglaj automat al microfonului" width="640">
+</p>
+
 ## Date și confidențialitate
 
 Recunoașterea vocală se face local cu Whisper prin faster-whisper și CTranslate2. Audio-ul și textul transcris nu sunt încărcate într-un serviciu cloud. Kitul publicat include componentele pentru rularea offline; descărcarea kitului și verificarea manuală a actualizărilor folosesc internetul.
@@ -72,6 +83,10 @@ Ce trimite — și ce nu trimite — raportul:
 | Descrierea ta, cu cuvintele tale | Textul dicat sau transcris (din carte) |
 | Ultimele erori din jurnal (mesaj, loc, oră) | Căile complete de pe disc (sunt scurtate: `%UTILIZATOR%`) |
 | Versiunea programului și a Windows-ului | Setările, parolele, cheile, numele de utilizator |
+
+<p align="center">
+  <img src="docs/img/raport.png" alt="Fereastra „Raportează o problemă” — detaliile tehnice deja completate" width="640">
+</p>
 
 Fereastra arată **exact** ce se trimite — nimic altceva nu pleacă din calculatorul tău. Dacă preferi, ai butonul „Copiază raportul” și îl trimiți cum vrei tu (poate și ca e-mail).
 
