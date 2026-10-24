@@ -139,6 +139,8 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+0"), self, self.reseteaza_scrisul)
         QShortcut(QKeySequence("Ctrl+,"), self, lambda: self.arata_ecran_setari())
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
+        QShortcut(QKeySequence("Ctrl+R"), self, self._comanda_asculta)  # 34: taste de redare
+        QShortcut(QKeySequence("Ctrl+Shift+R"), self, self._opreste_ascultarea)
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -208,6 +210,19 @@ class Aplicatie(QMainWindow):
         btn_transcrie.clicked.connect(self.transcrie_fisier_ales)
         btn_transcrie.setToolTip("Transcrie (Ctrl+T)")
         self.toolbar.addWidget(btn_transcrie)
+
+        # Ascultarea înregistrării (32/34/35): apare doar când există o dictare.
+        self.btn_asculta = QToolButton()
+        self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        self.btn_asculta.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_asculta.setToolTip(
+            "Ascultă înregistrarea ultimei dictări. "
+            "Pune cursorul lângă un semn [mm:ss] și pornește exact de acolo. "
+            "Ctrl+R = ascultă/pauză · Ctrl+Shift+R = oprește."
+        )
+        self.btn_asculta.clicked.connect(self._comanda_asculta)
+        self.btn_asculta.hide()
+        self.toolbar.addWidget(self.btn_asculta)
 
         # Spațiu liber
         self.toolbar.addSeparator()
@@ -826,6 +841,83 @@ class Aplicatie(QMainWindow):
             aplicatie = QApplication.instance()
             if aplicatie is not None:
                 aplicatie.installNativeEventFilter(self._filtru_hotkey)
+
+    # ------------------------------------------------------------- ascultare (32/34/35)
+
+    def _player_ascultare(self):
+        """„Reportofonul” editorului (creat o singură dată, cu sunetul real)."""
+        if not hasattr(self, "_ascultator"):
+            from .. import inregistrare, redare
+
+            self._ascultator = redare.Redare(
+                porneste_sunet=lambda pcm, rata: inregistrare.reda(pcm, rata),
+                opreste_sunet=inregistrare.opreste_redarea,
+            )
+        return self._ascultator
+
+    def primeste_inregistrarea(self, inregistrare_dictata) -> None:
+        """Dictarea s-a oprit: păstrează sunetul pentru „▶ Ascultă”."""
+        try:
+            pcm = getattr(inregistrare_dictata, "pcm", None)
+            rata = getattr(inregistrare_dictata, "rata", 16000) or 16000
+            if pcm is not None and len(pcm):
+                self._player_ascultare().incarca(pcm, rata)
+                self.btn_asculta.show()
+                self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        except Exception as exc:
+            jurnal.atentionare(f"Nu am putut păstra înregistrarea pentru ascultare: {exc}")
+
+    def _comanda_asculta(self) -> None:
+        """Ctrl+R: ascultă de la semnul de lângă cursor, sau pauză/continuare."""
+        from .. import redare as modul_redare
+
+        player = self._player_ascultare()
+        if not player.are():
+            self.bara_stare.arata("ℹ", "Nu există nicio dictare de ascultat încă.", "normal")
+            return
+        if player.ruleaza():
+            player.pauza()
+            self.btn_asculta.setText("▶ Continuă (Ctrl+R)")
+            self.bara_stare.arata("Pauză", "ascultarea e pe pauză (Ctrl+R continuă).", "normal")
+            return
+        # cerința 32: ascultă zona semnului de lângă cursor
+        cursor = self.editor.cursor_pozitie() if hasattr(self.editor, "cursor_pozitie") else -1
+        text = self.editor.text()
+        de_la = modul_redare.semn_la_cursor(text, cursor) if cursor >= 0 else None
+        if player.porneste(de_la):
+            self._porneste_ceasul_ascultarii()
+            self.btn_asculta.setText("⏸ Pauză (Ctrl+R)")
+            unde = f"de la semnul {modul_redare.marca_din_secunde(de_la)}" if de_la else "de la început"
+            self.bara_stare.arata("Redare", f"Ascult {unde}.", "lucru")
+
+    def _opreste_ascultarea(self) -> None:
+        """Ctrl+Shift+R: oprește complet ascultarea."""
+        if not hasattr(self, "_ascultator"):
+            return
+        self._ascultator.opreste()
+        self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        self.bara_stare.arata("Oprit", "ascultarea s-a oprit.", "normal")
+
+    def _porneste_ceasul_ascultarii(self) -> None:
+        from .. import redare as modul_redare
+
+        def pas() -> None:
+            if not hasattr(self, "_ascultator") or not self._ascultator.ruleaza():
+                return
+            if self._ascultator.la_capat():
+                self._ascultator.opreste()
+                self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+                return
+            pozitie = self._ascultator.pozitie()
+            self.bara_stare.arata(
+                "Redare",
+                f"▶ {modul_redare.marca_din_secunde(pozitie)} / "
+                f"{modul_redare.marca_din_secunde(self._ascultator.durata())}",
+                "lucru",
+            )
+            QTimer.singleShot(300, pas)
+
+        QTimer.singleShot(300, pas)
 
     def _deschide_raport(self, descriere: str = "") -> None:
         """Ajutor → Raportează o problemă (detaliile tehnice vin din jurnal)."""
