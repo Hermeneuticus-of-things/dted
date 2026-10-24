@@ -61,12 +61,20 @@ Procesoarele ARM, de exemplu Snapdragon, nu sunt suportate pentru transcriere. M
 
 Descarcă [kitul offline D&TED v0.1.1](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.1.1). Release-ul conține `Setup.DTED.exe`, `Setup.DTED-1.bin`, `Setup.DTED-2.bin` și `SHA256SUMS.txt`.
 
-1. Descarcă cele trei fișiere ale kitului și SHA256SUMS.txt; păstrează-le în același folder.
-2. Verifică amprentele SHA-256 cu lista din release.
-3. Pornește `Setup.DTED.exe` numai după ce verificările sunt reușite.
+**De ce mai multe fișiere?** Programul complet are ~4,3 GB (include modelul de transcriere, ca să meargă fără internet), iar GitHub nu acceptă fișiere mai mari de 2 GB la un download. De aceea instalatorul e tăiat în bucăți: `Setup.DTED.exe` e doar „vrăjitorul" de instalare (mesajele și butoanele), iar cele două fișiere `.bin` conțin efectiv programul. Nu porni niciodată un `.bin` — e doar un pachet citit de `Setup.DTED.exe`.
+
+**Cum instalezi, pas cu pas:**
+
+1. Descarcă **toate cele patru fișiere** din pagină: `Setup.DTED.exe`, `Setup.DTED-1.bin`, `Setup.DTED-2.bin` și `SHA256SUMS.txt`. (Apasă pe fiecare fișier în parte, nu pe butonul „Source code".)
+2. Pune-le **pe toate în același folder** (de exemplu `Descărcări\DTED`). Dacă lipsește un `.bin`, instalatorul se oprește cu un mesaj de eroare — nimic nu se strică: completează fișierul lipsă și pornește din nou.
+3. (Recomandat, dar opțional) Verifică descărcarea cu `SHA256SUMS.txt` — vezi comenzile de mai jos. Confirmă că fișierele nu s-au stricat pe drum.
+4. Dă **dublu clic pe `Setup.DTED.exe`** și urmează pașii: alegere limbă → Următor → Instalează. Nu cere internet: totul e deja în pachet.
+5. La final, pornește D&TED din scurtătura „D&TED – Dictare și transcriere" din meniul Start. Prima pornire verifică modelul (durează puțin).
+
+**Cum dezinstalezi:** meniul Start → „D&TED – Dezinstalare", sau Setări → Aplicații → D&TED.
 
 <details>
-<summary>Comenzi PowerShell pentru verificarea kitului</summary>
+<summary>Comenzi PowerShell pentru verificarea kitului (pasul 3)</summary>
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$HOME\Downloads\DTED-kit" | Out-Null
