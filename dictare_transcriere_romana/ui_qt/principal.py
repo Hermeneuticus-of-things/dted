@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from pathlib import Path
@@ -106,7 +107,8 @@ class Aplicatie(QMainWindow):
         self.stare = stare_modul.Stare(config=self.configurare)
         self.coada = comun.CoadaUI(self)
         self._motor: motor.MotorWhisper | None = motor.MotorWhisper(
-            getattr(self.configurare, "dispozitiv", "auto")
+            getattr(self.configurare, "dispozitiv", "auto"),
+            getattr(self.configurare, "model_preferat", "auto"),
         )
         self._pagini: dict[str, QWidget] = {}
         self._pagina_aleasa = ""
@@ -137,6 +139,8 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+0"), self, self.reseteaza_scrisul)
         QShortcut(QKeySequence("Ctrl+,"), self, lambda: self.arata_ecran_setari())
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
+        QShortcut(QKeySequence("Ctrl+R"), self, self._comanda_asculta)  # 34: taste de redare
+        QShortcut(QKeySequence("Ctrl+Shift+R"), self, self._opreste_ascultarea)
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -188,21 +192,15 @@ class Aplicatie(QMainWindow):
         self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
         self.toolbar.addWidget(self.btn_dictare)
 
-        # Vumetru lângă „Dictează” (cerința 36 / D-6): bară >10 px, lățime adaptivă.
-        self.vumetru_bar = QProgressBar()
-        self.vumetru_bar.setObjectName("nivel")
-        self.vumetru_bar.setProperty("sus", True)
-        self.vumetru_bar.setProperty("chunk", "verde")
-        self.vumetru_bar.setRange(0, 1000)
-        self.vumetru_bar.setValue(0)
-        self.vumetru_bar.setTextVisible(False)
-        self.vumetru_bar.setMinimumWidth(80)
-        self.vumetru_bar.setMaximumWidth(320)
-        self.vumetru_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        # Vumetru cu gradații dB (redesign UX) — vizibil DOAR cât se dictează.
+        # 0 dB = distorsiune; verde -30…-6 dB e zona bună de dictare.
+        self.vumetru_bar = comun.VumetruDb()
+        self.vumetru_bar.hide()
         self.toolbar.addWidget(self.vumetru_bar)
         self.vumetru_text = QLabel("")
         self.vumetru_text.setObjectName("vumetru_text")
         self.vumetru_text.setFont(comun.fonturi("mica"))
+        self.vumetru_text.hide()
         self.toolbar.addWidget(self.vumetru_text)
 
         # Buton mare „📂 Transcrie un fișier…”
@@ -213,6 +211,19 @@ class Aplicatie(QMainWindow):
         btn_transcrie.setToolTip("Transcrie (Ctrl+T)")
         self.toolbar.addWidget(btn_transcrie)
 
+        # Ascultarea înregistrării (32/34/35): apare doar când există o dictare.
+        self.btn_asculta = QToolButton()
+        self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        self.btn_asculta.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_asculta.setToolTip(
+            "Ascultă înregistrarea ultimei dictări. "
+            "Pune cursorul lângă un semn [mm:ss] și pornește exact de acolo. "
+            "Ctrl+R = ascultă/pauză · Ctrl+Shift+R = oprește."
+        )
+        self.btn_asculta.clicked.connect(self._comanda_asculta)
+        self.btn_asculta.hide()
+        self.toolbar.addWidget(self.btn_asculta)
+
         # Spațiu liber
         self.toolbar.addSeparator()
         spacer = QWidget()
@@ -221,27 +232,42 @@ class Aplicatie(QMainWindow):
         )
         self.toolbar.addWidget(spacer)
 
-        # Iconițe mici de rețea și confidențialitate
-        self.btn_retea = QToolButton()
-        self.btn_retea.setText("🔌 Offline")
-        self.btn_retea.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_retea.setToolTip("Starea rețelei")
-        self.toolbar.addWidget(self.btn_retea)
-
-        self.btn_confidentialitate = QToolButton()
-        self.btn_confidentialitate.setText("🟢 Internet pornit")
-        self.btn_confidentialitate.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_confidentialitate.setToolTip(
-            "Confidențialitate: nimic blocat.\nApasă pentru a alege modul."
+        # Meniu „Instrumente ▾” — ce se folosește rar (redesign UX): un singur loc,
+        # ca în aplicațiile profesionale; pagina principală rămâne doar cu des folositele.
+        self.menu_instrumente = QMenu(self)
+        self.menu_instrumente.addAction(
+            "🎤 Testează microfonul și boxele", lambda: self.arata_ecran("sunet")
         )
-        self.btn_confidentialitate.clicked.connect(self._la_confidentialitate)
-        self.toolbar.addWidget(self.btn_confidentialitate)
+        self.menu_instrumente.addAction(
+            "📁 Fișierele mele", lambda: self.arata_ecran("fisiere")
+        )
+        self.menu_instrumente.addSeparator()
+        self.menu_instrumente.addAction(
+            "🛡 Internet și confidențialitate", lambda: self.arata_ecran("internet")
+        )
+        self.menu_instrumente.addAction(
+            "📦 Instalare și actualizări", lambda: self.arata_ecran("instalare")
+        )
+        self.menu_instrumente.addAction(
+            "🔍 Verifică programul și calculatorul", lambda: self.arata_ecran("verificare")
+        )
+        self.menu_instrumente.addSeparator()
+        self.menu_instrumente.addAction("🏠 Ecranul de start", lambda: self.arata_ecran("principal"))
+        self.menu_instrumente.addAction("📄 Doar textul", self._doar_textul, QKeySequence("Ctrl+E"))
 
-        self.toolbar.addSeparator()
+        btn_instrumente = QToolButton()
+        btn_instrumente.setText("&Instrumente ▾")
+        btn_instrumente.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_instrumente.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        btn_instrumente.setMenu(self.menu_instrumente)
+        btn_instrumente.setToolTip("Uneltele folosite mai rar (sunet, fișiere, confidențialitate…)")
+        self.toolbar.addWidget(btn_instrumente)
+        self.addActions(self.menu_instrumente.actions())
 
         # Meniu „Ajutor ▾”
         self.menu_ajutor = QMenu(self)
         self.menu_ajutor.addAction("? &Ajutor", lambda: self._ajutor(), QKeySequence("F1"))
+        self.menu_ajutor.addAction("🐞 Raportează o problemă", self._deschide_raport)
         self.menu_ajutor.addAction("🎯 Tur ghidat", self._porneste_tur)
         self.menu_ajutor.addSeparator()
         self.menu_ajutor.addAction(
@@ -252,16 +278,16 @@ class Aplicatie(QMainWindow):
         self.menu_ajutor.addAction("ℹ &Despre", self._despre)
 
         btn_ajutor = QToolButton()
-        btn_ajutor.setText("&Ajutor ▾")
+        btn_ajutor.setText("❓")
         btn_ajutor.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_ajutor.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         btn_ajutor.setMenu(self.menu_ajutor)
-        btn_ajutor.setToolTip("Ajutor (F1)")
+        btn_ajutor.setToolTip("Ajutor (F1) — întrebări, tur ghidat, despre")
         self.toolbar.addWidget(btn_ajutor)
 
         # Buton „⚙ Setări”
         btn_setari = QToolButton()
-        btn_setari.setText("⚙ &Setări")
+        btn_setari.setText("⚙")
         btn_setari.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_setari.setToolTip("Setări (Ctrl+,)")
         btn_setari.clicked.connect(self.arata_ecran_setari)
@@ -303,10 +329,43 @@ class Aplicatie(QMainWindow):
         )
         jos_layout.addWidget(self._buton_folder)
 
+        # Starea rețelei și confidențialitatea — mici, în bara de jos (redesign UX):
+        # rareori folosite, deci nu mai stau în bara principală.
+        self.btn_retea = QToolButton()
+        self.btn_retea.setText("🔌 Offline")
+        self.btn_retea.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_retea.setToolTip("Starea rețelei")
+        jos_layout.addWidget(self.btn_retea)
+
+        self.btn_confidentialitate = QToolButton()
+        self.btn_confidentialitate.setText("🟢 Internet pornit")
+        self.btn_confidentialitate.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_confidentialitate.setToolTip(
+            "Confidențialitate: nimic blocat.\nApasă pentru a alege modul."
+        )
+        self.btn_confidentialitate.clicked.connect(self._la_confidentialitate)
+        jos_layout.addWidget(self.btn_confidentialitate)
+
+        # Mesajul discret de la eroare: „A apărut o problemă. Trimite raportul?”
+        self.buton_raport = QToolButton()
+        self.buton_raport.setText("⚠ A apărut o problemă — trimite raportul?")
+        self.buton_raport.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.buton_raport.clicked.connect(self._la_eroare_raport)
+        self.buton_raport.hide()
+        jos_layout.addWidget(self.buton_raport)
+
         layout.addWidget(self._jos)
 
-        self.arata_ecran("principal")
+        # Redesign UX: pornim direct pe editor — spațiu maxim pentru textul
+        # dictat (paginile întregi de corectat). Ecranul de start e în „Instrumente ▾”.
+        self._doar_textul()
         self._reimprospateaza_ultimele()
+
+    def _doar_textul(self) -> None:
+        """Ascunde toate ecranele și lasă numai editorul (spațiu maxim)."""
+        for pagina in self._pagini.values():
+            pagina.hide()
+        self._pagina_aleasa = ""
 
     # ------------------------------------------------------------------ ecrane
 
@@ -406,13 +465,36 @@ class Aplicatie(QMainWindow):
             self._deschide_document_ales(Path(cale))
 
     def _deschide_document_ales(self, cale: Path) -> None:
-        """Deschide un document text (docx/odt/txt/…) în editorul integrat."""
-        try:
-            from .. import documente
-            text = documente.citeste_text(cale)
-        except Exception as exc:
-            comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
-            return
+        """Deschide un document text (docx/odt/txt/…) în editorul integrat.
+
+        Documentele criptate (N-5) se deschid cu parola: se decriptează într-un
+        fișier temporar care se șterge imediat după citire.
+        """
+        from .. import criptare, documente
+
+        if criptare.este_criptat(cale):
+            cheie = self._cheie_criptare()
+            if cheie is None:
+                self.bara_stare.arata(
+                    "Încuiat", "documentul e criptat și nu s-a putut deschide fără parolă.", "problema"
+                )
+                return
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as folder:
+                temporar = Path(folder) / cale.name
+                try:
+                    criptare.decripteaza_fisier(cheie, cale, temporar)
+                    text = documente.citeste_text(temporar)
+                except Exception as exc:
+                    comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
+                    return
+        else:
+            try:
+                text = documente.citeste_text(cale)
+            except Exception as exc:
+                comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
+                return
         self.editor.set_text(text)
         self.stare.text = text
         self.stare.document_cale = Path(cale)
@@ -431,10 +513,64 @@ class Aplicatie(QMainWindow):
             biblioteca.nume_legat(self.stare.marca or "document", f".{fel}"),
         )
         documente.salveaza(text, destinatie, titlu=self.stare.marca or "Document")
-        self.bara_stare.arata(
-            "Succes", f"Document salvat: {destinatie.name}", "succes"
-        )
+        if self._cripteaza_daca_cere(destinatie):
+            self.bara_stare.arata(
+                "Succes", f"Document salvat și criptat: {destinatie.name}", "succes"
+            )
+        else:
+            self.bara_stare.arata(
+                "Succes", f"Document salvat: {destinatie.name}", "succes"
+            )
         self._salvare_automata_fisier(destinatie)
+
+    def _cheie_criptare(self) -> bytes | None:
+        """Cheia maestră a seifului; cere parola o singură dată pe sesiune (N-5/N-6)."""
+        if getattr(self, "_cheie_seif", None):
+            return self._cheie_seif
+        from .. import parola as modul_parola
+
+        seif = modul_parola.incarca_seif()
+        if seif is None:
+            return None
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+
+        for incercare in range(3):
+            from ..constante import PAROLA_IMPLICITA
+
+            text, ok = QInputDialog.getText(
+                self,
+                "Parola documentelor",
+                "Scrie parola cu care s-au criptat documentele\n"
+                "(parola implicită „Dictare” e deja scrisă):",
+                QLineEdit.EchoMode.Password,
+                PAROLA_IMPLICITA if incercare == 0 else "",
+            )
+            if not ok:
+                return None
+            try:
+                self._cheie_seif = modul_parola.deschide_cu_parola(seif, text)
+                return self._cheie_seif
+            except modul_parola.ParolaGresita:
+                if incercare == 2:
+                    comun.anunta(
+                        self,
+                        "Parola nu este corectă",
+                        "Trei încercări fără succes. Încearcă din nou mai târziu "
+                        "sau folosește cheia de recuperare din Setări.",
+                    )
+        return None
+
+    def _cripteaza_daca_cere(self, destinatie: Path) -> bool:
+        """Criptează pe loc documentul abia salvat, dacă e setat (N-5)."""
+        if not getattr(self.configurare, "cripteaza_documente", False):
+            return False
+        cheie = self._cheie_criptare()
+        if cheie is None:
+            return False
+        from .. import criptare
+
+        criptare.cripteaza_fisier(cheie, destinatie, destinatie)
+        return True
 
     def _salveaza_ca(self) -> None:
         from .comun import alege_folder
@@ -449,9 +585,14 @@ class Aplicatie(QMainWindow):
             marca = biblioteca.marca_din_nume(self.stare.marca or "document")
             destinatie = biblioteca.nume_unic(Path(cale), f"{marca}.docx")
             documente.salveaza(text, destinatie, titlu=self.stare.marca or "Document")
-            self.bara_stare.arata(
-                "Succes", f"Document salvat: {destinatie.name}", "succes"
-            )
+            if self._cripteaza_daca_cere(destinatie):
+                self.bara_stare.arata(
+                    "Succes", f"Document salvat și criptat: {destinatie.name}", "succes"
+                )
+            else:
+                self.bara_stare.arata(
+                    "Succes", f"Document salvat: {destinatie.name}", "succes"
+                )
 
     def _exporta_pdf(self) -> None:
         text = self.editor.text()
@@ -543,25 +684,43 @@ class Aplicatie(QMainWindow):
         self._porneste_vumetru(activ)
 
     def _porneste_vumetru(self, activ: bool) -> None:
-        """Pornește/oprește vumetrul din bara de sus; când e oprit, îl golește."""
+        """Pornește/oprește vumetrul din bara de sus; când e oprit, îl golește
+        și îl ascunde (redesign UX: bara de sus rămâne doar cu des folositele)."""
         if not hasattr(self, "_timer_vumetru"):
             self._timer_vumetru = QTimer(self)
             self._timer_vumetru.timeout.connect(self._actualizeaza_vumetru)
+        self.vumetru_bar.setVisible(activ)
+        self.vumetru_text.setVisible(activ)
         if activ:
             self._timer_vumetru.start(60)  # ~16 actualizări pe secundă
         else:
             self._timer_vumetru.stop()
-            self.vumetru_bar.setValue(0)
-            self.vumetru_text.setText("")
+            from .. import nivele as _nivele
+
+            self.vumetru_bar.pune_db(_nivele.DB_MINIM)
+            self.vumetru_text.setText("microfon oprit")
+            # rămâne vizibil 6 s și după oprire, ca să-l observi liniștit
+            def ascunde_daca_inactiv() -> None:
+                pagina = self._pagini.get("dictare")
+                inactiv = pagina is None or not getattr(pagina, "_activ", False)
+                if inactiv:
+                    self.vumetru_bar.hide()
+                    self.vumetru_text.hide()
+
+            QTimer.singleShot(6000, ascunde_daca_inactiv)
 
     def _actualizeaza_vumetru(self) -> None:
-        """Citește nivelul microfonului și afișează bara + textul (cerința 36)."""
+        """Citește nivelul microfonului și afișează bara + textul, în dB (cerința 36)."""
+        from .. import nivele
+
         pagina = self._pagini.get("dictare")
-        nivel = 0
+        amplitudine = 0.0
         if pagina is not None:
-            nivel = int(min(1.0, getattr(pagina, "nivel_microfon", 0.0)) * 1000)
-        self.vumetru_bar.setValue(nivel)
-        text, chunk = comun.text_nivel(nivel)
+            amplitudine = float(min(1.0, getattr(pagina, "nivel_microfon", 0.0)))
+        db = nivele.amplitudine_in_db(amplitudine)
+        self.vumetru_bar.pune_db(db)
+        self.vumetru_text.setText(nivele.text_db(db))
+        text, chunk = comun.text_nivel(int(amplitudine * 1000))
         if self.vumetru_bar.property("chunk") != chunk:
             self.vumetru_bar.setProperty("chunk", chunk)
             stil = self.vumetru_bar.style()
@@ -600,6 +759,207 @@ class Aplicatie(QMainWindow):
             f"QToolButton {{ color: {culoare}; font-weight: 600; }}"
         )
 
+    def _actualizeaza_indicator_retea(self) -> None:
+        """UX-31: indicatorul de rețea arată starea REALĂ (verificarea în fundal)."""
+        def lucru() -> None:
+            from .. import internet
+
+            try:
+                conectat = internet.are_internet()
+            except Exception:
+                conectat = None
+            self.coada.trimite(self._pune_indicator_retea, conectat)
+
+        threading.Thread(target=lucru, name="stare-retea", daemon=True).start()
+
+    def _pune_indicator_retea(self, conectat) -> None:
+        if conectat is None:
+            self.btn_retea.setText("🔌 Rețea neprecizată")
+            self.btn_retea.setToolTip("Nu am putut verifica starea internetului chiar acum.")
+            culoare = "#6B7280"
+        elif conectat:
+            self.btn_retea.setText("🌐 Internet pornit")
+            self.btn_retea.setToolTip(
+                "Internetul este pornit. Programul NU trimite nimic pe internet; "
+                "dacă lucrezi cu informații sensibile, îl poți opri."
+            )
+            culoare = "#B45309"
+        else:
+            self.btn_retea.setText("🔌 Fără internet")
+            self.btn_retea.setToolTip("Nicio legătură cu internetul — lucrezi în siguranță.")
+            culoare = "#15803D"
+        self.btn_retea.setStyleSheet(f"QToolButton {{ color: {culoare}; font-weight: 600; }}")
+
+    # ------------------------------------------------------------------ scurtături globale (53)
+
+    def _porneste_scurtaturile_globale(self, pornite: bool | None = None) -> None:
+        """Ctrl+Alt+D pornește/oprește dictarea din orice program.
+
+        Înregistrată DOAR dacă utilizatorul a bifat-o în Setări — oprită implicit.
+        """
+        if sys.platform != "win32":
+            return
+        import ctypes
+
+        if pornite is None:
+            pornite = bool(getattr(self.configurare, "scurtaturi_globale", False))
+        if pornite and getattr(self, "_hotkey_id", None) is None:
+            # MOD_ALT (1) + MOD_CONTROL (2), tasta virtuală „D” (0x44), id 1.
+            if ctypes.windll.user32.RegisterHotKey(None, 1, 0x0003, 0x44):
+                self._hotkey_id = 1
+                self._instaleaza_filtru_hotkey()
+        elif not pornite and getattr(self, "_hotkey_id", None) is not None:
+            try:
+                ctypes.windll.user32.UnregisterHotKey(None, self._hotkey_id)
+            except Exception:
+                pass
+            self._hotkey_id = None
+
+    def _instaleaza_filtru_hotkey(self) -> None:
+        """Prinde mesajul WM_HOTKEY din coada ferestrei și apelează comanda."""
+        from PySide6.QtCore import QAbstractNativeEventFilter
+
+        class _FiltruHotkey(QAbstractNativeEventFilter):
+            def __init__(self, la_apasare):
+                super().__init__()
+                self._la_apasare = la_apasare
+
+            def nativeEventFilter(self, tip, mesaj):
+                try:
+                    if int(mesaj):
+                        import ctypes.wintypes
+
+                        structura = ctypes.wintypes.MSG.from_address(int(mesaj))
+                        if structura.message == 0x0312 and structura.wParam == 1:
+                            self._la_apasare()
+                except Exception:
+                    pass
+                return False
+
+        if getattr(self, "_filtru_hotkey", None) is None:
+            self._filtru_hotkey = _FiltruHotkey(self._la_scurtatura_globala)
+            aplicatie = QApplication.instance()
+            if aplicatie is not None:
+                aplicatie.installNativeEventFilter(self._filtru_hotkey)
+
+    # ------------------------------------------------------------- ascultare (32/34/35)
+
+    def _player_ascultare(self):
+        """„Reportofonul” editorului (creat o singură dată, cu sunetul real)."""
+        if not hasattr(self, "_ascultator"):
+            from .. import inregistrare, redare
+
+            self._ascultator = redare.Redare(
+                porneste_sunet=lambda pcm, rata: inregistrare.reda(pcm, rata),
+                opreste_sunet=inregistrare.opreste_redarea,
+            )
+        return self._ascultator
+
+    def primeste_inregistrarea(self, inregistrare_dictata) -> None:
+        """Dictarea s-a oprit: păstrează sunetul pentru „▶ Ascultă”."""
+        try:
+            pcm = getattr(inregistrare_dictata, "pcm", None)
+            rata = getattr(inregistrare_dictata, "rata", 16000) or 16000
+            if pcm is not None and len(pcm):
+                self._player_ascultare().incarca(pcm, rata)
+                self.btn_asculta.show()
+                self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        except Exception as exc:
+            jurnal.atentionare(f"Nu am putut păstra înregistrarea pentru ascultare: {exc}")
+
+    def _comanda_asculta(self) -> None:
+        """Ctrl+R: ascultă de la semnul de lângă cursor, sau pauză/continuare."""
+        from .. import redare as modul_redare
+
+        player = self._player_ascultare()
+        if not player.are():
+            self.bara_stare.arata("ℹ", "Nu există nicio dictare de ascultat încă.", "normal")
+            return
+        if player.ruleaza():
+            player.pauza()
+            self.btn_asculta.setText("▶ Continuă (Ctrl+R)")
+            self.bara_stare.arata("Pauză", "ascultarea e pe pauză (Ctrl+R continuă).", "normal")
+            return
+        # cerința 32: ascultă zona semnului de lângă cursor
+        cursor = self.editor.cursor_pozitie() if hasattr(self.editor, "cursor_pozitie") else -1
+        text = self.editor.text()
+        de_la = modul_redare.semn_la_cursor(text, cursor) if cursor >= 0 else None
+        if player.porneste(de_la):
+            self._porneste_ceasul_ascultarii()
+            self.btn_asculta.setText("⏸ Pauză (Ctrl+R)")
+            unde = f"de la semnul {modul_redare.marca_din_secunde(de_la)}" if de_la else "de la început"
+            self.bara_stare.arata("Redare", f"Ascult {unde}.", "lucru")
+
+    def _opreste_ascultarea(self) -> None:
+        """Ctrl+Shift+R: oprește complet ascultarea."""
+        if not hasattr(self, "_ascultator"):
+            return
+        self._ascultator.opreste()
+        self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        self.bara_stare.arata("Oprit", "ascultarea s-a oprit.", "normal")
+
+    def _porneste_ceasul_ascultarii(self) -> None:
+        from .. import redare as modul_redare
+
+        def pas() -> None:
+            if not hasattr(self, "_ascultator") or not self._ascultator.ruleaza():
+                return
+            if self._ascultator.la_capat():
+                self._ascultator.opreste()
+                self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+                return
+            pozitie = self._ascultator.pozitie()
+            self.bara_stare.arata(
+                "Redare",
+                f"▶ {modul_redare.marca_din_secunde(pozitie)} / "
+                f"{modul_redare.marca_din_secunde(self._ascultator.durata())}",
+                "lucru",
+            )
+            QTimer.singleShot(300, pas)
+
+        QTimer.singleShot(300, pas)
+
+    def _deschide_raport(self, descriere: str = "") -> None:
+        """Ajutor → Raportează o problemă (detaliile tehnice vin din jurnal)."""
+        from .ui_raport import FereastraRaport
+
+        self.buton_raport.hide()
+        try:
+            FereastraRaport(self, descriere_initiala=descriere).exec()
+        except Exception as exc:
+            jurnal.atentionare(f"Fereastra de raport nu s-a putut deschide: {exc}")
+
+    def _la_eroare_raport(self) -> None:
+        """Un clic pe mesajul discret de eroare → fereastra de raport."""
+        self._deschide_raport()
+
+    def _la_eroare_jurnal(self, mesaj: str) -> None:
+        """Chemată de jurnal la fiecare EROARE: arată discret butonul de raport.
+
+        Poate veni din orice fir de execuție — trecem în firul interfeței.
+        """
+        def arata() -> None:
+            self.buton_raport.setToolTip(mesaj[:300])
+            self.buton_raport.show()
+            self.bara_stare.arata(
+                "Problemă", "a apărut o eroare (salvată în jurnal). Trimite raportul?",
+                "problema",
+            )
+            QTimer.singleShot(60_000, self.buton_raport.hide)
+
+        try:
+            QTimer.singleShot(0, arata)
+        except Exception:
+            pass
+
+    def _la_scurtatura_globala(self) -> None:
+        """Ctrl+Alt+D, apăsat în orice program: adu fereastra și comută dictarea."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.arata_ecran("dictare")
+        self._toggle_dictare()
+
     def _la_confidentialitate(self) -> None:
         """Click pe iconiță: dacă e blocat, oferă oprirea; altfel deschide avertizarea."""
         try:
@@ -635,6 +995,15 @@ class Aplicatie(QMainWindow):
             self._timer_confidentialitate = QTimer(self)
             self._timer_confidentialitate.timeout.connect(self._actualizeaza_bara_confidentialitate)
             self._timer_confidentialitate.start(5000)
+        # UX-31: indicatorul de rețea se citește la pornire și apoi din minut în minut
+        # (verificarea atinge rețeaua, deci nu se face la fiecare 5 secunde).
+        if not hasattr(self, "_timer_retea"):
+            self._timer_retea = QTimer(self)
+            self._timer_retea.timeout.connect(self._actualizeaza_indicator_retea)
+            self._timer_retea.start(60000)
+        self._actualizeaza_indicator_retea()
+        self._porneste_scurtaturile_globale()
+        jurnal.adauga_observator_eroare(self._la_eroare_jurnal)
         QTimer.singleShot(800, self._anuleaza_blocari_vechi_lapornire)
 
     def _anuleaza_blocari_vechi_lapornire(self) -> None:
@@ -997,6 +1366,9 @@ class Aplicatie(QMainWindow):
         comun.mareste_scris(getattr(config, "marire_scris", 100) / 100.0)
         self.editor.actualizeaza_font()
         self.editor.actualizeaza_etichete()
+        self._porneste_scurtaturile_globale(
+            bool(getattr(config, "scurtaturi_globale", False))
+        )
 
     def _reimprospateaza_ultimele(self) -> None:
         """Reîmprospătează submeniul „Recente” cu ultimele documente."""
@@ -1101,6 +1473,7 @@ class Aplicatie(QMainWindow):
                 self, "Nu am putut salva documentul", exc
             )
             return False
+        self._cripteaza_daca_cere(destinatie)
         self.stare.document_cale = destinatie
         self.stare.marcheaza_salvat()
         return True

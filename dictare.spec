@@ -20,7 +20,13 @@ block_cipher = None
 # Căi către datele de împachetat (kit offline complet, cerința 9 / N-7 V1).
 _SITE = sysconfig.get_paths()["purelib"]  # .venv/Lib/site-packages
 _LOCALAPPDATA = os.environ.get("LOCALAPPDATA", "")
-_MODEL = os.path.join(_LOCALAPPDATA, "Dictare&Transcriere Română", "model", "large-v3-turbo-ct2")
+# v0.1.2: kitul poartă modelul STANDARD (cel mai bun pe text lung de carte,
+# măsurat WER 15% vs 37% pentru fine-tunatul RO); dacă lipsește pe disc,
+# se împachetează fine-tunatul românesc.
+_MODELE_KIT = [
+    ("large-v3-turbo-ct2", "large-v3-turbo-ct2"),
+    ("large-v3-turbo-ro-ct2", "large-v3-turbo-ro-ct2"),
+]
 
 datas = [('dictare_transcriere_romana/iconita_dictare.ico', 'dictare_transcriere_romana')]
 datas += collect_data_files('faster_whisper')      # filtrul VAD (silero, .onnx)
@@ -30,11 +36,17 @@ datas += collect_data_files('tiktoken')            # fișierele BPE pentru opena
 
 # Modelul de transcriere (~1,6 GB) împachetat lângă program: cai.fisier_model()
 # îl citește din bundle când programul e construit, deci fără descărcare la pornire.
-for _fisier_model in ("config.json", "preprocessor_config.json", "tokenizer.json",
-                      "vocabulary.json", "model.bin"):
-    _cale_model = os.path.join(_MODEL, _fisier_model)
-    if os.path.isfile(_cale_model):
-        datas += [(_cale_model, "model/large-v3-turbo-ct2")]
+for _folder_model, _destinatie_model in _MODELE_KIT:
+    _radacina_model = os.path.join(_LOCALAPPDATA, "Dictare&Transcriere Română", "model", _folder_model)
+    _gasite = 0
+    for _fisier_model in ("config.json", "preprocessor_config.json", "tokenizer.json",
+                          "vocabulary.json", "model.bin"):
+        _cale_model = os.path.join(_radacina_model, _fisier_model)
+        if os.path.isfile(_cale_model):
+            datas += [(_cale_model, "model/" + _destinatie_model)]
+            _gasite += 1
+    if _gasite:
+        break
 
 # Bibliotecile CUDA (cuBLAS 12 + cuDNN 9), doar folderul bin, exact cum le caută
 # motor.foldere_biblioteci_cuda() în bundle (sys._MEIPASS/nvidia/*/bin).

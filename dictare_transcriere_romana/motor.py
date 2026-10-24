@@ -353,8 +353,9 @@ def informatii_audio(cale: str | Path) -> InformatiiAudio:
 class MotorWhisper:
     """Încarcă modelul o singură dată și transcrie fișiere sau sunet din memorie."""
 
-    def __init__(self, dispozitiv: str = "auto"):
+    def __init__(self, dispozitiv: str = "auto", model: str | None = None):
         self.dispozitiv_preferat = dispozitiv
+        self.model_preferat = model or "auto"
         self._model = None
         self._dispozitiv = "cpu"
         self._blocare = threading.Lock()
@@ -427,7 +428,7 @@ class MotorWhisper:
         """Încarcă modelul, dacă nu este deja în memorie."""
         if self._model is not None:
             return
-        fisier = cai.fisier_model()
+        fisier = cai.fisier_model(getattr(self, "model_preferat", None))
         if not fisier.exists():
             raise EroareMotor(
                 "Modelul de transcriere lipsește.",

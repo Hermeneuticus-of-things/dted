@@ -221,3 +221,29 @@ def proceseaza_comenzi_vocale(text: str) -> str:
         pattern = r"(?i)\b" + re.escape(comanda) + r"\b"
         rezultat = re.sub(pattern, COMENZI_Vocale[comanda], rezultat)
     return rezultat
+
+_REPETITIE = re.compile(
+    r"\b([\wăâîșțĂÂÎȘȚ]+(?:-[\wăâîșțĂÂÎȘȚ]+)?)(?:[ ,;]+\1\b){2,}",
+    re.IGNORECASE,
+)
+
+
+def curata_repetari(text: str) -> str:
+    """Strânge cuvintele repetate în lanț (bâlbâială sau buclă de model).
+
+    „nu, nu, nu, nu” devine „nu”; dublările firești („foarte, foarte bun”)
+    rămân — se taie doar de la trei repetări în sus, la rând.
+    """
+    if not text:
+        return text
+    anterior = None
+    while anterior != text:
+        anterior = text
+        text = _REPETITIE.sub(r"\1", text)
+    return text
+    anterior = None
+    while anterior != text:
+        anterior = text
+        text = _REPETITIE.sub(r"", text)
+    return text
+

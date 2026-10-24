@@ -11,6 +11,8 @@
 7. Programul de scris — LibreOffice sau altul
 8. Afișarea textului — mărime, wrap, font, spațiere, lățime, margină
 9. Aspect — luminos / întunecat / ca Windows
+10. Parolă și criptare — parolă pentru documente + criptare la salvare
+11. Confidențialitate — blocarea căilor de ieșire în timpul dictării
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -82,9 +85,11 @@ AUTOMAT = "Automat (cel ales de Windows)"
 #: Fiecare secțiune e o listă de metode ``_rand_*`` care îi construiesc rândurile.
 SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Documente", ("_rand_folder",)),
-    ("Limbă și termeni", ("_rand_limba", "_rand_termeni")),
-    ("Sunet", ("_rand_microfon", "_rand_difuzor")),
+    ("Limbă și termeni", ("_rand_limba", "_rand_termeni", "_rand_dictionar")),
+    ("Sunet", ("_rand_microfon", "_rand_difuzor", "_rand_dictare")),
     ("Transcriere și salvare", ("_rand_transcriere", "_rand_salvare", "_rand_program")),
+    ("Parolă și criptare", ("_rand_parola",)),
+    ("Confidențialitate", ("_rand_blocare",)),
     ("Aspect", ("_rand_afisare", "_rand_aspect")),
 )
 
@@ -309,6 +314,83 @@ class FereastraSetari(QDialog):
         self.edit_termeni.setFont(fonturi("baza"))
         card.layout().addWidget(self.edit_termeni)
 
+    def _rand_dictionar(self) -> None:
+        card = self._card(
+            "Dicționar de corecturi",
+            "Când corectezi un cuvânt greșit scris de program (îl ștergi și scrii "
+            "corect), perechea se reține singură și se aplică de la următoarea "
+            "transcriere. Lista poate fi adusă și dintr-un fișier (import).",
+        )
+        self.eticheta_dictionar = self._valoare(card, "")
+        rand = QHBoxLayout()
+        rand.addWidget(Buton(card, "Import din fișier…", self._importa_dictionar, latime=220, inaltime=40))
+        rand.addWidget(Buton(card, "Export în fișier…", self._exporta_dictionar, latime=220, inaltime=40))
+        rand.addStretch(1)
+        card.layout().addLayout(rand)
+        self._arata_dictionar()
+
+    def _arata_dictionar(self) -> None:
+        from .. import inlocuiri
+
+        try:
+            numar = len(inlocuiri.incarca())
+        except Exception:
+            numar = 0
+        if numar:
+            self.eticheta_dictionar.setText(f"Corecturi învățate: {numar}.")
+        else:
+            self.eticheta_dictionar.setText(
+                "Corecturi învățate: niciuna încă — apar singure când corectezi textul."
+            )
+
+    def _importa_dictionar(self) -> None:
+        from PySide6.QtWidgets import QFileDialog
+
+        from .. import inlocuiri
+
+        cale, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import dicționar de corecturi",
+            "",
+            "Dicționar (*.txt *.json *.csv);;Toate fișierele (*.*)",
+        )
+        if not cale:
+            return
+        puse, respinse = inlocuiri.importa_din_fisier(Path(cale))
+        self._arata_dictionar()
+        mesaj = f"{puse} perechi au fost puse în dicționar."
+        if respinse:
+            mesaj += (
+                f"\n\n{respinse} rânduri au fost ignorate: nu erau perechi simple "
+                "de un cuvânt (se acceptă „greșit -> corect”, JSON sau CSV)."
+            )
+        anunta(self, "Import terminat", mesaj)
+
+    def _exporta_dictionar(self) -> None:
+        from PySide6.QtWidgets import QFileDialog
+
+        from .. import inlocuiri
+
+        perechi = inlocuiri.incarca()
+        if not perechi:
+            anunta(
+                self,
+                "Dicționarul e gol",
+                "Nu ai încă nicio corectură învățată, deci nu e nimic de exportat.",
+            )
+            return
+        cale, _ = QFileDialog.getSaveFileName(
+            self, "Export dicționar de corecturi", "dictionar-dted.txt", "Text (*.txt);;JSON (*.json)"
+        )
+        if not cale:
+            return
+        try:
+            Path(cale).write_text(inlocuiri.exporta_text(perechi), encoding="utf-8")
+        except OSError:
+            anunta(self, "Nu am putut scrie fișierul", "Fișierul nu s-a putut salva pe disc.")
+            return
+        anunta(self, "Export terminat", f"{len(perechi)} perechi au fost scrise în {Path(cale).name}.")
+
     def _rand_microfon(self) -> None:
         card = self._card(
             "Microfonul folosit",
@@ -326,6 +408,253 @@ class FereastraSetari(QDialog):
         self.eticheta_difuzor = self._valoare(card, "")
         btn = Buton(card, "Alege difuzorul", self._schimba_difuzor, latime=250, inaltime=40)
         card.layout().addWidget(btn)
+
+    def _rand_dictare(self) -> None:
+        card = self._card(
+            "Cum se aude dictarea",
+            "Ajustări opționale pentru sunetul dictat; toate sunt oprite la început, "
+            "ca textul să rămână întocmai ce s-a auzit.",
+        )
+        self.var_auto_volum = bool(getattr(self.config, "auto_volum", True))
+        self._rand_da_nu(
+            card,
+            "var_auto_volum",
+            "Aduce singur nivelul microfonului ca să nu se distorsioneze (0 dB) și să se audă bine",
+            self.var_auto_volum,
+        )
+        self.var_pauze = bool(getattr(self.config, "scurteaza_pauze", False))
+        self._rand_da_nu(
+            card,
+            "var_pauze",
+            "Sare peste pauzele lungi de peste 2 secunde (cerința 52)",
+            self.var_pauze,
+        )
+        self.var_pregateste = bool(getattr(self.config, "pregateste_audio", False))
+        self._rand_da_nu(
+            card,
+            "var_pregateste",
+            "Aduce volumul la un nivel potrivit, dacă s-a vorbit prea încet (cerința 51)",
+            self.var_pregateste,
+        )
+        self.var_scurtaturi = bool(getattr(self.config, "scurtaturi_globale", False))
+        self._rand_da_nu(
+            card,
+            "var_scurtaturi",
+            "Scurtătură globală Ctrl+Alt+D pornește/oprește dictarea din orice program (cerința 53)",
+            self.var_scurtaturi,
+        )
+
+    # ------------------------------------------------------- parolă și criptare
+
+    def _rand_parola(self) -> None:
+        from .. import parola
+
+        self._modul_parola = parola
+        card = self._card(
+            "Parola și criptarea documentelor",
+            "Cu o parolă pusă, documentele salvate pot fi criptate (AES-256): fără parolă, "
+            "conținutul lor nu se poate citi în alt program. La schimbarea parolei "
+            "documentele deja criptate NU se rescriu — cheia lor rămâne aceeași.",
+        )
+        self.eticheta_parola = self._valoare(card, "")
+        self.var_cripteaza = QCheckBox("Criptează documentele salvate")
+        self.var_cripteaza.setFont(fonturi("baza"))
+        self.var_cripteaza.setChecked(
+            bool(getattr(self.config, "cripteaza_documente", False)) and parola.seif_definit()
+        )
+        card.layout().addWidget(self.var_cripteaza)
+        rand = QHBoxLayout()
+        rand.addWidget(Buton(card, "Pune o parolă", self._pune_parola, latime=200, inaltime=40))
+        rand.addWidget(Buton(card, "Schimbă parola", self._schimba_parola_setari, latime=220, inaltime=40))
+        rand.addWidget(Buton(card, "Scoate parola", self._scoate_parola, latime=200, inaltime=40))
+        rand.addStretch(1)
+        card.layout().addLayout(rand)
+        self._arata_parola()
+
+    def _arata_parola(self) -> None:
+        try:
+            definit = self._modul_parola.seif_definit()
+        except Exception:
+            definit = False
+        if definit:
+            text = "Parolă pusă. Documentele se pot cripta la salvare."
+        else:
+            text = "Nicio parolă pusă. Documentele se salvează normale (oricine le poate citi)."
+        self.eticheta_parola.setText(text)
+        self.var_cripteaza.setEnabled(definit)
+        if not definit:
+            self.var_cripteaza.setChecked(False)
+
+    def _cere_parola(self, titlu: str, eticheta: str, precompletat: str = "") -> str | None:
+        text, ok = QInputDialog.getText(
+            self, titlu, eticheta, QLineEdit.EchoMode.Password, precompletat
+        )
+        return (text or "").strip() if ok else None
+
+    def _pune_parola(self) -> None:
+        parola = self._modul_parola
+        if parola.seif_definit():
+            anunta(
+                self,
+                "Există deja o parolă",
+                "Ai deja o parolă pusă. Ca să o schimbi, apasă «Schimbă parola».",
+            )
+            return
+        prima = self._cere_parola(
+            "Pune o parolă",
+            "Scrie parola (cel puțin 4 semne).\nParola implicită „Dictare” e deja scrisă — poți rămâne la ea:",
+            constante.PAROLA_IMPLICITA,
+        )
+        if prima is None:
+            return
+        if len(prima) < 4:
+            anunta(self, "Parola e prea scurtă", "Parola trebuie să aibă cel puțin 4 semne.")
+            return
+        a_doua = self._cere_parola(
+            "Pune o parolă", "Scrie parola încă o dată, ca să fie sigur:", prima
+        )
+        if a_doua is None:
+            return
+        if prima != a_doua:
+            anunta(self, "Parolele nu se potrivesc", "Cele două parole scrise nu sunt la fel. Încearcă din nou.")
+            return
+        seif, recuperare, _cheie = parola.defineste(prima)
+        if not parola.salveaza_seif(seif):
+            anunta(
+                self,
+                "Parola nu s-a putut păstra",
+                "Seiful nu a putut fi scris pe disc (folder protejat sau disc plin). Parola NU a fost pusă.",
+            )
+            return
+        anunta(
+            self,
+            "Cheia de recuperare — scrie-o pe hârtie",
+            "Dacă uiți parola, documentele criptate se pot deschide NUMAI cu cheia de recuperare de mai jos.\n\n"
+            f"{recuperare}\n\n"
+            "Această cheie se arată o singură dată. Scrie-o pe hârtie și ține-o la loc sigur.",
+        )
+        self.var_cripteaza.setEnabled(True)
+        self.var_cripteaza.setChecked(True)
+        self._arata_parola()
+        self.linie_stare.arata(
+            "Gata", "parola e pusă. Bifează «Criptează documentele salvate» și apasă «Salvează setările».", "bine"
+        )
+
+    def _schimba_parola_setari(self) -> None:
+        parola = self._modul_parola
+        seif = parola.incarca_seif()
+        if seif is None:
+            anunta(self, "Nicio parolă pusă", "Nu ai încă o parolă. Apasă întâi «Pune o parolă».")
+            return
+        veche = self._cere_parola("Schimbă parola", "Scrie parola veche:")
+        if veche is None:
+            return
+        try:
+            parola.deschide_cu_parola(seif, veche)  # doar verificăm parola veche
+        except parola.ParolaGresita:
+            anunta(self, "Parola nu este corectă", "Parola veche scrisă nu este corectă. Încearcă din nou.")
+            return
+        noua = self._cere_parola("Schimbă parola", "Scrie parola nouă (cel puțin 4 semne):")
+        if noua is None or len(noua) < 4:
+            if noua is not None:
+                anunta(self, "Parola e prea scurtă", "Parola trebuie să aibă cel puțin 4 semne.")
+            return
+        seif_nou = parola.schimba_parola(seif, veche, noua)
+        if not parola.salveaza_seif(seif_nou):
+            anunta(self, "Parola nouă nu s-a putut păstra", "Scrierea pe disc a eșuat. Parola veche rămâne valabilă.")
+            return
+        self.linie_stare.arata("Gata", "parola s-a schimbat. Documentele deja criptate se deschid în continuare.", "bine")
+
+    def _scoate_parola(self) -> None:
+        parola = self._modul_parola
+        seif = parola.incarca_seif()
+        if seif is None:
+            anunta(self, "Nicio parolă pusă", "Nu ai încă o parolă de scos.")
+            return
+        raspuns = dialog(
+            self,
+            "Scoți parola?",
+            "Dacă scoți parola, documentele DEJA criptate nu se mai pot deschide "
+            "nici cu parola, nici cu vreo cheie — rămân pentru totdeauna încuiate.\n\n"
+            "Documentele noi se vor salva normale (necriptate).",
+            [("Scoate parola", "pericol"), ("Renunță", "secundar")],
+            implicit=1,
+            anulare=1,
+        )
+        if raspuns != 0:
+            return
+        cere = self._cere_parola("Scoate parola", "Scrie parola, ca să fie sigur:")
+        if cere is None:
+            return
+        try:
+            parola.deschide_cu_parola(seif, cere)
+        except parola.ParolaGresita:
+            anunta(self, "Parola nu este corectă", "Parola scrisă nu este corectă. Parola rămâne pusă.")
+            return
+        parola.sterge_seif()
+        self.config.cripteaza_documente = False
+        self._arata_parola()
+        self.linie_stare.arata("Gata", "parola s-a scos. Apasă «Salvează setările».", "bine")
+
+    # ------------------------------------------------------- confidențialitate
+
+    def _rand_blocare(self) -> None:
+        card = self._card(
+            "Blocarea căilor de ieșire la dictare",
+            "Cât timp dictezi, programul poate tăia căile pe care textul ar putea pleca "
+            "din calculator, ca nimeni să nu-l poată asculta de departe. "
+            "La oprirea dictării, totul revine exact așa cum era.",
+        )
+        self.var_blocare = getattr(self.config, "blocare_dictare", "nimic") or "nimic"
+        if self.var_blocare not in ("nimic", "program", "tot"):
+            self.var_blocare = "nimic"
+        optiuni = (
+            ("nimic", "Fără blocare — lasă calculatorul așa cum e"),
+            ("program", "Blochează doar D&TED (regulă de firewall doar pe acest program)"),
+            ("tot", "Blochează tot calculatorul (internet + USB + Bluetooth)"),
+        )
+        self._casute_blocare: list[tuple[str, QCheckBox]] = []
+        for cod, text in optiuni:
+            rb = QCheckBox(text)
+            rb.setFont(fonturi("baza"))
+            rb.setChecked(cod == self.var_blocare)
+            rb.toggled.connect(lambda checked, c=cod: self._seteaza_blocare(c, checked))
+            self._casute_blocare.append((cod, rb))
+            card.layout().addWidget(rb)
+        nota = QLabel(
+            "„Tot calculatorul” cere o confirmare Windows (fereastră albastră) la pornirea "
+            "dictării, pentru că schimbă regulile de rețea. Dacă răspunzi «Nu», dictarea "
+            "pornește oricum, doar fără blocare."
+        )
+        nota.setFont(fonturi("mica"))
+        seteaza_rol(nota, "secundar")
+        nota.setWordWrap(True)
+        card.layout().addWidget(nota)
+        self.var_avertizari = all(
+            bool(getattr(self.config, cheie, True))
+            for cheie in (
+                "avertizeaza_internet",
+                "avertizeaza_wifi",
+                "avertizeaza_bluetooth",
+                "avertizeaza_stick",
+            )
+        )
+        self._rand_da_nu(
+            card,
+            "var_avertizari",
+            "Avertizarea roșie când internetul e pornit (o poți opri și din fereastra ei)",
+            self.var_avertizari,
+        )
+
+    def _seteaza_blocare(self, cod: str, checked: bool) -> None:
+        if not checked:
+            return
+        self.var_blocare = cod
+        for c, rb in self._casute_blocare:
+            if c != cod:
+                rb.blockSignals(True)
+                rb.setChecked(False)
+                rb.blockSignals(False)
 
     def _rand_transcriere(self) -> None:
         card = self._card(
@@ -367,7 +696,47 @@ class FereastraSetari(QDialog):
         self.buton_cuda.setFont(fonturi("baza"))
         self.buton_cuda.clicked.connect(self._descarca_cuda)
         card.layout().addWidget(self.buton_cuda)
+        # Modelul de transcriere (v0.1.2): cel îmbunătățit pentru română, dacă există.
+        rand_model = QHBoxLayout()
+        et_model = QLabel("Modelul de transcriere:")
+        et_model.setFont(fonturi("baza"))
+        rand_model.addWidget(et_model)
+        self.combo_model = QComboBox()
+        self.combo_model.setFont(fonturi("baza"))
+        self._umple_modele()
+        rand_model.addWidget(self.combo_model, 1)
+        card.layout().addLayout(rand_model)
         self.actualizeaza_placa_video()
+
+    def _umple_modele(self) -> None:
+        """Populează lista de modele instalate (kitul sau folderul de instalare)."""
+        import sys as _sys
+
+        from .. import cai
+        from ..constante import MODELE_TRANSCRIBERE
+
+        radacini = []
+        ambalat = getattr(_sys, "_MEIPASS", None)
+        if ambalat:
+            radacini.append(Path(ambalat))
+        radacini.append(cai.director_model())
+
+        def instalat(nume: str) -> bool:
+            return any(
+                (radacina / "model" / nume / "model.bin").is_file() for radacina in radacini
+            )
+
+        self.combo_model.addItem("Automat — românescul, dacă există", "auto")
+        for nume, descriere in MODELE_TRANSCRIBERE.items():
+            self.combo_model.addItem(descriere if instalat(nume) else f"{descriere} (lipsește)", nume)
+            if not instalat(nume):
+                model_index = self.combo_model.count() - 1
+                self.combo_model.model().item(model_index).setEnabled(False)
+        preferat = getattr(self.config, "model_preferat", "auto") or "auto"
+        for index in range(self.combo_model.count()):
+            if self.combo_model.itemData(index) == preferat:
+                self.combo_model.setCurrentIndex(index)
+                break
 
     def _aplicatia_principala(self):
         widget = self.parent()
@@ -423,36 +792,15 @@ class FereastraSetari(QDialog):
         )
 
     def _rand_da_nu(self, parinte: QWidget, cheie: str, text: str, valoare: bool) -> None:
-        rand = QHBoxLayout()
-        et = QLabel(text)
-        et.setFont(fonturi("baza"))
-        et.setWordWrap(True)
-        et.setMinimumWidth(500)
-        et.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        rand.addWidget(et)
-        rb_da = QCheckBox("Da")
-        rb_nu = QCheckBox("Nu")
-        rb_da.setFont(fonturi("baza"))
-        rb_nu.setFont(fonturi("baza"))
-        rb_da.setChecked(valoare)
-        rb_nu.setChecked(not valoare)
+        """Un rând de setare cu o SINGURĂ bifă (UX-22/redesign): bifat = activat.
 
-        def da_toggled(checked):
-            if checked:
-                rb_nu.setChecked(False)
-            setattr(self, cheie, checked)
-
-        def nu_toggled(checked):
-            if checked:
-                rb_da.setChecked(False)
-            setattr(self, cheie, not checked)
-
-        rb_da.toggled.connect(da_toggled)
-        rb_nu.toggled.connect(nu_toggled)
-        rand.addWidget(rb_da)
-        rand.addWidget(rb_nu)
-        rand.addStretch(1)
-        parinte.layout().addLayout(rand)
+        A înlocuit perechea de casete „Da / Nu”, care ocupa loc degeaba.
+        """
+        bifa = QCheckBox(text)
+        bifa.setFont(fonturi("baza"))
+        bifa.setChecked(bool(valoare))
+        bifa.toggled.connect(lambda bifat: setattr(self, cheie, bifat))
+        parinte.layout().addWidget(bifa)
 
     def _rand_program(self) -> None:
         card = self._card(
@@ -910,6 +1258,10 @@ class FereastraSetari(QDialog):
         except (AttributeError,):
             pass
         try:
+            self.config.model_preferat = self.combo_model.currentData() or "auto"
+        except (AttributeError,):
+            pass
+        try:
             if self.var_salvare_auto:
                 try:
                     cat = int(getattr(self.config, "salvare_automata_secunde", 0))
@@ -956,6 +1308,41 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.termeni = (self.edit_termeni.text() or "").strip()
+        except (AttributeError,):
+            pass
+        try:
+            self.config.cripteaza_documente = self.var_cripteaza.isChecked()
+        except (AttributeError,):
+            pass
+        try:
+            self.config.blocare_dictare = self.var_blocare
+        except (AttributeError,):
+            pass
+        try:
+            self.config.auto_volum = self.var_auto_volum
+        except (AttributeError,):
+            pass
+        try:
+            self.config.scurteaza_pauze = self.var_pauze
+        except (AttributeError,):
+            pass
+        try:
+            self.config.pregateste_audio = self.var_pregateste
+        except (AttributeError,):
+            pass
+        try:
+            self.config.scurtaturi_globale = self.var_scurtaturi
+        except (AttributeError,):
+            pass
+        try:
+            avertizari = self.var_avertizari
+            for cheie in (
+                "avertizeaza_internet",
+                "avertizeaza_wifi",
+                "avertizeaza_bluetooth",
+                "avertizeaza_stick",
+            ):
+                setattr(self.config, cheie, avertizari)
         except (AttributeError,):
             pass
 

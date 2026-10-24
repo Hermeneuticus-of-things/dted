@@ -13,7 +13,7 @@
 #define MyAppDescription "Dictare și transcriere în limba română"
 ; AppId-ul rămâne cel vechi (implicit era AppName), ca actualizarea să recunoască instalarea.
 #define MyAppIdVechi "Dictare&Transcriere Română"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.1.1"
 #define MyAppPublisher "D&TED"
 #define MyAppExeName "DTED.exe"
 #define MyDistDir "..\dist\DTED"

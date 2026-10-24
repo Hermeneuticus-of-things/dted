@@ -419,27 +419,38 @@ def creeaza_mediu(progres: Progres | None, baza: float = 0.10, spatiu: float = 0
     return python_mediu
 
 
+def pyav_compatibil(versiune: str) -> bool:
+    """PyAV 18+ nu este compatibil cu faster-whisper 1.2.1."""
+    try:
+        major = int(versiune.split(".", 1)[0])
+    except (AttributeError, ValueError):
+        return False
+    return major < 18
+
+
 def _biblioteci_in_proces() -> bool:
     """Adevărat dacă bibliotecile de transcriere se pot importa chiar aici."""
     try:
         from . import motor  # noqa: F401  (pregătește întâi bibliotecile CUDA)
+        import av
         import faster_whisper  # noqa: F401
         import imageio_ffmpeg  # noqa: F401
         import numpy  # noqa: F401
         import sounddevice  # noqa: F401
     except Exception:
         return False
-    return True
+    return pyav_compatibil(av.__version__)
 
 
 def _are_biblioteci(python_mediu: Path, are_gpu: bool = False) -> bool:
     """Adevărat dacă în mediu se pot importa toate bibliotecile de care e nevoie.
 
-    Cu faster-whisper nu mai avem nevoie de PyTorch, deci verificăm doar
-    faster-whisper, sounddevice, imageio_ffmpeg și numpy.
+    faster-whisper 1.2.1 cere PyAV sub versiunea 18; verificăm explicit
+    compatibilitatea, ca o instalare veche să nu fie considerată completă.
     """
     verificare = (
-        "import faster_whisper, sounddevice, imageio_ffmpeg, numpy;"
+        "import faster_whisper, sounddevice, imageio_ffmpeg, numpy, av;"
+        "raise SystemExit(1 if int(av.__version__.split('.')[0]) >= 18 else 0)"
     )
     try:
         rezultat = subprocess.run(

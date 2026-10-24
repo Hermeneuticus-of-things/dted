@@ -22,7 +22,7 @@ def _cu_director_temp(functie):
             cai.director_instalare = original
 
 
-def test_ce_s_a_schimbat(tmp_dummy):
+def test_ce_s_a_schimbat():
     def corp(tmp):
         act.scrie_versiuni({"program": {"versiune": "1.0"}, "model": {"versiune": "v1"}})
         manifest = {
@@ -38,7 +38,7 @@ def test_ce_s_a_schimbat(tmp_dummy):
     print("ce_s_a_schimbat OK")
 
 
-def test_backup_aplicare_revenire(tmp_dummy):
+def test_backup_aplicare_revenire():
     def corp(tmp):
         comp = tmp / "program"
         comp.mkdir(parents=True)
@@ -64,7 +64,7 @@ def test_backup_aplicare_revenire(tmp_dummy):
     print("backup + aplica + revine OK")
 
 
-def test_sha256(tmp_dummy):
+def test_sha256():
     with tempfile.TemporaryDirectory() as tmp:
         f = Path(tmp) / "x.bin"
         f.write_bytes(b"abc\n")
@@ -74,7 +74,7 @@ def test_sha256(tmp_dummy):
 
 
 if __name__ == "__main__":
-    test_ce_s_a_schimbat(None)
-    test_backup_aplicare_revenire(None)
-    test_sha256(None)
+    test_ce_s_a_schimbat()
+    test_backup_aplicare_revenire()
+    test_sha256()
     print("TOATE OK")
