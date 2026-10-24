@@ -115,6 +115,18 @@ Procesoarele ARM, de exemplu Snapdragon, nu sunt suportate pentru transcriere. M
 
 ## Instalare Windows
 
+### Dintr-o singură comandă (cel mai simplu)
+
+Deschide **PowerShell** (Start → tastează „powershell” → Enter), copiază rândul de mai jos, lipește cu Enter și așteaptă:
+
+```powershell
+irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
+```
+
+Scriptul descarcă kitul de la versiunea fixă **v0.2.0-beta**, verifică **amprenta SHA-256 a fiecărei bucăți** (refuză instalarea dacă vreo sumă nu se potrivește — nimic nu se instalează înainte ca toate verificările să treacă) și pornește instalatorul. Nu cere drepturi de administrator.
+
+### Sau descarcă manual kitul
+
 Descarcă [kitul offline D&TED v0.1.1](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.1.1). Release-ul conține `Setup.DTED.exe`, `Setup.DTED-1.bin`, `Setup.DTED-2.bin` și `SHA256SUMS.txt`.
 
 **De ce mai multe fișiere?** Programul complet are ~4,3 GB (include modelul de transcriere, ca să meargă fără internet), iar GitHub nu acceptă fișiere mai mari de 2 GB la un download. De aceea instalatorul e tăiat în bucăți: `Setup.DTED.exe` e doar „vrăjitorul" de instalare (mesajele și butoanele), iar cele două fișiere `.bin` conțin efectiv programul. Nu porni niciodată un `.bin` — e doar un pachet citit de `Setup.DTED.exe`.

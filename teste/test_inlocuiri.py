@@ -65,3 +65,12 @@ def test_importul_din_text_si_fisier(monkeypatch):
 
         text_export = inlocuiri.exporta_text(inlocuiri.incarca())
         assert "dragostae -> dragoste" in text_export
+
+
+def test_curățarea_repetitiilor_din_bâlbâiala():
+    from dictare_transcriere_romana import text_ro
+
+    assert text_ro.curata_repetari("Și, nu, nu, nu, nu, nu.") == "Și, nu."
+    assert text_ro.curata_repetari("foarte, foarte bun") == "foarte, foarte bun"
+    assert text_ro.curata_repetari("capra capra capra piatra") == "capra piatra"
+    assert text_ro.curata_repetari("") == ""
