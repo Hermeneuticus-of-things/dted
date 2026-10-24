@@ -190,18 +190,9 @@ class Aplicatie(QMainWindow):
         self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
         self.toolbar.addWidget(self.btn_dictare)
 
-        # Vumetru lângă „Dictează” (cerința 36 / D-6) — vizibil DOAR cât se dictează,
-        # ca bara de sus să rămână aerisită pentru text (redesign UX).
-        self.vumetru_bar = QProgressBar()
-        self.vumetru_bar.setObjectName("nivel")
-        self.vumetru_bar.setProperty("sus", True)
-        self.vumetru_bar.setProperty("chunk", "verde")
-        self.vumetru_bar.setRange(0, 1000)
-        self.vumetru_bar.setValue(0)
-        self.vumetru_bar.setTextVisible(False)
-        self.vumetru_bar.setMinimumWidth(80)
-        self.vumetru_bar.setMaximumWidth(320)
-        self.vumetru_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        # Vumetru cu gradații dB (redesign UX) — vizibil DOAR cât se dictează.
+        # 0 dB = distorsiune; verde -30…-6 dB e zona bună de dictare.
+        self.vumetru_bar = comun.VumetruDb()
         self.vumetru_bar.hide()
         self.toolbar.addWidget(self.vumetru_bar)
         self.vumetru_text = QLabel("")
@@ -680,17 +671,23 @@ class Aplicatie(QMainWindow):
             self._timer_vumetru.start(60)  # ~16 actualizări pe secundă
         else:
             self._timer_vumetru.stop()
-            self.vumetru_bar.setValue(0)
+            from .. import nivele as _nivele
+
+            self.vumetru_bar.pune_db(_nivele.DB_MINIM)
             self.vumetru_text.setText("")
 
     def _actualizeaza_vumetru(self) -> None:
-        """Citește nivelul microfonului și afișează bara + textul (cerința 36)."""
+        """Citește nivelul microfonului și afișează bara + textul, în dB (cerința 36)."""
+        from .. import nivele
+
         pagina = self._pagini.get("dictare")
-        nivel = 0
+        amplitudine = 0.0
         if pagina is not None:
-            nivel = int(min(1.0, getattr(pagina, "nivel_microfon", 0.0)) * 1000)
-        self.vumetru_bar.setValue(nivel)
-        text, chunk = comun.text_nivel(nivel)
+            amplitudine = float(min(1.0, getattr(pagina, "nivel_microfon", 0.0)))
+        db = nivele.amplitudine_in_db(amplitudine)
+        self.vumetru_bar.pune_db(db)
+        self.vumetru_text.setText(nivele.text_db(db))
+        text, chunk = comun.text_nivel(int(amplitudine * 1000))
         if self.vumetru_bar.property("chunk") != chunk:
             self.vumetru_bar.setProperty("chunk", chunk)
             stil = self.vumetru_bar.style()

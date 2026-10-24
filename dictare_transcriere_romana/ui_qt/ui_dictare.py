@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import biblioteca, erori, jurnal, motor, stare as stare_modul, text_ro
+from . import comun
 from .comun import (
     BaraStare,
     Buton,
@@ -109,13 +110,7 @@ class PaginaDictare(QWidget):
         cl.addWidget(titlu)
 
         # Nivel microfon (animatie): bară vizibilă, cu trei culori și text.
-        self.nivel_bar = QProgressBar()
-        self.nivel_bar.setObjectName("nivel")
-        self.nivel_bar.setProperty("chunk", "verde")
-        self.nivel_bar.setRange(0, 1000)
-        self.nivel_bar.setValue(0)
-        self.nivel_bar.setTextVisible(False)
-        self.nivel_bar.setMinimumHeight(18)
+        self.nivel_bar = comun.VumetruDb()
         self.nivel_bar.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
@@ -448,20 +443,61 @@ class PaginaDictare(QWidget):
             pass
 
     def _actualizeaza_nivel(self) -> None:
+        from .. import nivele
+
         if self._microfon is None:
             return
-        nivel = min(1000, int(self._microfon.nivel * 1000))
-        self.nivel_bar.setValue(nivel)
-        text, rol = text_nivel(nivel)
-        if self.nivel_bar.property("chunk") != rol:
-            self.nivel_bar.setProperty("chunk", rol)
-            self.nivel_bar.style().unpolish(self.nivel_bar)
-            self.nivel_bar.style().polish(self.nivel_bar)
-        # Textul de stare („Te aud” / „Prea încet” / „Prea tare” / „Doar zgomot”).
+        amplitudine = min(1.0, float(self._microfon.nivel))
+        db = nivele.amplitudine_in_db(amplitudine)
+        self.nivel_bar.pune_db(db)
+        text, rol = text_nivel(int(amplitudine * 1000))
+        # Textul de stare („Te aud” / „Prea încet” / „Prea tare” / „Doar zgomot”) + dB.
         self.eticheta_nivel.setText(f"● {text}")
         rol_eticheta = {"verde": "verde", "galben": "atentie", "rosu": "pericol"}[rol]
         seteaza_rol(self.eticheta_nivel, rol_eticheta)
-        self.eticheta_nivel_cifra.setText(f"{nivel // 10}%")
+        self.eticheta_nivel_cifra.setText(nivele.text_db(db))
+        self._auto_volum(db)
+
+    def _auto_volum(self, db: float) -> None:
+        """Aduce SINGURĂ volumul microfonului când e risc de distorsiune (0 dB)
+        sau când abia se aude — cerința utilizatorului: anti-distorsiune automată."""
+        from .. import nivele
+
+        self._varf_fereastra = max(getattr(self, "_varf_fereastra", -99.0), db)
+        # Distorsiunea se oprește IMEDIAT (nu așteptăm fereastra).
+        if self._varf_fereastra >= nivele.DB_ATENTIE:
+            self._varf_fereastra = -99.0
+            self._regleaza_volumul("coboara")
+            return
+        acum = time.monotonic()
+        if acum - getattr(self, "_ultima_evaluare_auto", 0.0) < 2.0:
+            return
+        self._ultima_evaluare_auto = acum
+        decizie = nivele.decizie_volum(self._varf_fereastra)
+        self._varf_fereastra = -99.0
+        if decizie:
+            self._regleaza_volumul(decizie)
+
+    def _regleaza_volumul(self, decizie: str) -> None:
+        """Schimbă efectiv volumul Windows al microfonului (cu limite și pauze)."""
+        from .. import nivele
+
+        if not getattr(self.config, "auto_volum", True):
+            return
+        if time.monotonic() - getattr(self, "_ultimul_reglaj_volum", 0.0) < 3.0:
+            return
+        self._ultimul_reglaj_volum = time.monotonic()
+        nou = nivele.aplica_decizia(decizie)
+        if nou is None:
+            return
+        mesaj = (
+            "am coborât nivelul microfonului ca să nu se distorsioneze"
+            if decizie == "coboara"
+            else "am urcat nivelul microfonului — abia se auzea"
+        )
+        self.aplicatie.bara_stare.arata(
+            "Microfon", f"Automat: {mesaj} (acum {int(round(nou * 100))}%).", "lucru"
+        )
 
     # ------------------------------------------------------------------ bucla dictare
 

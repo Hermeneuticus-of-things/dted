@@ -1036,3 +1036,80 @@ def anunta_ascundere(parinte: QWidget) -> None:
         ),
         [("Am înțeles", "principal")],
     )
+
+
+# --------------------------------------------------------------------------- vumetru dB
+
+
+class VumetruDb(QWidget):
+    """Vumetru cu gradații în decibeli, ca la echipamentele de sunet.
+
+    Scara: ``-60 … 0 dB``, unde **0 dB înseamnă plină scara — nivelul la care
+    sunetul se distorsionează (taie)**. Zona verde (-30…-6 dB) e cea bună
+    pentru dictare, galbenă înseamnă prea încet sau aproape tare, roșie
+    înseamnă risc de tăiere. Se desenează singur, fără QSS.
+    """
+
+    def __init__(self, parinte: QWidget | None = None, etichete: bool = True):
+        super().__init__(parinte)
+        from .. import nivele
+
+        self._nivele = nivele
+        self._db = nivele.DB_MINIM
+        self._etichete = etichete
+        self.setMinimumSize(200, 26)
+        self.setMaximumHeight(34)
+
+    def pune_db(self, db: float) -> None:
+        """Actualizează nivelul afișat (în dB; se limitează la scara)."""
+        self._db = max(self._nivele.DB_MINIM, min(0.0, float(db)))
+        self.update()
+
+    def nivel_db(self) -> float:
+        return self._db
+
+    def paintEvent(self, eveniment) -> None:
+        from PySide6.QtGui import QColor, QPainter, QPen
+        from PySide6.QtCore import QRect, Qt
+
+        nivele = self._nivele
+        painter = QPainter(self)
+        latime, inaltime = self.width(), self.height()
+        jos_text = 11 if self._etichete else 0
+        h_bar = inaltime - jos_text
+
+        fundal = self.palette().color(QPalette.ColorRole.Window)
+        painter.fillRect(0, 0, latime, inaltime, fundal)
+
+        def x(db: float) -> int:
+            return int(latime * nivele.db_in_fractie(db))
+
+        # Zonele de culoare (fundalul bării): verde / galben / roșu.
+        painter.fillRect(QRect(x(nivele.DB_MINIM), 1, x(nivele.DB_BUN_JOS) - x(nivele.DB_MINIM), h_bar - 2), QColor(245, 200, 80, 70))
+        painter.fillRect(QRect(x(nivele.DB_BUN_JOS), 1, x(nivele.DB_BUN_SUS) - x(nivele.DB_BUN_JOS), h_bar - 2), QColor(34, 160, 80, 80))
+        painter.fillRect(QRect(x(nivele.DB_BUN_SUS), 1, x(nivele.DB_ATENTIE) - x(nivele.DB_BUN_SUS), h_bar - 2), QColor(245, 200, 80, 70))
+        painter.fillRect(QRect(x(nivele.DB_ATENTIE), 1, x(0.0) - x(nivele.DB_ATENTIE), h_bar - 2), QColor(214, 60, 60, 90))
+
+        # Nivelul curent.
+        zona = nivele.zona_db(self._db)
+        culoare_nivel = {
+            "verde": QColor(21, 128, 61),
+            "galben": QColor(180, 83, 9),
+            "roșu": QColor(185, 28, 28),
+        }[zona]
+        painter.fillRect(QRect(0, 1, x(self._db), h_bar - 2), culoare_nivel)
+
+        # Gradațiile și etichetele (0 e distorsiunea).
+        pen_gri = QPen(QColor(120, 120, 120))
+        painter.setPen(pen_gri)
+        font = self.font()
+        font.setPointSize(7 if self._etichete else 6)
+        painter.setFont(font)
+        for db in (0.0, -3.0, -6.0, -12.0, -20.0, -30.0, -40.0, -60.0):
+            poz = x(db)
+            painter.drawLine(poz, 1, poz, h_bar - 2)
+            if self._etichete and db in (0.0, -6.0, -12.0, -20.0, -30.0, -60.0):
+                eticheta = "0" if db == 0.0 else str(int(db))
+                aliniere = 2 if db > -50 else -12
+                painter.drawText(poz + aliniere, inaltime - 2, eticheta)
+        painter.end()

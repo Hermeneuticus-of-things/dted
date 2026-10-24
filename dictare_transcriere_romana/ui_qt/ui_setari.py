@@ -415,6 +415,13 @@ class FereastraSetari(QDialog):
             "Ajustări opționale pentru sunetul dictat; toate sunt oprite la început, "
             "ca textul să rămână întocmai ce s-a auzit.",
         )
+        self.var_auto_volum = bool(getattr(self.config, "auto_volum", True))
+        self._rand_da_nu(
+            card,
+            "var_auto_volum",
+            "Aduce singur nivelul microfonului ca să nu se distorsioneze (0 dB) și să se audă bine",
+            self.var_auto_volum,
+        )
         self.var_pauze = bool(getattr(self.config, "scurteaza_pauze", False))
         self._rand_da_nu(
             card,
@@ -1330,6 +1337,10 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.blocare_dictare = self.var_blocare
+        except (AttributeError,):
+            pass
+        try:
+            self.config.auto_volum = self.var_auto_volum
         except (AttributeError,):
             pass
         try:
