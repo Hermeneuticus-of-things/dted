@@ -55,6 +55,50 @@ SECUNDE_SUPRAPUNERE = 2.0
 #: Extensiile acceptate.
 FORMATE = "MP3, WAV, M4A, OGG sau FLAC"
 
+#: Extensiile pe care le primește zona de drag & drop (aceleași ca la buton).
+EXTENSII_DROP = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".opus"}
+
+
+def _are_audio(mime) -> bool:
+    """``True`` dacă printre fișierele trase există măcar unul audio."""
+    if not mime.hasUrls():
+        return False
+    return any(
+        url.toLocalFile() and Path(url.toLocalFile()).suffix.lower() in EXTENSII_DROP
+        for url in mime.urls()
+    )
+
+
+class _ZonaDrop(QFrame):
+    """Zona „trage fișierul aici” (UX-28): primește cu adevărat fișiere trase cu mausul."""
+
+    def __init__(self, parinte: QWidget | None = None):
+        super().__init__(parinte)
+        self.setAcceptDrops(True)
+        self.la_primire = None      # apelat cu Path când se dă drumul unui fișier audio
+        self.la_traversare = None   # apelat cu True/False la intrarea/ieșirea mausului
+
+    def dragEnterEvent(self, eveniment):
+        if _are_audio(eveniment.mimeData()):
+            eveniment.acceptProposedAction()
+            if self.la_traversare:
+                self.la_traversare(True)
+
+    def dragLeaveEvent(self, eveniment):
+        if self.la_traversare:
+            self.la_traversare(False)
+
+    def dropEvent(self, eveniment):
+        if self.la_traversare:
+            self.la_traversare(False)
+        for url in eveniment.mimeData().urls():
+            cale = url.toLocalFile()
+            if cale and Path(cale).suffix.lower() in EXTENSII_DROP:
+                eveniment.acceptProposedAction()
+                if self.la_primire:
+                    self.la_primire(Path(cale))
+                return
+
 
 class PaginaTranscriere(QWidget):
     """Ecranul „Transcriere fișier audio”."""
@@ -115,10 +159,12 @@ class PaginaTranscriere(QWidget):
         card_1, corp_1 = self._card(corp, "1. Alege fișierul audio")
         corp_layout.addWidget(card_1)
 
-        # Zona drop (simplificată: etichetă cu border).
-        self.zona_drop = QFrame()
+        # Zona drop: primește fișierele trase cu mausul (UX-28).
+        self.zona_drop = _ZonaDrop()
         self.zona_drop.setObjectName("drop")
         self.zona_drop.setMinimumHeight(120)
+        self.zona_drop.la_primire = self._ia_fisierul
+        self.zona_drop.la_traversare = self._la_traversare_drop
         drop_layout = QVBoxLayout(self.zona_drop)
         self.eticheta_drop = QLabel(
             "Trage fișierul audio aici, sau folosește butonul „Alege fișierul audio“."
@@ -320,6 +366,13 @@ class PaginaTranscriere(QWidget):
         if stil is not None:
             stil.unpolish(self.zona_drop)
             stil.polish(self.zona_drop)
+
+    def _la_traversare_drop(self, deasupra: bool) -> None:
+        """Evidențierea zonei cât timp un fișier e tras deasupra ei."""
+        if deasupra:
+            self._pune_stare_drop("verde")
+        elif self._cale is None:
+            self._pune_stare_drop("")
 
     def _seteaza_mod_text(self, adauga: bool) -> None:
         self._adauga_la_text = bool(adauga)
