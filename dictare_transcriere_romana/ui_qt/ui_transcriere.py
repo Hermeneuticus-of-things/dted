@@ -17,6 +17,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -211,26 +212,14 @@ class PaginaTranscriere(QWidget):
         card_2, corp_2 = self._card(corp, "2. Spune ce se face cu textul")
         corp_layout.addWidget(card_2)
 
-        rand_text = QHBoxLayout()
-        self.buton_inlocuieste = Buton(
-            corp_2,
-            "Înlocuiește textul de pe ecran",
-            lambda: self._seteaza_mod_text(False),
-            fel="principal",
-            latime=320,
-            inaltime=40,
+        # Redesign UX: o singură bifă în loc de două butoane mari.
+        self.bifa_adauga = QCheckBox(
+            "Adaugă textul nou la cel de pe ecran (debifat: îl înlocuiește)"
         )
-        rand_text.addWidget(self.buton_inlocuieste)
-        self.buton_adauga = Buton(
-            corp_2,
-            "Adaugă la textul de pe ecran",
-            lambda: self._seteaza_mod_text(True),
-            latime=320,
-            inaltime=40,
-        )
-        rand_text.addWidget(self.buton_adauga)
-        rand_text.addStretch(1)
-        corp_2.layout().addLayout(rand_text)
+        self.bifa_adauga.setFont(fonturi("baza"))
+        self.bifa_adauga.setChecked(bool(self._adauga_la_text))
+        self.bifa_adauga.toggled.connect(self._seteaza_mod_text)
+        corp_2.layout().addWidget(self.bifa_adauga)
 
         et_mod = eticheta(
             corp_2,
@@ -380,16 +369,6 @@ class PaginaTranscriere(QWidget):
 
     def _seteaza_mod_text(self, adauga: bool) -> None:
         self._adauga_la_text = bool(adauga)
-        self.buton_adauga.set_activ(adauga)
-        self.buton_inlocuieste.set_activ(not adauga)
-        if adauga:
-            self.buton_adauga._fel = "principal"
-            self.buton_inlocuieste._fel = "secundar"
-        else:
-            self.buton_adauga._fel = "secundar"
-            self.buton_inlocuieste._fel = "principal"
-        self.buton_adauga._aplica_stil()
-        self.buton_inlocuieste._aplica_stil()
 
     def _seteaza_limba(self, limba: str) -> None:
         # Româna e implicită și forțată; nu există opțiune de detectare automată
