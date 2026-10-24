@@ -52,9 +52,11 @@ WHISPER_NUME_RO = "large-v3-turbo-ro-ct2"
 WHISPER_CT2_REPO = "deepdml/faster-whisper-large-v3-turbo-ct2"
 
 #: Modelele de transcriere cunoscute (folder → descriere pentru utilizator).
+#: Măsurat pe voce românească de carte (XTTS-v2-ro, WER): standard 15% vs
+#: fine-tunat 37% — fine-tunatul taie textul lung (antrenat pe clipuri de 5 s).
 MODELE_TRANSCRIBERE = {
-    WHISPER_NUME_RO: "Îmbunătățit pentru română (recomandat)",
-    WHISPER_NUME: "Standard multilingv (Whisper large-v3-turbo)",
+    WHISPER_NUME: "Standard — recomandat pentru text lung (cărți)",
+    WHISPER_NUME_RO: "Fine-tunat RO — doar pentru clipuri scurte (taie textul lung)",
 }
 
 #: Fișierele care compun modelul CTranslate2 (descărcate la instalare).

@@ -20,11 +20,12 @@ block_cipher = None
 # Căi către datele de împachetat (kit offline complet, cerința 9 / N-7 V1).
 _SITE = sysconfig.get_paths()["purelib"]  # .venv/Lib/site-packages
 _LOCALAPPDATA = os.environ.get("LOCALAPPDATA", "")
-# v0.1.2: kitul poartă modelul îmbunătățit pentru română (large-v3-turbo-ro-ct2);
-# dacă lipsește pe disc, se împachetează modelul standard de bază.
+# v0.1.2: kitul poartă modelul STANDARD (cel mai bun pe text lung de carte,
+# măsurat WER 15% vs 37% pentru fine-tunatul RO); dacă lipsește pe disc,
+# se împachetează fine-tunatul românesc.
 _MODELE_KIT = [
-    ("large-v3-turbo-ro-ct2", "large-v3-turbo-ro-ct2"),
     ("large-v3-turbo-ct2", "large-v3-turbo-ct2"),
+    ("large-v3-turbo-ro-ct2", "large-v3-turbo-ro-ct2"),
 ]
 
 datas = [('dictare_transcriere_romana/iconita_dictare.ico', 'dictare_transcriere_romana')]
