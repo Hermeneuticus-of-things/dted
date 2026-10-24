@@ -47,6 +47,10 @@ irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-boo
 <img src="docs/img/setari-sunet.png" alt="Setări cu bife și reglaj automat" width="380">
 </div>
 
+## Folosit din alte programe
+
+D&TED poate lucra și pentru alte programe, fără fereastră. Scribner (programul de scris cărți) îl poate folosi pentru dictare direct în carte și pentru transcrierea fișierelor audio. Detalii: [`docs/SERVICIU.md`](docs/SERVICIU.md).
+
 ## 📥 Instalare
 
 <div align="center">

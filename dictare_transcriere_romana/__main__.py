@@ -10,6 +10,9 @@ Aici se hotărăște ce face programul când este pornit:
   depanare, fără să se deschidă vreo fereastră);
 * cu ``--transcrie fisier.mp3 --format docx`` se transcrie un fișier fără
   interfață, pentru cine vrea să folosească programul din linia de comandă;
+* cu ``--serviciu`` programul lucrează pentru alt program (de exemplu Scribner): primește
+  comenzi și trimite textul prin intrarea și ieșirea standard, câte un JSON pe linie
+  (vezi ``serviciu.py``); merge și când fereastra D&TED este deja deschisă;
 * cu ``--dezinstaleaza`` se scoate programul de pe calculator, cu întrebare în
   fereastra programului.
 
@@ -56,6 +59,7 @@ def _argumente(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dezinstaleaza", action="store_true", help="scoate programul de pe calculator")
     parser.add_argument("--verifica", action="store_true", help="scrie în consolă ce are calculatorul")
     parser.add_argument("--pregateste", action="store_true", help="descarcă modelul (și CUDA, cu placă NVIDIA), fără ferestre")
+    parser.add_argument("--serviciu", action="store_true", help="lucrează pentru alt program (Scribner): comenzi JSON pe intrarea standard")
     parser.add_argument("--transcrie", metavar="FIȘIER", help="transcrie un fișier audio, fără interfață")
     parser.add_argument(
         "--format",
@@ -197,6 +201,12 @@ def main(argv: list[str] | None = None) -> int:
     _pregateste_consola()
     argumente = _argumente(argv)
     _pune_folderele(argumente)
+
+    # Modul serviciu (Scribner): fără ferestre, deci și lângă fereastra deja deschisă.
+    if argumente.serviciu:
+        from . import serviciu
+
+        return serviciu.ruleaza()
 
     # Cerinta 44: o singura instanta. Daca programul ruleaza deja, iesim.
     try:
