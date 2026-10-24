@@ -221,7 +221,7 @@ class Aplicatie(QMainWindow):
         # ca în aplicațiile profesionale; pagina principală rămâne doar cu des folositele.
         self.menu_instrumente = QMenu(self)
         self.menu_instrumente.addAction(
-            "🔊 Verifică sunetul", lambda: self.arata_ecran("sunet")
+            "🎤 Testează microfonul și boxele", lambda: self.arata_ecran("sunet")
         )
         self.menu_instrumente.addAction(
             "📁 Fișierele mele", lambda: self.arata_ecran("fisiere")
@@ -263,16 +263,16 @@ class Aplicatie(QMainWindow):
         self.menu_ajutor.addAction("ℹ &Despre", self._despre)
 
         btn_ajutor = QToolButton()
-        btn_ajutor.setText("&Ajutor ▾")
+        btn_ajutor.setText("❓")
         btn_ajutor.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_ajutor.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         btn_ajutor.setMenu(self.menu_ajutor)
-        btn_ajutor.setToolTip("Ajutor (F1)")
+        btn_ajutor.setToolTip("Ajutor (F1) — întrebări, tur ghidat, despre")
         self.toolbar.addWidget(btn_ajutor)
 
         # Buton „⚙ Setări”
         btn_setari = QToolButton()
-        btn_setari.setText("⚙ &Setări")
+        btn_setari.setText("⚙")
         btn_setari.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_setari.setToolTip("Setări (Ctrl+,)")
         btn_setari.clicked.connect(self.arata_ecran_setari)
@@ -683,7 +683,16 @@ class Aplicatie(QMainWindow):
             from .. import nivele as _nivele
 
             self.vumetru_bar.pune_db(_nivele.DB_MINIM)
-            self.vumetru_text.setText("")
+            self.vumetru_text.setText("microfon oprit")
+            # rămâne vizibil 6 s și după oprire, ca să-l observi liniștit
+            def ascunde_daca_inactiv() -> None:
+                pagina = self._pagini.get("dictare")
+                inactiv = pagina is None or not getattr(pagina, "_activ", False)
+                if inactiv:
+                    self.vumetru_bar.hide()
+                    self.vumetru_text.hide()
+
+            QTimer.singleShot(6000, ascunde_daca_inactiv)
 
     def _actualizeaza_vumetru(self) -> None:
         """Citește nivelul microfonului și afișează bara + textul, în dB (cerința 36)."""

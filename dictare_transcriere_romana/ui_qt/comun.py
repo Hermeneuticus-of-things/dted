@@ -1057,8 +1057,8 @@ class VumetruDb(QWidget):
         self._nivele = nivele
         self._db = nivele.DB_MINIM
         self._etichete = etichete
-        self.setMinimumSize(200, 26)
-        self.setMaximumHeight(34)
+        self.setMinimumSize(260, 30)
+        self.setMaximumHeight(38)
 
     def pune_db(self, db: float) -> None:
         """Actualizează nivelul afișat (în dB; se limitează la scara)."""
