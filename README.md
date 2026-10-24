@@ -43,8 +43,13 @@ irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-boo
 | 🐞 **Raportare integrată** | Erorile din jurnal pleacă direct pe GitHub, fără text din carte și fără căi personale |
 
 <div align="center">
-<img src="docs/img/vumetru-db.png" alt="Vumetru cu gradații dB" width="380">
-<img src="docs/img/setari-sunet.png" alt="Setări cu bife și reglaj automat" width="380">
+
+**Vumetrul în dB, integrat în interfață** (bară sus în timpul dictării + ecranul de dictare):
+
+<img src="docs/img/vumetru-interfat.png" alt="Vumetrul dB integrat în interfața de dictare" width="820">
+
+<br><img src="docs/img/setari-sunet.png" alt="Setări cu bife și reglaj automat" width="560">
+
 </div>
 
 ## Folosit din alte programe
