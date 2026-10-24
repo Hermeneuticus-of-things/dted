@@ -252,6 +252,7 @@ class Aplicatie(QMainWindow):
         # Meniu „Ajutor ▾”
         self.menu_ajutor = QMenu(self)
         self.menu_ajutor.addAction("? &Ajutor", lambda: self._ajutor(), QKeySequence("F1"))
+        self.menu_ajutor.addAction("🐞 Raportează o problemă", self._deschide_raport)
         self.menu_ajutor.addAction("🎯 Tur ghidat", self._porneste_tur)
         self.menu_ajutor.addSeparator()
         self.menu_ajutor.addAction(
@@ -329,6 +330,14 @@ class Aplicatie(QMainWindow):
         )
         self.btn_confidentialitate.clicked.connect(self._la_confidentialitate)
         jos_layout.addWidget(self.btn_confidentialitate)
+
+        # Mesajul discret de la eroare: „A apărut o problemă. Trimite raportul?”
+        self.buton_raport = QToolButton()
+        self.buton_raport.setText("⚠ A apărut o problemă — trimite raportul?")
+        self.buton_raport.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.buton_raport.clicked.connect(self._la_eroare_raport)
+        self.buton_raport.hide()
+        jos_layout.addWidget(self.buton_raport)
 
         layout.addWidget(self._jos)
 
@@ -809,6 +818,39 @@ class Aplicatie(QMainWindow):
             if aplicatie is not None:
                 aplicatie.installNativeEventFilter(self._filtru_hotkey)
 
+    def _deschide_raport(self, descriere: str = "") -> None:
+        """Ajutor → Raportează o problemă (detaliile tehnice vin din jurnal)."""
+        from .ui_raport import FereastraRaport
+
+        self.buton_raport.hide()
+        try:
+            FereastraRaport(self, descriere_initiala=descriere).exec()
+        except Exception as exc:
+            jurnal.atentionare(f"Fereastra de raport nu s-a putut deschide: {exc}")
+
+    def _la_eroare_raport(self) -> None:
+        """Un clic pe mesajul discret de eroare → fereastra de raport."""
+        self._deschide_raport()
+
+    def _la_eroare_jurnal(self, mesaj: str) -> None:
+        """Chemată de jurnal la fiecare EROARE: arată discret butonul de raport.
+
+        Poate veni din orice fir de execuție — trecem în firul interfeței.
+        """
+        def arata() -> None:
+            self.buton_raport.setToolTip(mesaj[:300])
+            self.buton_raport.show()
+            self.bara_stare.arata(
+                "Problemă", "a apărut o eroare (salvată în jurnal). Trimite raportul?",
+                "problema",
+            )
+            QTimer.singleShot(60_000, self.buton_raport.hide)
+
+        try:
+            QTimer.singleShot(0, arata)
+        except Exception:
+            pass
+
     def _la_scurtatura_globala(self) -> None:
         """Ctrl+Alt+D, apăsat în orice program: adu fereastra și comută dictarea."""
         self.show()
@@ -860,6 +902,7 @@ class Aplicatie(QMainWindow):
             self._timer_retea.start(60000)
         self._actualizeaza_indicator_retea()
         self._porneste_scurtaturile_globale()
+        jurnal.adauga_observator_eroare(self._la_eroare_jurnal)
         QTimer.singleShot(800, self._anuleaza_blocari_vechi_lapornire)
 
     def _anuleaza_blocari_vechi_lapornire(self) -> None:

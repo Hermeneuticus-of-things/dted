@@ -4,17 +4,29 @@
   <img src="dictare_transcriere_romana/iconita_dictare.png" alt="Microfonul D&TED" width="112">
 </p>
 
-<h1 align="center">D&TED</h1>
+<h1 align="center">D&amp;TED</h1>
 
 <p align="center"><strong>Dictare și transcriere în limba română, direct pe calculatorul tău.</strong></p>
 <p align="center">Vorbești la microfon sau alegi un fișier audio. Revizuiești textul, îl editezi și îl salvezi.</p>
 
 <p align="center">
-  <a href="https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.1.1">Descarcă kitul offline · v0.1.1</a>
+  <a href="https://github.com/Hermeneuticus-of-things/dted/releases"><img src="https://img.shields.io/github/v/release/Hermeneuticus-of-things/dted?include_prereleases&label=versiune&color=2563eb" alt="Versiune"></a>
+  &nbsp;
+  <a href="https://github.com/Hermeneuticus-of-things/dted/actions"><img src="https://img.shields.io/github/actions/workflow/status/Hermeneuticus-of-things/dted/ci.yml?label=teste&logo=github" alt="Teste"></a>
+  &nbsp;
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?logo=windows11" alt="Platformă">
+  &nbsp;
+  <img src="https://img.shields.io/badge/procesare-100%25%20local%C4%83-16a34a" alt="Procesare locală">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.1.2">⬇ Descarcă kitul offline · v0.1.2-beta</a>
   &nbsp;·&nbsp;
   <a href="#instalare-windows">Instalare</a>
   &nbsp;·&nbsp;
-  <a href="#rulare-din-codul-sursă">Cod sursă</a>
+  <a href="#-ai-găsit-o-problemă">Raportează o problemă</a>
+  &nbsp;·&nbsp;
+  <a href="#-ce-urmează">Ce urmează</a>
 </p>
 
 <p align="center"><sub>Windows 10/11 · 64 de biți · Whisper large-v3-turbo · procesare locală</sub></p>
@@ -44,6 +56,35 @@ Recunoașterea vocală se face local cu Whisper prin faster-whisper și CTransla
 
 - **„program”** blochează accesul la internet pentru D&TED prin Windows Firewall.
 - **„tot”** blochează internetul pentru calculator, precum și stocarea USB, Bluetooth-ul și Wi-Fi-ul. Necesită drepturi de administrator și afectează întregul calculator.
+
+## 🐞 Ai găsit o problemă?
+
+Nimic de configurat, niciun cont de făcut. Programul își face singur raportul.
+
+**Când apare o eroare**, jos în fereastră apare discret: „⚠ A apărut o problemă — trimite raportul?”. Un clic și fereastra de raport se deschide **cu detaliile tehnice deja completate** din jurnalul programului: mesajul, locul și ora erorii. Tu scrii doar, cu cuvintele tale, ce făceai în momentul acela și apeși **„Trimite pe GitHub”** — raportul ajunge direct la proiect.
+
+Poți deschide fereastra oricând și din meniul **Ajutor → 🐞 Raportează o problemă**.
+
+Ce trimite — și ce nu trimite — raportul:
+
+| ✔ Se trimite | ✘ NU se trimite |
+|---|---|
+| Descrierea ta, cu cuvintele tale | Textul dicat sau transcris (din carte) |
+| Ultimele erori din jurnal (mesaj, loc, oră) | Căile complete de pe disc (sunt scurtate: `%UTILIZATOR%`) |
+| Versiunea programului și a Windows-ului | Setările, parolele, cheile, numele de utilizator |
+
+Fereastra arată **exact** ce se trimite — nimic altceva nu pleacă din calculatorul tău. Dacă preferi, ai butonul „Copiază raportul” și îl trimiți cum vrei tu (poate și ca e-mail).
+
+---
+
+## 🚀 Ce urmează
+
+- 🔊 **Redarea sunetului în editor, sincronizată cu semnele [mm:ss]** — asculți exact bucata din jurul unui marcaj și o corectezi „ascultând” (cerințele 32–35).
+- 📦 **Instalatorul online mic (V2)** — varianta care descarcă de pe internet doar dintr-o listă fixă de versiuni, cu sume verificate (N-7).
+- 🧠 **Modelul [eek/whisper-turbo-ro-en](https://huggingface.co/eek/whisper-turbo-ro-en)** — cel mai bun raportat pe română vorbită; îl aducem ca opțiune imediat ce autorul aprobă accesul.
+- 🎛 **Tur de finisaj UX**: scalare pe ecrane mici, ordinea tastării Tab/Narrator, mesajele de eroare unificate.
+
+---
 
 ## Cerințe
 
