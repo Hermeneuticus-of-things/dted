@@ -406,13 +406,36 @@ class Aplicatie(QMainWindow):
             self._deschide_document_ales(Path(cale))
 
     def _deschide_document_ales(self, cale: Path) -> None:
-        """Deschide un document text (docx/odt/txt/…) în editorul integrat."""
-        try:
-            from .. import documente
-            text = documente.citeste_text(cale)
-        except Exception as exc:
-            comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
-            return
+        """Deschide un document text (docx/odt/txt/…) în editorul integrat.
+
+        Documentele criptate (N-5) se deschid cu parola: se decriptează într-un
+        fișier temporar care se șterge imediat după citire.
+        """
+        from .. import criptare, documente
+
+        if criptare.este_criptat(cale):
+            cheie = self._cheie_criptare()
+            if cheie is None:
+                self.bara_stare.arata(
+                    "Încuiat", "documentul e criptat și nu s-a putut deschide fără parolă.", "problema"
+                )
+                return
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as folder:
+                temporar = Path(folder) / cale.name
+                try:
+                    criptare.decripteaza_fisier(cheie, cale, temporar)
+                    text = documente.citeste_text(temporar)
+                except Exception as exc:
+                    comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
+                    return
+        else:
+            try:
+                text = documente.citeste_text(cale)
+            except Exception as exc:
+                comun.dialog_eroare(self, "Nu am putut deschide documentul", exc)
+                return
         self.editor.set_text(text)
         self.stare.text = text
         self.stare.document_cale = Path(cale)
@@ -431,10 +454,64 @@ class Aplicatie(QMainWindow):
             biblioteca.nume_legat(self.stare.marca or "document", f".{fel}"),
         )
         documente.salveaza(text, destinatie, titlu=self.stare.marca or "Document")
-        self.bara_stare.arata(
-            "Succes", f"Document salvat: {destinatie.name}", "succes"
-        )
+        if self._cripteaza_daca_cere(destinatie):
+            self.bara_stare.arata(
+                "Succes", f"Document salvat și criptat: {destinatie.name}", "succes"
+            )
+        else:
+            self.bara_stare.arata(
+                "Succes", f"Document salvat: {destinatie.name}", "succes"
+            )
         self._salvare_automata_fisier(destinatie)
+
+    def _cheie_criptare(self) -> bytes | None:
+        """Cheia maestră a seifului; cere parola o singură dată pe sesiune (N-5/N-6)."""
+        if getattr(self, "_cheie_seif", None):
+            return self._cheie_seif
+        from .. import parola as modul_parola
+
+        seif = modul_parola.incarca_seif()
+        if seif is None:
+            return None
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+
+        for incercare in range(3):
+            from ..constante import PAROLA_IMPLICITA
+
+            text, ok = QInputDialog.getText(
+                self,
+                "Parola documentelor",
+                "Scrie parola cu care s-au criptat documentele\n"
+                "(parola implicită „Dictare” e deja scrisă):",
+                QLineEdit.EchoMode.Password,
+                PAROLA_IMPLICITA if incercare == 0 else "",
+            )
+            if not ok:
+                return None
+            try:
+                self._cheie_seif = modul_parola.deschide_cu_parola(seif, text)
+                return self._cheie_seif
+            except modul_parola.ParolaGresita:
+                if incercare == 2:
+                    comun.anunta(
+                        self,
+                        "Parola nu este corectă",
+                        "Trei încercări fără succes. Încearcă din nou mai târziu "
+                        "sau folosește cheia de recuperare din Setări.",
+                    )
+        return None
+
+    def _cripteaza_daca_cere(self, destinatie: Path) -> bool:
+        """Criptează pe loc documentul abia salvat, dacă e setat (N-5)."""
+        if not getattr(self.configurare, "cripteaza_documente", False):
+            return False
+        cheie = self._cheie_criptare()
+        if cheie is None:
+            return False
+        from .. import criptare
+
+        criptare.cripteaza_fisier(cheie, destinatie, destinatie)
+        return True
 
     def _salveaza_ca(self) -> None:
         from .comun import alege_folder
@@ -449,9 +526,14 @@ class Aplicatie(QMainWindow):
             marca = biblioteca.marca_din_nume(self.stare.marca or "document")
             destinatie = biblioteca.nume_unic(Path(cale), f"{marca}.docx")
             documente.salveaza(text, destinatie, titlu=self.stare.marca or "Document")
-            self.bara_stare.arata(
-                "Succes", f"Document salvat: {destinatie.name}", "succes"
-            )
+            if self._cripteaza_daca_cere(destinatie):
+                self.bara_stare.arata(
+                    "Succes", f"Document salvat și criptat: {destinatie.name}", "succes"
+                )
+            else:
+                self.bara_stare.arata(
+                    "Succes", f"Document salvat: {destinatie.name}", "succes"
+                )
 
     def _exporta_pdf(self) -> None:
         text = self.editor.text()
@@ -1101,6 +1183,7 @@ class Aplicatie(QMainWindow):
                 self, "Nu am putut salva documentul", exc
             )
             return False
+        self._cripteaza_daca_cere(destinatie)
         self.stare.document_cale = destinatie
         self.stare.marcheaza_salvat()
         return True

@@ -52,6 +52,8 @@ class Config:
     cuda_stare: str = ""                  # bibliotecile plăcii video: "", "ok", "esuat", "refuzat"
     cuda_stare_data: str = ""             # când s-a hotărât starea de mai sus (AAAA-LL-ZZ HH:MM)
     cuda_stare_detaliu: str = ""          # motivul, dacă descărcarea a eșuat
+    cripteaza_documente: bool = False     # salvează documentele criptat (AES-256, cu parolă)
+    blocare_dictare: str = "nimic"        # la dictare: „nimic”, „program” (doar D&TED) sau „tot”
 
 
 def incarca() -> Config:
