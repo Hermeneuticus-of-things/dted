@@ -1,64 +1,51 @@
-# Modelele de transcriere pentru limba română
+# Modelele de transcriere pentru limba română — măsurători și recomandări
 
-## Ce folosește D&TED (v0.1.2-beta)
+## Ce am măsurat (24.10.2026, placă video NVIDIA dedicată (NVIDIA, CUDA))
 
-Din v0.1.2, programul folosește implicit **modelul îmbunătățit pentru română**:
-[`large-v3-turbo-ro-ct2`](https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro) —
-Whisper large-v3-turbo (OpenAI) **fine-tunat pe 47 de ore de română** din Common Voice 20
-(41 431 de înregistrări), de TransferRapid.
+Mostre: voce românească sintetizată cu [XTTS-v2-romanian-v2](https://huggingface.co/eduardem/xtts-v2-romanian-v2)
+(vocile Georgel/Costel, cele mai bune), un pasaj de carte de 30 s + 3 propoziții scurte.
+Text cunoscut → WER (rata cuvintelor greșite) calculat cuvânt cu cuvânt.
 
-Rezultatele autorului pe setul de test Common Voice 20 (română):
+| Model | WER total | Carte (30 s) | Scurte | Viteză (30 s audio) |
+|---|---|---|---|---|
+| **Whisper large-v3-turbo (standard)** | **15,0%** | 12,2% | 0–50% | 2,5 s |
+| large-v3-turbo_ro (fine-tunat RO, [TransferRapid](https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro)) | 37,0% | 47,3% | 0–12% | 0,7 s |
 
-| Model | WER (cuvinte greșite) | CER (caractere greșite) |
-|---|---|---|
-| Whisper large-v3-turbo (original) | 20,72% | 6,50% |
-| **large-v3-turbo_ro (fine-tunat)** | **4,69%** | **1,22%** |
+Pe fișierul uman curat (18 s, dictare de probă): standard **0%** WER.
 
-Conversia în formatul CTranslate2 (float16) a fost făcută local cu
-`ct2-transformers-converter`. Licența modelului: **CC-BY-NC-4.0** (utilizare
-necomercială — pentru uz personal, ca acest program, este permisă).
+## Concluzia (pentru dictare de CARTE)
 
-Alegerea modelului se schimbă din **Setări → „Cum transcrie” → Modelul de
-transcriere**: „Automat” (românescul, dacă există), românescul sau cel standard
-multilingv. Diacriticele cu sedilă (ş/ţ) pe care le produce uneori modelul se
-repară automat la afișare de către program (`text_ro.repara_diacritice`).
+**Modelul standard (large-v3-turbo) rămâne implicit.** Fine-tunatul
+românesc, deși are WER 4,69% pe benchmark-ul Common Voice 20 (clipuri de ~5 s),
+**taie textul lung**: oprește generația devreme (antrenat doar pe clipuri scurte)
+— inacceptabil pentru dictarea de cărți. E disponibil ca opțiune în
+Setări → „Cum transcrie”, pentru clipuri scurte.
 
-## Alternativa mai bună (dacă obții acces)
+Alegerea se face din **Setări → „Cum transcrie” → Modelul de transcriere**;
+„Automat” = standardul. Diacriticele cu sedilă (ş/ţ) se repară automat la
+afișare (`text_ro.repara_diacritice`).
 
-[`eek/whisper-turbo-ro-en`](https://huggingface.co/eek/whisper-turbo-ro-en) este,
-la data de 2026-10-24, cel mai bun model local pentru româna vorbită curentă:
-WER mediu **7,9** pe 9 seturi de test românești (vs 12,1 pentru large-v3),
-antrenat pe română conversațională, licență MIT, include o conversie CTranslate2.
-Modelul este **cu acces restricționat** (gated): intri pe pagina lui, apeși
-„Request access”, iar după aprobarea autorului descarci folderul
-`ctranslate2-int8` și îl copiezi în
-`%LOCALAPPDATA%\Dictare&Transcriere Română\model\whisper-turbo-ro-en-ct2`
-(cu `model.bin` și `tokenizer.json` în el) — apoi apare singur în Setări.
+## Ce am încercat și am reținut
 
-## Cum îți faci propriul fine-tuning pentru română
+- **[TransferRapid/whisper-large-v3-turbo_ro](https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro)** — descărcat, convertit CT2 float16, inclus ca opțiune. Licență CC-BY-NC-4.0 (necomercial).
+- **[eek/whisper-turbo-ro-en](https://huggingface.co/eek/whisper-turbo-ro-en)** — cel mai bun raportat pe română vorbită (WER 7,9 mediu pe 9 seturi, MIT, conversie CT2 inclusă), dar **cu acces restricționat**: cere „Request access” pe pagina HuggingFace. După aprobare: descarcă folderul `ctranslate2-int8` și copiază-l în `%LOCALAPPDATA%\Dictare&Transcriere Română\model\whisper-turbo-ro-en-ct2` — apare singur ca opțiune (adaugă-l în `MODELE_TRANSCRIBERE`).
+- **[Systran/faster-whisper-large-v3](https://huggingface.co/Systran/faster-whisper-large-v3)** — modelul complet large-v3 (nu turbo): potențial mai precis, de ~2–3× mai lent; de testat ca opțiune viitoare.
 
-Rețetă scurtă (detalii: [ghidul oficial HuggingFace](https://huggingface.co/blog/fine-tune-whisper)):
+## Cum îți faci propriul fine-tuning (pentru text lung de carte)
 
-1. **Date**: [Common Voice română](https://commonvoice.mozilla.org/ro) (20+),
-   [eduardem/romanian-speech-v2](https://huggingface.co/datasets/eduardem/romanian-speech-v2)
-   (360 h) sau propriile înregistrări (fișier CSV: cale audio + text).
-2. **Antrenare** (LoRA sau complet, pe o placă video cu ≥16 GB):
-   `transformers` + `peft` + `datasets`, model de bază `openai/whisper-large-v3-turbo`,
-   2–5 epoci, learning rate ~1e-5.
-3. **Conversie în formatul programului**:
-   ```bash
-   ct2-transformers-converter --model modelul-meu-ro --output_dir large-v3-turbo-ro-ct2 --quantization float16
-   ```
-   plus `tokenizer.json`/`preprocessor_config.json` copiate din modelul de bază.
-4. **Instalare**: copiază folderul rezultat în
-   `%LOCALAPPDATA%\Dictare&Transcriere Română\model\` și alege-l din Setări.
+Rețetă (detalii: [ghidul HuggingFace](https://huggingface.co/blog/fine-tune-whisper)):
 
-## Surse
+1. **Date**: [Common Voice română](https://commonvoice.mozilla.org/ro) + texte lungi proprii
+   (cel mai important: clipuri **lungi**, ca să nu învețe să taie); sau
+   [eduardem/romanian-speech-v2](https://huggingface.co/datasets/eduardem/romanian-speech-v2) (360 h).
+2. **Antrenare**: `transformers` + `peft` (LoRA), bază `openai/whisper-large-v3-turbo`,
+   2–5 epoci, lr ~1e-5, pe GPU ≥16 GB.
+3. **Conversie**: `ct2-transformers-converter --model modelul-ro --output_dir model-ro-ct2 --quantization float16`
+   (+ `tokenizer.json`/`preprocessor_config.json` din modelul de bază).
+4. **Instalare**: folderul în `%LOCALAPPDATA%\Dictare&Transcriere Română\model\`, apoi apare în Setări.
 
-- [TransferRapid/whisper-large-v3-turbo_ro](https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro)
-- [eek/whisper-turbo-ro-en](https://huggingface.co/eek/whisper-turbo-ro-en)
-- [Systran/faster-whisper-large-v3](https://huggingface.co/Systran/faster-whisper-large-v3)
-- [Fine-Tune Whisper (HuggingFace)](https://huggingface.co/blog/fine-tune-whisper)
-- [faster-whisper (CTranslate2)](https://github.com/SYSTRAN/faster-whisper)
-- [Modern Speech Recognition for Romanian Language (MDPI 2026)](https://www.mdpi.com/2076-3417/16/4/1928)
-- [gigant/whisper-medium-romanian](https://huggingface.co/gigant/whisper-medium-romanian)
+## Probele de acuratețe (reproductibile)
+
+Mostrele sunt în `<folder local>\probe_ro\` (generate local), iar scriptul de WER
+compară oricare două foldere de modele. TTS-ul de generat mostre românești:
+`<folder local>\xtts-v2-romanian-v2` (mediu `<folder local>\tts-venv`).

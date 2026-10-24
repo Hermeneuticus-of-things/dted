@@ -252,14 +252,14 @@ def fisier_model(preferat: str | None = None) -> Path:
     folosește direct, fără nicio descărcare la prima pornire.
 
     ``preferat`` spune care model se alege (v0.1.2): „auto” ia modelul
-    îmbunătățit pentru română când există, altfel cel standard; un nume
-    explicit din ``MODELE_TRANSCRIBERE`` forțează acel model. Preferința
-    are prioritate față de loc (kitul sau folderul de instalare).
+    standard (cel mai bun pe text lung de carte, măsurat), un nume explicit
+    din ``MODELE_TRANSCRIBERE`` forțează acel model. Preferința are prioritate
+    față de loc (kitul sau folderul de instalare).
     """
     from .constante import MODELE_TRANSCRIBERE, WHISPER_NUME, WHISPER_NUME_RO
 
     if preferat in (None, "", "auto"):
-        candidate = [WHISPER_NUME_RO, WHISPER_NUME]
+        candidate = [WHISPER_NUME, WHISPER_NUME_RO]
     elif preferat in MODELE_TRANSCRIBERE:
         candidate = [preferat, WHISPER_NUME_RO, WHISPER_NUME]
     else:
