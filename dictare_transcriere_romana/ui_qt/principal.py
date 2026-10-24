@@ -190,7 +190,8 @@ class Aplicatie(QMainWindow):
         self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
         self.toolbar.addWidget(self.btn_dictare)
 
-        # Vumetru lângă „Dictează” (cerința 36 / D-6): bară >10 px, lățime adaptivă.
+        # Vumetru lângă „Dictează” (cerința 36 / D-6) — vizibil DOAR cât se dictează,
+        # ca bara de sus să rămână aerisită pentru text (redesign UX).
         self.vumetru_bar = QProgressBar()
         self.vumetru_bar.setObjectName("nivel")
         self.vumetru_bar.setProperty("sus", True)
@@ -201,10 +202,12 @@ class Aplicatie(QMainWindow):
         self.vumetru_bar.setMinimumWidth(80)
         self.vumetru_bar.setMaximumWidth(320)
         self.vumetru_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.vumetru_bar.hide()
         self.toolbar.addWidget(self.vumetru_bar)
         self.vumetru_text = QLabel("")
         self.vumetru_text.setObjectName("vumetru_text")
         self.vumetru_text.setFont(comun.fonturi("mica"))
+        self.vumetru_text.hide()
         self.toolbar.addWidget(self.vumetru_text)
 
         # Buton mare „📂 Transcrie un fișier…”
@@ -223,23 +226,37 @@ class Aplicatie(QMainWindow):
         )
         self.toolbar.addWidget(spacer)
 
-        # Iconițe mici de rețea și confidențialitate
-        self.btn_retea = QToolButton()
-        self.btn_retea.setText("🔌 Offline")
-        self.btn_retea.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_retea.setToolTip("Starea rețelei")
-        self.toolbar.addWidget(self.btn_retea)
-
-        self.btn_confidentialitate = QToolButton()
-        self.btn_confidentialitate.setText("🟢 Internet pornit")
-        self.btn_confidentialitate.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_confidentialitate.setToolTip(
-            "Confidențialitate: nimic blocat.\nApasă pentru a alege modul."
+        # Meniu „Instrumente ▾” — ce se folosește rar (redesign UX): un singur loc,
+        # ca în aplicațiile profesionale; pagina principală rămâne doar cu des folositele.
+        self.menu_instrumente = QMenu(self)
+        self.menu_instrumente.addAction(
+            "🔊 Verifică sunetul", lambda: self.arata_ecran("sunet")
         )
-        self.btn_confidentialitate.clicked.connect(self._la_confidentialitate)
-        self.toolbar.addWidget(self.btn_confidentialitate)
+        self.menu_instrumente.addAction(
+            "📁 Fișierele mele", lambda: self.arata_ecran("fisiere")
+        )
+        self.menu_instrumente.addSeparator()
+        self.menu_instrumente.addAction(
+            "🛡 Internet și confidențialitate", lambda: self.arata_ecran("internet")
+        )
+        self.menu_instrumente.addAction(
+            "📦 Instalare și actualizări", lambda: self.arata_ecran("instalare")
+        )
+        self.menu_instrumente.addAction(
+            "🔍 Verifică programul și calculatorul", lambda: self.arata_ecran("verificare")
+        )
+        self.menu_instrumente.addSeparator()
+        self.menu_instrumente.addAction("🏠 Ecranul de start", lambda: self.arata_ecran("principal"))
+        self.menu_instrumente.addAction("📄 Doar textul", self._doar_textul, QKeySequence("Ctrl+E"))
 
-        self.toolbar.addSeparator()
+        btn_instrumente = QToolButton()
+        btn_instrumente.setText("&Instrumente ▾")
+        btn_instrumente.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_instrumente.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        btn_instrumente.setMenu(self.menu_instrumente)
+        btn_instrumente.setToolTip("Uneltele folosite mai rar (sunet, fișiere, confidențialitate…)")
+        self.toolbar.addWidget(btn_instrumente)
+        self.addActions(self.menu_instrumente.actions())
 
         # Meniu „Ajutor ▾”
         self.menu_ajutor = QMenu(self)
@@ -305,10 +322,35 @@ class Aplicatie(QMainWindow):
         )
         jos_layout.addWidget(self._buton_folder)
 
+        # Starea rețelei și confidențialitatea — mici, în bara de jos (redesign UX):
+        # rareori folosite, deci nu mai stau în bara principală.
+        self.btn_retea = QToolButton()
+        self.btn_retea.setText("🔌 Offline")
+        self.btn_retea.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_retea.setToolTip("Starea rețelei")
+        jos_layout.addWidget(self.btn_retea)
+
+        self.btn_confidentialitate = QToolButton()
+        self.btn_confidentialitate.setText("🟢 Internet pornit")
+        self.btn_confidentialitate.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_confidentialitate.setToolTip(
+            "Confidențialitate: nimic blocat.\nApasă pentru a alege modul."
+        )
+        self.btn_confidentialitate.clicked.connect(self._la_confidentialitate)
+        jos_layout.addWidget(self.btn_confidentialitate)
+
         layout.addWidget(self._jos)
 
-        self.arata_ecran("principal")
+        # Redesign UX: pornim direct pe editor — spațiu maxim pentru textul
+        # dictat (paginile întregi de corectat). Ecranul de start e în „Instrumente ▾”.
+        self._doar_textul()
         self._reimprospateaza_ultimele()
+
+    def _doar_textul(self) -> None:
+        """Ascunde toate ecranele și lasă numai editorul (spațiu maxim)."""
+        for pagina in self._pagini.values():
+            pagina.hide()
+        self._pagina_aleasa = ""
 
     # ------------------------------------------------------------------ ecrane
 
@@ -627,10 +669,13 @@ class Aplicatie(QMainWindow):
         self._porneste_vumetru(activ)
 
     def _porneste_vumetru(self, activ: bool) -> None:
-        """Pornește/oprește vumetrul din bara de sus; când e oprit, îl golește."""
+        """Pornește/oprește vumetrul din bara de sus; când e oprit, îl golește
+        și îl ascunde (redesign UX: bara de sus rămâne doar cu des folositele)."""
         if not hasattr(self, "_timer_vumetru"):
             self._timer_vumetru = QTimer(self)
             self._timer_vumetru.timeout.connect(self._actualizeaza_vumetru)
+        self.vumetru_bar.setVisible(activ)
+        self.vumetru_text.setVisible(activ)
         if activ:
             self._timer_vumetru.start(60)  # ~16 actualizări pe secundă
         else:
