@@ -295,6 +295,23 @@ class PaginaDictare(QWidget):
         self._dictare_sunet = None
         self.buton_semn.set_activ(True)
 
+        # N-3/cerința 5: blocarea căilor de ieșire cât timp se dictează.
+        self._blocat_de_noi = False
+        mod_blocare = getattr(self.aplicatie.configurare, "blocare_dictare", "nimic") or "nimic"
+        if mod_blocare in ("program", "tot"):
+            from .. import blocare as modul_blocare
+
+            try:
+                self._blocat_de_noi = modul_blocare.blocheaza(mod_blocare)
+            except Exception:
+                self._blocat_de_noi = False
+            if self._blocat_de_noi:
+                self.aplicatie.bara_stare.arata(
+                    "Blocat",
+                    "căile de ieșire sunt tăiate cât timp dictezi.",
+                    "lucru",
+                )
+
         self.buton_start.set_text("◼ Dictează…")
         self.buton_start.set_activ(True)
         self.buton_start._fel = "pericol"
@@ -330,6 +347,16 @@ class PaginaDictare(QWidget):
         if hasattr(self, "_timer_nivel"):
             self._timer_nivel.stop()
         self._sunet('stop')
+
+        # N-3: dacă am blocat căile de ieșire la pornirea dictării, le aducem înapoi.
+        if getattr(self, "_blocat_de_noi", False):
+            from .. import blocare as modul_blocare
+
+            self._blocat_de_noi = False
+            try:
+                modul_blocare.deblocheaza_acum()
+            except Exception:
+                pass
 
         self.buton_start.set_text("● Dictează")
         self.buton_start._fel = "principal"

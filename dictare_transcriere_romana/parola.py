@@ -20,10 +20,12 @@ cheia de recuperare, fișierele se pierd definitiv (0.11.4).
 from __future__ import annotations
 
 import base64
+import json
 import os
 import sys
 from dataclasses import dataclass, field
 from hashlib import scrypt
+from pathlib import Path
 from typing import Any
 
 if sys.platform == "win32":
@@ -207,3 +209,49 @@ def pauza_greseli(nr_greseli: int) -> float:
     if nr_greseli <= 0:
         return 0.0
     return float(min(2 ** min(nr_greseli, 8), 300))
+
+
+# ------------------------------------------------------------------ fișierul seifului
+
+
+def fisier_seif() -> Path:
+    """Unde stă seiful pe disc, în folderul de instalare (``seif.json``)."""
+    from . import cai
+
+    return cai.director_instalare() / "seif.json"
+
+
+def salveaza_seif(seif: Seif) -> bool:
+    """Scrie seiful pe disc (JSON). Întoarce ``False`` dacă scrierea eșuează."""
+    try:
+        fisier = fisier_seif()
+        fisier.parent.mkdir(parents=True, exist_ok=True)
+        fisier.write_text(json.dumps(seif.la_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+        return True
+    except OSError:
+        return False
+
+
+def incarca_seif() -> Seif | None:
+    """Citește seiful de pe disc; ``None`` dacă lipsește sau e deteriorat."""
+    try:
+        date = json.loads(fisier_seif().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(date, dict):
+        return None
+    return Seif.din_dict(date)
+
+
+def sterge_seif() -> bool:
+    """Șterge seiful (când utilizatorul scoate parola). Nu șterge documente."""
+    try:
+        fisier_seif().unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
+def seif_definit() -> bool:
+    """``True`` dacă există o parolă pusă (seiful e pe disc)."""
+    return fisier_seif().exists()

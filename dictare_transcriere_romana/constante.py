@@ -256,6 +256,17 @@ PYTHON_JSON_SUME = f"{PYTHON_FOLDER}/windows-{PYTHON_VERSIUNE}.json"
 TORCH_INDEX_CPU = "https://download.pytorch.org/whl/cpu"
 TORCH_INDEX_CUDA = "https://download.pytorch.org/whl/cu130"
 
+#: Manifestul actualizărilor pe componente (cerința 8 / N-2): aceeași formă ca
+#: „versiuni.json” din folderul de instalare (versiune, dimensiune, adresă,
+#: sumă SHA-256). Se citește DOAR la apăsarea butonului „Caută actualizări”.
+URL_MANIFEST_ACTUALIZARI = (
+    "https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/versiuni.json"
+)
+
+#: Parola implicită a programului, scrisă și în Ajutor. Se precompletează la
+#: punerea parolei; utilizatorul o poate schimba oricând cu a lui.
+PAROLA_IMPLICITA = "Dictare"
+
 #: Versiunea bibliotecii de transcriere (aceeași pe procesor și pe placă video).
 #: Înlocuim torch + openai-whisper cu faster-whisper (CTranslate2), de câteva
 #: ori mai rapid și mai ușor pe memoria video.

@@ -190,19 +190,27 @@ ECRANE: dict[str, Ghid] = {
             "Limba vorbită, microfonul și difuzorul alese, felul de a transcrie (procesor sau placă video).",
             "Cât de des se salvează automat și dacă documentele se salvează singure după transcriere.",
             "Programul de scris preferat, folosit la „Deschide în…”.",
+            "Secțiunea „Parolă și criptare”: parola documentelor și criptarea lor la salvare.",
+            "Secțiunea „Confidențialitate”: blocarea căilor de ieșire în timpul dictării.",
         ],
         ce_faci=[
             "Schimbă doar ce ai nevoie; fiecare rând are explicație simplă.",
             "Apasă „Revino la locul implicit” sau „Revino la LibreOffice” dacă vrei înapoi setările din start.",
+            "La „Parolă și criptare”, apasă „Pune o parolă”: parola implicită a programului este „Dictare” "
+            "(deja scrisă în căsuță — poți rămâne la ea sau să scrii alta).",
+            "Bifează „Criptează documentele salvate” ca documentele să fie încuiate cu parola (AES-256).",
             "Apasă „Salvează setările” când ai terminat.",
         ],
         urmeaza=[
             "Setările se păstrează și după închiderea programului.",
             "Dacă schimbi folderul, fișierele vechi rămân unde erau; cele noi se pun în folderul nou.",
+            "Documentele criptate se deschid doar cu parola (implicit „Dictare”) sau cu cheia de recuperare primită la punerea parolei.",
         ],
         probleme=[
             ("Am pus un folder greșit.", "Apasă „Revino la locul implicit” și documentele se pun iar în „Documente”."),
             ("Nu găsesc setarea.", "Apasă „? Ajutor”; toate setările sunt explicate pe scurt, cu cuvintele din program."),
+            ("Care este parola implicită?", "Parola implicită a programului este „Dictare”. O poți schimba oricând din „Parolă și criptare” → „Schimbă parola”."),
+            ("Am uitat parola.", "Folosește cheia de recuperare arătată la punerea parolei (dacă ai salvat-o). Fără parolă sau cheie, documentele criptate nu se mai pot deschide."),
         ],
     ),
 

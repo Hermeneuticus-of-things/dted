@@ -7,20 +7,23 @@ Aici, în programul care deja rulează, arătăm doar starea, fără acțiuni ca
 
 from __future__ import annotations
 
+import json
 import threading
 
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
+    QMessageBox,
     QVBoxLayout,
     QWidget,
 )
 
-from .. import cai, instalare, libreoffice
+from .. import actualizare, cai, instalare, libreoffice
 from ..constante import NUME_AFISAT, NUME_SCURT, VERSIUNE_COMPLETA
 from . import comun
-from .comun import Buton, fonturi, seteaza_rol
+from .comun import Buton, anunta, fonturi, seteaza_rol
 
 
 class FereastraInstalare(QWidget):
@@ -69,6 +72,39 @@ class FereastraInstalare(QWidget):
         rand.addWidget(self.btn_verifica)
         rand.addStretch(1)
         layout.addLayout(rand)
+
+        # Actualizările (N-2): pornesc DOAR la buton, niciodată singure.
+        card_act = QFrame()
+        card_act.setObjectName("card")
+        ca = QVBoxLayout(card_act)
+        ca.setContentsMargins(16, 12, 16, 12)
+        ca.setSpacing(6)
+        et_act = QLabel("Actualizări pe componente")
+        et_act.setFont(fonturi("buton"))
+        ca.addWidget(et_act)
+        et_act_detaliu = QLabel(
+            "Programul nu caută și nu descarcă nimic singur. La apăsarea butonului "
+            "compară versiunile componentelor (program, model) cu lista oficială; "
+            "se descarcă doar ce schimbi tu, cu sumă verificată și copie de siguranță."
+        )
+        et_act_detaliu.setFont(fonturi("mica"))
+        seteaza_rol(et_act_detaliu, "secundar")
+        et_act_detaliu.setWordWrap(True)
+        ca.addWidget(et_act_detaliu)
+        rand_act = QHBoxLayout()
+        rand_act.setSpacing(8)
+        self.btn_actualizari = Buton(
+            self, "Caută actualizări (internet)", self._cauta_actualizari, fel="principal", latime=250, inaltime=40
+        )
+        self.btn_revino = Buton(
+            self, "Revino la versiunea anterioară", self._revino_actualizare, latime=270, inaltime=40
+        )
+        rand_act.addWidget(self.btn_actualizari)
+        rand_act.addWidget(self.btn_revino)
+        rand_act.addStretch(1)
+        ca.addLayout(rand_act)
+        layout.addWidget(card_act)
+
         layout.addStretch(1)
 
         self._verifica()
@@ -122,3 +158,164 @@ class FereastraInstalare(QWidget):
     def _pune(eticheta: QLabel, ok: bool) -> None:
         eticheta.setText(("✔  instalat" if ok else "✘  lipsește"))
         seteaza_rol(eticheta, "verde" if ok else "pericol")
+
+    # ------------------------------------------------------------- actualizări (N-2)
+
+    def _cauta_actualizari(self) -> None:
+        """Caută actualizări DOAR la buton (0.8.2): compară versiunile cu manifestul."""
+        from .. import constante
+
+        self.btn_actualizari.setEnabled(False)
+        self.btn_revino.setEnabled(False)
+        self.et_detalii.setText("Se caută actualizări pe internet…")
+        seteaza_rol(self.et_detalii, "secundar")
+
+        def lucru() -> None:
+            from .. import actualizare as act
+
+            # Prima oară: notează ce versiuni sunt acum instalate.
+            if not act.versiuni_instalate():
+                instalate: dict[str, dict] = {"program": {"versiune": constante.VERSIUNE}}
+                try:
+                    folder_model = cai.fisier_model().parent
+                    if folder_model.exists():
+                        instalate["model"] = {"versiune": folder_model.name}
+                except Exception:
+                    pass
+                act.scrie_versiuni(instalate)
+            temporar = act.fisier_versiuni().parent / "manifest-descarcat.json"
+            if not act.descarca(constante.URL_MANIFEST_ACTUALIZARI, temporar):
+                self.coada.trimite(self._eroare_cautare)
+                return
+            try:
+                manifest = json.loads(temporar.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                temporar.unlink(missing_ok=True)
+                self.coada.trimite(self._eroare_cautare)
+                return
+            temporar.unlink(missing_ok=True)
+            schimbari = act.ce_s_a_schimbat(manifest)
+            self.coada.trimite(self._dupa_cautare, schimbari, manifest)
+
+        threading.Thread(target=lucru, name="cauta-actualizari", daemon=True).start()
+
+    def _eroare_cautare(self) -> None:
+        self.btn_actualizari.setEnabled(True)
+        self.btn_revino.setEnabled(True)
+        self.et_detalii.setText(
+            "Nu am putut căuta actualizări: fie nu e internet, fie lista oficială nu răspunde.\n"
+            "Nimic nu s-a schimbat la instalare — poți folosi programul în continuare."
+        )
+        seteaza_rol(self.et_detalii, "pericol")
+
+    def _dupa_cautare(self, schimbari: list, manifest: dict) -> None:
+        from .. import actualizare as act
+
+        self.btn_actualizari.setEnabled(True)
+        self.btn_revino.setEnabled(True)
+        if not schimbari:
+            self.et_detalii.setText("Ești la zi: toate componentele au ultima versiune.")
+            seteaza_rol(self.et_detalii, "verde")
+            return
+        descarcabile = [
+            s for s in schimbari if str((manifest or {}).get(s.nume, {}).get("url", "")).strip()
+        ]
+        texte = [f"• {s.eticheta}" for s in schimbari]
+        confirmate = []
+        for schimbare in descarcabile:
+            raspuns = QMessageBox.question(
+                self,
+                f"Actualizez «{schimbare.nume}»?",
+                f"{schimbare.eticheta}\n\n"
+                "Descarc și înlocuiesc doar această componentă?\n"
+                "Cea veche se păstrează și poți reveni oricând la ea.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if raspuns == QMessageBox.StandardButton.Yes:
+                confirmate.append(schimbare)
+        if not confirmate:
+            self.et_detalii.setText(
+                "Update-uri disponibile:\n" + "\n".join(texte) + "\n\nNimic nu s-a descărcat."
+            )
+            seteaza_rol(self.et_detalii, "secundar")
+            return
+        self._descarca_si_aplica(confirmate, manifest)
+
+    def _descarca_si_aplica(self, schimbari: list, manifest: dict) -> None:
+        from .. import actualizare as act
+
+        self.btn_actualizari.setEnabled(False)
+        self.btn_revino.setEnabled(False)
+
+        def progres(primiti: int, total: int) -> None:
+            if total > 0:
+                self.coada.trimite(
+                    self._text_progres, f"Se descarcă… {primiti / total * 100:.0f}%"
+                )
+
+        def lucru() -> None:
+            rapoarte: list[str] = []
+            for schimbare in schimbari:
+                meta = (manifest or {}).get(schimbare.nume, {})
+                pachet = cai.director_descarcari() / f"{schimbare.nume}-{schimbare.noua}"
+                ok = act.descarca(
+                    str(meta.get("url", "")),
+                    pachet,
+                    str(meta.get("sha256", "")),
+                    progres=progres,
+                )
+                if not ok:
+                    rapoarte.append(f"✘ {schimbare.nume}: descărcarea a eșuat (sumă sau rețea)")
+                    continue
+                try:
+                    act.aplica(schimbare.nume, schimbare.noua, pachet)
+                    rapoarte.append(f"✔ {schimbare.eticheta} — instalat")
+                except Exception as exc:
+                    rapoarte.append(f"✘ {schimbare.nume}: instalarea a eșuat ({exc})")
+            self.coada.trimite(self._dupa_aplicare, rapoarte)
+
+        threading.Thread(target=lucru, name="aplica-actualizari", daemon=True).start()
+
+    def _text_progres(self, text: str) -> None:
+        self.et_detalii.setText(text)
+        seteaza_rol(self.et_detalii, "secundar")
+
+    def _dupa_aplicare(self, rapoarte: list[str]) -> None:
+        self.btn_actualizari.setEnabled(True)
+        self.btn_revino.setEnabled(True)
+        self.et_detalii.setText("\n".join(rapoarte))
+        seteaza_rol(self.et_detalii, "verde")
+        self._verifica()
+
+    def _revino_actualizare(self) -> None:
+        """„Revino la versiunea anterioară”: restaurează o componentă din backup."""
+        backup = cai.director_instalare() / actualizare.FOLDER_BACKUP
+        variante = (
+            sorted(p.name for p in backup.glob("*-*") if p.is_dir()) if backup.exists() else []
+        )
+        if not variante:
+            anunta(
+                self,
+                "Nimic de refăcut",
+                "Nu există nicio versiune veche păstrată.\n\n"
+                "Copiile apar singure după o actualizare făcută din acest ecran.",
+            )
+            return
+        alegere, ok = QInputDialog.getItem(
+            self,
+            "Revino la versiunea anterioară",
+            "Componenta și versiunea la care revii:",
+            variante,
+            0,
+            False,
+        )
+        if not ok or "-" not in alegere:
+            return
+        nume, versiune = alegere.rsplit("-", 1)
+        if actualizare.revin(nume, versiune):
+            self.et_detalii.setText(f"✔ {nume} a revenit la versiunea {versiune}.")
+            seteaza_rol(self.et_detalii, "verde")
+            self._verifica()
+        else:
+            self.et_detalii.setText(f"✘ Nu am putut readuce {nume} la versiunea {versiune}.")
+            seteaza_rol(self.et_detalii, "pericol")
