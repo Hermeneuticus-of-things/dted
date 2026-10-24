@@ -110,11 +110,14 @@ class Serviciu:
             self._anuleaza_calculul()
             return False
         if cmd == "stare":
-            self.scrie(self._stare())
+            # id-ul cererii revine în răspuns, ca programul să știe cui îi răspunde.
+            self.scrie({**self._stare(), **({"id": id_} if id_ is not None else {})})
         elif cmd == "transcrie":
             cale = str(comanda.get("cale") or "")
             if not cale:
                 self._eroare(id_, "Lipsește fișierul audio.")
+            elif str(id_) in self._transcrieri:
+                self._eroare(id_, "Există deja o transcriere cu acest id.")
             else:
                 semnal = threading.Event()
                 self._transcrieri[str(id_)] = semnal
@@ -125,18 +128,20 @@ class Serviciu:
             else:
                 self._porneste_dictarea(id_, comanda.get("limba") or "ro", comanda.get("termeni") or "")
         elif cmd == "dictare_stop":
-            self._opreste_dictarea(anulat=False)
+            # Doar dictarea cu acest id (o fereastră nu oprește dictarea alteia).
+            if self._dictare is not None and (id_ is None or self._dictare["id"] == id_):
+                self._opreste_dictarea(anulat=False)
         elif cmd == "model":
             nume = str(comanda.get("nume") or "auto")
             if nume != "auto" and nume not in _modele():
                 self._eroare(id_, f"Model necunoscut: {nume}", "Alege unul dintre modelele din „stare”.")
-            elif self._dictare is not None or self._curent is not None:
+            elif self._dictare is not None or self._curent is not None or self._transcrieri:
                 self._eroare(id_, "Modelul nu se poate schimba în timpul unei dictări sau transcrieri.", "Oprește-o, apoi alege modelul.")
             else:
                 with self._creare_motor:
                     self._model = None if nume == "auto" else nume
                     self._motor = None  # modelul nou se încarcă la cererea următoare
-                self.scrie(self._stare())
+                self.scrie({**self._stare(), **({"id": id_} if id_ is not None else {})})
         elif cmd == "anuleaza":
             semnal = self._transcrieri.get(str(id_))
             if semnal is not None:
@@ -200,7 +205,8 @@ class Serviciu:
             else:
                 self._eroare(id_, exc)
         finally:
-            self._transcrieri.pop(str(id_), None)
+            if self._transcrieri.get(str(id_)) is semnal:
+                self._transcrieri.pop(str(id_), None)
 
     # ------------------------------------------------------------------ dictare
 
@@ -222,6 +228,8 @@ class Serviciu:
             return
         stare["anulat"] = anulat
         stare["oprit"].set()
+        if anulat:
+            self._anuleaza_calculul(f"d:{stare['id']}")  # bucata în lucru se oprește și ea
         # O dictare nouă poate porni imediat; bucla veche își termină singură ultima bucată.
         self._dictare = None
 
@@ -351,8 +359,12 @@ def ruleaza(intrare=None, iesire=None, **optiuni) -> int:
         return 2
 
     def scrie(mesaj: dict) -> None:
-        iesire.write(json.dumps(mesaj, ensure_ascii=False) + "\n")
-        iesire.flush()
+        # ensure_ascii: un caracter care nu se poate scrie (surogat singur) nu oprește serviciul.
+        try:
+            iesire.write(json.dumps(mesaj, ensure_ascii=True) + "\n")
+            iesire.flush()
+        except (OSError, ValueError):
+            pass
 
     serviciu = Serviciu(scrie, **optiuni)
     serviciu.scrie({"ev": "gata", "protocol": PROTOCOL})
@@ -365,8 +377,11 @@ def ruleaza(intrare=None, iesire=None, **optiuni) -> int:
         except ValueError:
             serviciu.scrie({"ev": "eroare", "id": None, "mesaj": "Comanda nu este JSON valid.", "ce_fac": ""})
             continue
-        if not serviciu.executa(comanda):
-            break
+        try:
+            if not serviciu.executa(comanda):
+                break
+        except Exception as exc:  # noqa: BLE001 — o comandă greșită nu oprește serviciul
+            serviciu.scrie({"ev": "eroare", "id": comanda.get("id") if isinstance(comanda, dict) else None, "mesaj": f"Eroare internă: {exc}", "ce_fac": ""})
     serviciu.executa({"cmd": "iesire"})
     serviciu.asteapta(10.0)
     return 0

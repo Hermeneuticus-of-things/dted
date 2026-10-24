@@ -515,10 +515,14 @@ class MotorWhisper:
         ``progres`` primește o fracțiune între 0 și 1, iar ``faza`` mesaje
         scurte, în română, pentru afișare.
         """
+        # Cererea se poate anula și cât timp se încarcă modelul (zeci de secunde):
+        # semnalul se șterge înainte de încărcare și se verifică după ea.
+        self._anulat.clear()
         if faza:
             faza("Pregătesc modelul de transcriere…")
         self.incarca()
-        self._anulat.clear()
+        if self._anulat.is_set():
+            raise Anulat()
 
         # Româna e implicită și forțată pe „auto”/gol: fără detectare automată
         # (cerința 0). Alte limbi rămân doar ca opțiune avansată, în setări.

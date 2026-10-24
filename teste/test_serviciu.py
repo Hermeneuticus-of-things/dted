@@ -126,6 +126,24 @@ class TestServiciu(unittest.TestCase):
         s.executa({"cmd": "model", "nume": "nu-exista"})
         self.assertEqual(mesaje[-1]["ev"], "eroare")
 
+    def test_oprirea_altui_id_nu_opreste_dictarea(self):
+        microfon = MicrofonFals() if 'MicrofonFals' in globals() else None
+        if microfon is None:
+            self.skipTest('fără microfon fals')
+        s, mesaje = porneste(motor_fabrica=MotorFals, microfon_fabrica=lambda: microfon)
+        s.executa({"cmd": "dictare_start", "id": "d1"})
+        s.executa({"cmd": "dictare_stop", "id": "d2"})
+        self.assertIsNotNone(s._dictare)
+        s.executa({"cmd": "dictare_stop", "id": "d1"})
+        self.assertIsNone(s._dictare)
+
+    def test_id_dublu_refuzat(self):
+        s, mesaje = porneste(motor_fabrica=lambda: MotorFals(intarziere=0.3))
+        s.executa({"cmd": "transcrie", "id": "a", "cale": "x.mp3"})
+        s.executa({"cmd": "transcrie", "id": "a", "cale": "y.mp3"})
+        self.assertTrue(any(m["ev"] == "eroare" and m["id"] == "a" for m in mesaje))
+        s.asteapta(5)
+
     def test_transcrie_fisier(self):
         s, mesaje = porneste(motor_fabrica=MotorFals)
         s.executa({"cmd": "transcrie", "id": "t1", "cale": "interviu.mp3"})
