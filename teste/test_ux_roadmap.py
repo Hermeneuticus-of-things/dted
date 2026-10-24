@@ -43,7 +43,7 @@ def test_are_audio_accepta_doar_fișiere_audio():
     assert _are_audio(mime_text) is False
 
 
-def test_zona_drop_primeste_primul_fișier_audio():
+def test_zona_drop_primeste_toate_fișierele_audio():
     _app()
     zona = _ZonaDrop()
     assert zona.acceptDrops() is True
@@ -55,6 +55,7 @@ def test_zona_drop_primeste_primul_fișier_audio():
         [
             QUrl.fromLocalFile("C:/probe/poze.txt"),
             QUrl.fromLocalFile("C:/probe/convorbire.wav"),
+            QUrl.fromLocalFile("C:/probe/interviu.mp3"),
         ]
     )
     eveniment = QDropEvent(
@@ -65,8 +66,8 @@ def test_zona_drop_primeste_primul_fișier_audio():
         Qt.KeyboardModifier.NoModifier,
     )
     zona.dropEvent(eveniment)
-    assert len(primite) == 1
-    assert primite[0].name == "convorbire.wav"
+    assert primite and isinstance(primite[0], list)
+    assert [cale.name for cale in primite[0]] == ["convorbire.wav", "interviu.mp3"]
 
 
 def test_indicatorul_de_retea_arată_starea_reală():

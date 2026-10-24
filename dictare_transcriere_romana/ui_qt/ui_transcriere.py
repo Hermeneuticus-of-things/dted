@@ -91,13 +91,15 @@ class _ZonaDrop(QFrame):
     def dropEvent(self, eveniment):
         if self.la_traversare:
             self.la_traversare(False)
-        for url in eveniment.mimeData().urls():
-            cale = url.toLocalFile()
-            if cale and Path(cale).suffix.lower() in EXTENSII_DROP:
-                eveniment.acceptProposedAction()
-                if self.la_primire:
-                    self.la_primire(Path(cale))
-                return
+        primite = [
+            Path(url.toLocalFile())
+            for url in eveniment.mimeData().urls()
+            if url.toLocalFile() and Path(url.toLocalFile()).suffix.lower() in EXTENSII_DROP
+        ]
+        if primite:
+            eveniment.acceptProposedAction()
+            if self.la_primire:
+                self.la_primire(primite)
 
 
 class PaginaTranscriere(QWidget):
@@ -112,6 +114,8 @@ class PaginaTranscriere(QWidget):
 
         self._cale: Path | None = None
         self._info = None
+        self._coada: list[Path] = []      # fișierele care așteaptă la rând (35)
+        self._auto_continua = False       # pornește singur următorul din coadă
         self._fir: threading.Thread | None = None
         self._anulat = threading.Event()
         self._motor_local: motor.MotorWhisper | None = None
@@ -159,11 +163,11 @@ class PaginaTranscriere(QWidget):
         card_1, corp_1 = self._card(corp, "1. Alege fișierul audio")
         corp_layout.addWidget(card_1)
 
-        # Zona drop: primește fișierele trase cu mausul (UX-28).
+        # Zona drop: primește fișierele trase cu mausul (UX-28 + coada, 35).
         self.zona_drop = _ZonaDrop()
         self.zona_drop.setObjectName("drop")
         self.zona_drop.setMinimumHeight(120)
-        self.zona_drop.la_primire = self._ia_fisierul
+        self.zona_drop.la_primire = self._primeste_fisiere
         self.zona_drop.la_traversare = self._la_traversare_drop
         drop_layout = QVBoxLayout(self.zona_drop)
         self.eticheta_drop = QLabel(
@@ -398,10 +402,50 @@ class PaginaTranscriere(QWidget):
     # ------------------------------------------------------------------ pasul 1
 
     def _alege_fisier(self) -> None:
-        cale = alege_fisier_audio(self, titlu="Alege fișierul audio de transcris")
-        if cale is None:
+        caile = alege_fisier_audio(
+            self, titlu="Alege fișierul audio de transcris (poți bifă mai multe)", multiple=True
+        )
+        if not caile:
             return
-        self._ia_fisierul(cale)
+        self._primeste_fisiere(caile)
+
+    def _primeste_fisiere(self, fisiere) -> None:
+        """Coadă (cerința 35): mai multe fișiere la rând; cele deja transcrise
+        se sar singure (cerința 47)."""
+        from .. import biblioteca
+
+        noi: list[Path] = []
+        sarite = 0
+        for cale in fisiere:
+            try:
+                deja = biblioteca.a_fost_transcris(cale)
+            except Exception:
+                deja = False
+            if deja:
+                sarite += 1
+            else:
+                noi.append(Path(cale))
+        if not noi:
+            anunta(
+                self,
+                "Nimic nou de transcris",
+                f"Toate fișierele alese ({sarite}) au fost deja transcrise.\n\n"
+                "Ca să retranscrii unul anume, alege doar fișierul acela și apasă "
+                "„Începe transcrierea”.",
+            )
+            return
+        primul, *restul = noi
+        self._coada = restul
+        self._auto_continua = False
+        self._ia_fisierul(primul)
+        if restul:
+            self.eticheta_drop.setText(
+                f"Fișier ales: {primul.name} (+{len(restul)} în coadă)"
+            )
+        if sarite:
+            self.eticheta_estimare.setText(
+                f"{sarite} fișier(e) sărite: fuseseră deja transcrise."
+            )
 
     def _ia_fisierul(self, cale: Path) -> None:
         self._cale = cale
@@ -434,6 +478,10 @@ class PaginaTranscriere(QWidget):
             return
         self._secunde_audio = float(info.secunde or 0.0)
         self._arata_estimarea()
+        # Din coadă: fișierul următor pornește singur după ce e gata citit.
+        if getattr(self, "_auto_continua", False):
+            self._auto_continua = False
+            self._incepe()
 
     def _arata_estimarea(self) -> None:
         durata = text_ro.durata_text(self._secunde_audio) if self._secunde_audio else "puțin"
@@ -599,6 +647,9 @@ class PaginaTranscriere(QWidget):
         return callback
 
     def _adauga_text(self, fragment: str) -> None:
+        from .. import inlocuiri
+
+        fragment = inlocuiri.aplica(fragment)
         curent = self.editor.text()
         if curent:
             nou = curent + " " + fragment
@@ -622,6 +673,24 @@ class PaginaTranscriere(QWidget):
         )
         self.stare.text = text_complet
         self.editor.set_text(text_complet)
+        # Reține fișierul ca transcris (47) și pornește următorul din coadă (35).
+        from .. import biblioteca
+
+        if self._cale is not None:
+            try:
+                biblioteca.noteaza_transcris(self._cale)
+            except Exception:
+                pass
+        if self._coada:
+            urmatorul = self._coada.pop(0)
+            self._auto_continua = True
+            self.zona_finala.setVisible(False)
+            self.aplicatie.bara_stare.arata(
+                "În coadă",
+                f"Urmează: {urmatorul.name} (încă {len(self._coada)} după el).",
+                "lucru",
+            )
+            QTimer.singleShot(700, lambda: self._ia_fisierul(urmatorul))
 
     def _termina_anulat(self) -> None:
         """După „Anulează”: butoanele redevin active, textul scris rămâne."""

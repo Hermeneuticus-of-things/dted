@@ -54,6 +54,10 @@ class Config:
     cuda_stare_detaliu: str = ""          # motivul, dacă descărcarea a eșuat
     cripteaza_documente: bool = False     # salvează documentele criptat (AES-256, cu parolă)
     blocare_dictare: str = "nimic"        # la dictare: „nimic”, „program” (doar D&TED) sau „tot”
+    scurteaza_pauze: bool = False         # dictare: taie tăcerile mai lungi de 2 secunde (52)
+    pregateste_audio: bool = False        # dictare: aduce volumul la un nivel potrivit (51)
+    scurtaturi_globale: bool = False      # scurtăturile globale (Ctrl+Alt+D) — OPRITE implicit (53)
+    asistent_microfon_vazut: bool = False # asistentul de microfon de la prima dictare (52)
 
 
 def incarca() -> Config:

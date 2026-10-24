@@ -893,8 +893,13 @@ def alege_fisier_audio(
     parinte: QWidget,
     folder: Path | None = None,
     titlu: str = "Alege fișierul audio",
-) -> Path | None:
-    """Alege un fișier audio cu QFileDialog, în română."""
+    multiple: bool = False,
+) -> Path | list[Path] | None:
+    """Alege un fișier audio (sau mai multe, pentru coada de transcris).
+
+    Cu ``multiple=True`` se poate bifi mai multe fișiere odată (cerința 35)
+    și se întoarce o listă (goală la renunțare).
+    """
     foldere = [
         "MP3 (*.mp3)",
         "WAV (*.wav)",
@@ -906,6 +911,14 @@ def alege_fisier_audio(
         "Toate fișierele (*.*)",
     ]
     cale_initiala = str(folder or cai_documente())
+    if multiple:
+        caile, _ = QFileDialog.getOpenFileNames(
+            parinte,
+            titlu,
+            cale_initiala,
+            ";;".join(foldere),
+        )
+        return [Path(cale) for cale in caile]
     cale, _ = QFileDialog.getOpenFileName(
         parinte,
         titlu,
