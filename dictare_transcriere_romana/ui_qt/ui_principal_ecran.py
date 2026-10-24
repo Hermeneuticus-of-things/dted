@@ -1,8 +1,8 @@
-"""Ecran principal PySide6: un rând compact de acțiuni rapide.
+"""Ecran de bun venit („Ecranul de start” din Instrumente).
 
-Înlocuiește PaginaPrincipala din ui_principal.py (Tkinter). Comenzile apar
-și în bara de sus, deci aici e doar un rând scurt, ca editorul să ocupe
-cel mai mult spațiu (cerințele 15 și 17).
+Redesign UX: fără butoane care dublează bara de sus — acolo e un singur loc
+pentru fiecare acțiune (Dictează, Transcrie, Ascultă), ca în aplicațiile
+profesionale. Aici e doar un ghid scurt: cum merge programul, în trei pași.
 """
 
 from __future__ import annotations
@@ -16,45 +16,71 @@ from PySide6.QtWidgets import (
 )
 
 from ..constante import NUME_AFISAT, NUME_SCURT, SUBTITLU_RO
-from .comun import Buton, fonturi, seteaza_rol
+from .comun import fonturi, seteaza_rol
 
 
 class PaginaPrincipala(QWidget):
-    """Ecranul de pornire: antet + acțiuni rapide pe un singur rând."""
+    """Ghid scurt de trei pași; acțiunile sunt doar în bara de sus."""
 
     def __init__(self, parinte: QWidget, aplicatie):
         super().__init__(parinte)
         self.aplicatie = aplicatie
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 8, 20, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(28, 22, 28, 22)
+        layout.setSpacing(14)
 
-        # Antet compact, un singur rând: numele (D&TED) + subtitlul, mai mic.
-        antet = QHBoxLayout()
-        antet.setSpacing(12)
         titlu = QLabel(f"{NUME_AFISAT} ({NUME_SCURT})")
         titlu.setTextFormat(Qt.TextFormat.PlainText)
-        titlu.setFont(fonturi("buton"))
-        antet.addWidget(titlu)
-        subtitlu = QLabel(SUBTITLU_RO)
-        subtitlu.setFont(fonturi("mica"))
-        seteaza_rol(subtitlu, "secundar")
-        antet.addWidget(subtitlu, 0, Qt.AlignmentFlag.AlignBottom)
-        antet.addStretch(1)
-        layout.addLayout(antet)
+        titlu.setFont(fonturi("titlu"))
+        layout.addWidget(titlu)
 
-        # Acțiunile principale, pe un singur rând compact.
-        rand = QHBoxLayout()
-        rand.setSpacing(8)
-        rand.addWidget(Buton(self, "🎤 Dictează", lambda: aplicatie.arata_ecran("dictare"), fel="principal", latime=120, inaltime=36))
-        rand.addWidget(Buton(self, "📂 Transcrie un fișier", lambda: aplicatie.arata_ecran("transcriere"), latime=170, inaltime=36))
-        rand.addWidget(Buton(self, "✏️ Scrie / corectează", lambda: aplicatie.arata_ecran("editor"), latime=160, inaltime=36))
-        rand.addWidget(Buton(self, "🗂 Fișierele mele", lambda: aplicatie.arata_ecran("fisiere"), latime=140, inaltime=36))
-        rand.addWidget(Buton(self, "🔊 Verifică sunetul", lambda: aplicatie.arata_ecran("sunet"), latime=150, inaltime=36))
-        rand.addWidget(Buton(self, "🔍 Verifică calculatorul", lambda: aplicatie.arata_ecran("verificare"), latime=160, inaltime=36))
-        rand.addStretch(1)
-        layout.addLayout(rand)
+        subtitlu = QLabel(SUBTITLU_RO)
+        subtitlu.setFont(fonturi("baza"))
+        seteaza_rol(subtitlu, "secundar")
+        subtitlu.setWordWrap(True)
+        layout.addWidget(subtitlu)
+
+        layout.addSpacing(8)
+        pași = QLabel("Cum merge, în trei pași")
+        pași.setFont(fonturi("buton"))
+        layout.addWidget(pași)
+
+        for număr, text, detaliu in (
+            ("1", "Vorbește", "apasă „🎤 Dictează” din bara de sus (sau Ctrl+Space) și dictează calm; semnele [mm:ss] se pun cu Ctrl+B"),
+            ("2", "Corectează ascultând", "pune cursorul lângă un semn și apasă Ctrl+R — redau exact bucata aia din înregistrare"),
+            ("3", "Salvează", "Ctrl+S salvează documentul (DOCX, ODT, TXT, PDF…); criptarea cu parolă e din Setări"),
+        ):
+            rand = QHBoxLayout()
+            rand.setSpacing(12)
+            numar = QLabel(număr)
+            numar.setFont(fonturi("titlu"))
+            numar.setMinimumWidth(22)
+            seteaza_rol(numar, "secundar")
+            rand.addWidget(numar, 0, Qt.AlignmentFlag.AlignTop)
+            coloana = QVBoxLayout()
+            coloana.setSpacing(2)
+            nume = QLabel(text)
+            nume.setFont(fonturi("buton"))
+            coloana.addWidget(nume)
+            explicatie = QLabel(detaliu)
+            explicatie.setFont(fonturi("baza"))
+            explicatie.setWordWrap(True)
+            seteaza_rol(explicatie, "secundar")
+            coloana.addWidget(explicatie)
+            rand.addLayout(coloana, 1)
+            layout.addLayout(rand)
+
+        layout.addSpacing(6)
+        nota = QLabel(
+            "Restul uneltelor (sunet, fișiere, confidențialitate, instalare) sunt în "
+            "meniul „Instrumente ▾” din dreapta sus."
+        )
+        nota.setFont(fonturi("mica"))
+        seteaza_rol(nota, "secundar")
+        nota.setWordWrap(True)
+        layout.addWidget(nota)
+        layout.addStretch(1)
 
     def sincronizeaza_din_stare(self) -> None:
         pass

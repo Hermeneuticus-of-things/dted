@@ -205,10 +205,10 @@ class Aplicatie(QMainWindow):
 
         # Buton mare „📂 Transcrie un fișier…”
         btn_transcrie = QToolButton()
-        btn_transcrie.setText("📂 Transcrie un fișier…")
+        btn_transcrie.setText("📂")
         btn_transcrie.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_transcrie.clicked.connect(self.transcrie_fisier_ales)
-        btn_transcrie.setToolTip("Transcrie (Ctrl+T)")
+        btn_transcrie.setToolTip("Transcrie un fișier audio (Ctrl+T)")
         self.toolbar.addWidget(btn_transcrie)
 
         # Ascultarea înregistrării (32/34/35): apare doar când există o dictare.
