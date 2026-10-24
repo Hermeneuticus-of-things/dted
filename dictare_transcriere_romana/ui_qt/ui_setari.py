@@ -792,36 +792,15 @@ class FereastraSetari(QDialog):
         )
 
     def _rand_da_nu(self, parinte: QWidget, cheie: str, text: str, valoare: bool) -> None:
-        rand = QHBoxLayout()
-        et = QLabel(text)
-        et.setFont(fonturi("baza"))
-        et.setWordWrap(True)
-        et.setMinimumWidth(500)
-        et.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        rand.addWidget(et)
-        rb_da = QCheckBox("Da")
-        rb_nu = QCheckBox("Nu")
-        rb_da.setFont(fonturi("baza"))
-        rb_nu.setFont(fonturi("baza"))
-        rb_da.setChecked(valoare)
-        rb_nu.setChecked(not valoare)
+        """Un rând de setare cu o SINGURĂ bifă (UX-22/redesign): bifat = activat.
 
-        def da_toggled(checked):
-            if checked:
-                rb_nu.setChecked(False)
-            setattr(self, cheie, checked)
-
-        def nu_toggled(checked):
-            if checked:
-                rb_da.setChecked(False)
-            setattr(self, cheie, not checked)
-
-        rb_da.toggled.connect(da_toggled)
-        rb_nu.toggled.connect(nu_toggled)
-        rand.addWidget(rb_da)
-        rand.addWidget(rb_nu)
-        rand.addStretch(1)
-        parinte.layout().addLayout(rand)
+        A înlocuit perechea de casete „Da / Nu”, care ocupa loc degeaba.
+        """
+        bifa = QCheckBox(text)
+        bifa.setFont(fonturi("baza"))
+        bifa.setChecked(bool(valoare))
+        bifa.toggled.connect(lambda bifat: setattr(self, cheie, bifat))
+        parinte.layout().addWidget(bifa)
 
     def _rand_program(self) -> None:
         card = self._card(
