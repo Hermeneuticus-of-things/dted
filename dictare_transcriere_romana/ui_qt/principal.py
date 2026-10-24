@@ -107,7 +107,8 @@ class Aplicatie(QMainWindow):
         self.stare = stare_modul.Stare(config=self.configurare)
         self.coada = comun.CoadaUI(self)
         self._motor: motor.MotorWhisper | None = motor.MotorWhisper(
-            getattr(self.configurare, "dispozitiv", "auto")
+            getattr(self.configurare, "dispozitiv", "auto"),
+            getattr(self.configurare, "model_preferat", "auto"),
         )
         self._pagini: dict[str, QWidget] = {}
         self._pagina_aleasa = ""

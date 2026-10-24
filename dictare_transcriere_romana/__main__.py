@@ -141,7 +141,10 @@ def _transcrie(argumente: argparse.Namespace) -> int:
     setari = config_modul.incarca()
     limba = argumente.limba or setari.limba or "ro"
     print(f"Transcriu „{cale.name}” (limba: {limba}). Durează în funcție de lungimea înregistrării.")
-    motor = motor_mod.MotorWhisper(getattr(setari, "dispozitiv", "auto"))
+    motor = motor_mod.MotorWhisper(
+        getattr(setari, "dispozitiv", "auto"),
+        getattr(setari, "model_preferat", "auto"),
+    )
 
     def progres(fractiune: float) -> None:
         print(f"\r  {int(round(max(0.0, min(1.0, fractiune)) * 100)):3d}%", end="", flush=True)

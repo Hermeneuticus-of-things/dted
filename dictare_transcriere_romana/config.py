@@ -54,6 +54,7 @@ class Config:
     cuda_stare_detaliu: str = ""          # motivul, dacă descărcarea a eșuat
     cripteaza_documente: bool = False     # salvează documentele criptat (AES-256, cu parolă)
     blocare_dictare: str = "nimic"        # la dictare: „nimic”, „program” (doar D&TED) sau „tot”
+    model_preferat: str = "auto"          # „auto” (românescul, dacă există) sau numele folderului
     scurteaza_pauze: bool = False         # dictare: taie tăcerile mai lungi de 2 secunde (52)
     pregateste_audio: bool = False        # dictare: aduce volumul la un nivel potrivit (51)
     scurtaturi_globale: bool = False      # scurtăturile globale (Ctrl+Alt+D) — OPRITE implicit (53)

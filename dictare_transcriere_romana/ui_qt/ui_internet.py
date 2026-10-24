@@ -231,10 +231,10 @@ class FereastraAvertisment(QDialog):
             self, "Am înțeles, continuă", self.accept, fel="succes", latime=220, inaltime=40
         )
         jos.addWidget(self.buton_continua)
-        Buton(self, "Nu mai afișa azi", self._ascunde_azi, latime=200, inaltime=40).setParent(
-            self
-        )
         jos.addWidget(Buton(self, "Nu mai afișa azi", self._ascunde_azi, latime=200, inaltime=40))
+        jos.addWidget(
+            Buton(self, "Nu mai afișa deloc", self._nu_mai_afisa_deloc, latime=200, inaltime=40)
+        )
         jos.addStretch(1)
         layout.addLayout(jos)
 
@@ -437,6 +437,23 @@ class FereastraAvertisment(QDialog):
     def _ascunde_azi(self) -> None:
         ascunde_azi(self.configurare)
         comun.anunta_ascundere(self)
+        self.reject()
+
+    def _nu_mai_afisa_deloc(self) -> None:
+        """Oprește avertizările de confidențialitate pentru totdeauna.
+
+        Se pot porni la loc din Setări → „Confidențialitate”.
+        """
+        for cheie in (
+            "avertizeaza_internet",
+            "avertizeaza_wifi",
+            "avertizeaza_bluetooth",
+            "avertizeaza_stick",
+        ):
+            setattr(self.configurare, cheie, False)
+        from .. import config as config_modul
+
+        config_modul.salveaza(self.configurare)
         self.reject()
 
     def reject(self) -> None:

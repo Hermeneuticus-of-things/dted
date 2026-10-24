@@ -26,8 +26,8 @@ NUME_SCURTATURA = f"{NUME_SCURT} – {NUME_AFISAT}"
 NUME_EXE = "DTED"
 NUME_PACHET = "dictare_transcriere_romana"  # numele tehnic (fără diacritice)
 NUME_PUBLICATOR = "D&TED"
-VERSIUNE = "1.0.0"
-VERSIUNE_COMPLETA = f"{VERSIUNE} (2026-10)"
+VERSIUNE = "0.1.2"
+VERSIUNE_COMPLETA = f"{VERSIUNE}-beta (2026-10)"
 
 #: Variabila de mediu care poate muta instalarea în alt folder.
 VAR_MEDIU_FOLDER = "DICTARE_DIR"
@@ -42,8 +42,20 @@ VAR_MEDIU_IESIRI = "DICTARE_IESIRI"
 #: nu un fișier .pt). Modelul este convertit din openai/whisper-large-v3-turbo.
 WHISPER_NUME = "large-v3-turbo-ct2"
 
+#: Modelul îmbunătățit pentru română (v0.1.2): Whisper large-v3-turbo
+#: fine-tunat pe Common Voice 20 (41 431 de înregistrări românești),
+#: WER 4,69% vs 20,72% la modelul de bază; licență CC-BY-NC-4.0.
+#: Sursă: https://huggingface.co/TransferRapid/whisper-large-v3-turbo_ro
+WHISPER_NUME_RO = "large-v3-turbo-ro-ct2"
+
 #: Repository Hugging Face care găzduiește modelul CTranslate2 gata convertit.
 WHISPER_CT2_REPO = "deepdml/faster-whisper-large-v3-turbo-ct2"
+
+#: Modelele de transcriere cunoscute (folder → descriere pentru utilizator).
+MODELE_TRANSCRIBERE = {
+    WHISPER_NUME_RO: "Îmbunătățit pentru română (recomandat)",
+    WHISPER_NUME: "Standard multilingv (Whisper large-v3-turbo)",
+}
 
 #: Fișierele care compun modelul CTranslate2 (descărcate la instalare).
 WHISPER_CT2_FISIERE = (
