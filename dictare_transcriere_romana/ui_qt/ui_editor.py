@@ -236,6 +236,10 @@ class Editor(QWidget):
         self._control.find(text)
         self._control.setFocus()
 
+    def cursor_pozitie(self) -> int:
+        """Poziția cursorului în text (pentru redarea de la semnul de lângă el)."""
+        return self._control.textCursor().position()
+
     def text(self) -> str:
         return self._control.toPlainText()
 

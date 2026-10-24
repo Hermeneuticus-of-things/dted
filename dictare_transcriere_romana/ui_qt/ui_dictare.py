@@ -379,6 +379,11 @@ class PaginaDictare(QWidget):
             self._microfon = None
             if inreg is not None:
                 self._secunde_audio = inreg.secunde
+            # 32/34/35: sunetul rămâne disponibil pentru „▶ Ascultă” din editor
+            try:
+                self.aplicatie.primeste_inregistrarea(self._dictare_sunet)
+            except Exception:
+                pass
 
         self._anulat.set()
         self._activ = False
