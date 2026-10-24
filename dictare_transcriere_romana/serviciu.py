@@ -48,7 +48,9 @@ class Serviciu:
         self._motor_fabrica = motor_fabrica or _motor_implicit
         self._microfon_fabrica = microfon_fabrica or _microfon_implicit
         self._motor = None
+        self._creare_motor = threading.Lock()  # un singur model, chiar cu două cereri simultane
         self._motor_blocare = threading.Lock()  # un singur calcul pe model odată
+        self._curent = None  # id-ul cererii calculate acum (anularea oprește doar cererea ei)
         self._secunde_bucata = secunde_bucata
         self._dictare: dict | None = None
         self._transcrieri: dict[str, threading.Event] = {}
@@ -65,11 +67,19 @@ class Serviciu:
         self.scrie({"ev": "eroare", "id": id_, "mesaj": mesaj, "ce_fac": getattr(exc, "ce_fac", "") or ce_fac})
 
     def motor(self):
-        if self._motor is None:
-            self._motor = self._motor_fabrica()
-        return self._motor
+        with self._creare_motor:
+            if self._motor is None:
+                self._motor = self._motor_fabrica()
+            return self._motor
+
+    def _anuleaza_calculul(self, id_=None) -> None:
+        """Oprește calculul în curs, doar dacă e al cererii `id_` (sau oricare, fără id)."""
+        motor = self._motor
+        if motor is not None and hasattr(motor, "anuleaza") and self._curent is not None and (id_ is None or self._curent == id_):
+            motor.anuleaza()
 
     def _porneste_fir(self, tinta, *args) -> threading.Thread:
+        self._fire = [f for f in self._fire if f.is_alive()]
         fir = threading.Thread(target=tinta, args=args, daemon=True)
         self._fire.append(fir)
         fir.start()
@@ -94,6 +104,7 @@ class Serviciu:
             self._opreste_dictarea(anulat=True)
             for semnal in self._transcrieri.values():
                 semnal.set()
+            self._anuleaza_calculul()
             return False
         if cmd == "stare":
             self.scrie(self._stare())
@@ -116,9 +127,7 @@ class Serviciu:
             semnal = self._transcrieri.get(str(id_))
             if semnal is not None:
                 semnal.set()
-                motor = self._motor
-                if motor is not None and hasattr(motor, "anuleaza"):
-                    motor.anuleaza()
+                self._anuleaza_calculul(f"t:{id_}")
             elif self._dictare is not None and self._dictare["id"] == id_:
                 self._opreste_dictarea(anulat=True)
         else:
@@ -145,13 +154,17 @@ class Serviciu:
             with self._motor_blocare:
                 if semnal.is_set():
                     raise _Anulat()
-                rezultat = motor.transcrie(
-                    cale,
-                    limba=limba,
-                    termeni=termeni,
-                    progres=lambda p: self.scrie({"ev": "progres", "id": id_, "p": round(float(p), 3)}),
-                    faza=lambda f: self.scrie({"ev": "faza", "id": id_, "text": str(f)}),
-                )
+                self._curent = f"t:{id_}"
+                try:
+                    rezultat = motor.transcrie(
+                        cale,
+                        limba=limba,
+                        termeni=termeni,
+                        progres=lambda p: self.scrie({"ev": "progres", "id": id_, "p": round(float(p), 3)}),
+                        faza=lambda f: self.scrie({"ev": "faza", "id": id_, "text": str(f)}),
+                    )
+                finally:
+                    self._curent = None
             if semnal.is_set():
                 raise _Anulat()
             self.scrie(
@@ -192,13 +205,20 @@ class Serviciu:
             return
         stare["anulat"] = anulat
         stare["oprit"].set()
+        # O dictare nouă poate porni imediat; bucla veche își termină singură ultima bucată.
+        self._dictare = None
 
     def _fragment(self, stare: dict, sunet) -> None:
         if sunet is None or len(sunet) < int(0.5 * RATA):  # prea puțin sunet
             return
         try:
+            motor = self.motor()
             with self._motor_blocare:
-                rezultat = self.motor().transcrie(sunet, limba=stare["limba"], termeni=stare["termeni"], progres=None, faza=None)
+                self._curent = f"d:{stare['id']}"
+                try:
+                    rezultat = motor.transcrie(sunet, limba=stare["limba"], termeni=stare["termeni"], progres=None, faza=None)
+                finally:
+                    self._curent = None
         except BaseException as exc:  # noqa: BLE001
             if type(exc).__name__ != "Anulat":
                 self._eroare(stare["id"], exc)
@@ -228,7 +248,8 @@ class Serviciu:
                 pass
             self._eroare(stare["id"], exc, "Verifică dacă microfonul este conectat, apoi pornește dictarea din nou.")
         finally:
-            self._dictare = None
+            if self._dictare is stare:
+                self._dictare = None
             if stare["anulat"]:
                 self.scrie({"ev": "anulat", "id": stare["id"]})
             else:

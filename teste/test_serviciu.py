@@ -159,6 +159,41 @@ class TestServiciu(unittest.TestCase):
         s.executa({"cmd": "dictare_stop", "id": "f"})
         s.asteapta(5)
 
+    def test_repornire_imediata_dupa_stop(self):
+        s, mesaje = porneste(motor_fabrica=MotorFals, microfon_fabrica=MicrofonFals)
+        s.executa({"cmd": "dictare_start", "id": "a"})
+        s.executa({"cmd": "dictare_stop", "id": "a"})
+        s.executa({"cmd": "dictare_start", "id": "b"})
+        self.assertFalse(any(m["ev"] == "eroare" for m in mesaje))
+        s.executa({"cmd": "dictare_stop", "id": "b"})
+        s.asteapta(5)
+        self.assertEqual({m["id"] for m in mesaje if m["ev"] == "dictare_oprita"}, {"a", "b"})
+
+    def test_anularea_unei_cereri_in_asteptare_nu_opreste_cererea_in_curs(self):
+        motor = MotorFals(intarziere=0.6)
+        s, mesaje = porneste(motor_fabrica=lambda: motor)
+        s.executa({"cmd": "transcrie", "id": "a", "cale": "a.mp3"})
+        time.sleep(0.1)
+        s.executa({"cmd": "transcrie", "id": "b", "cale": "b.mp3"})
+        s.executa({"cmd": "anuleaza", "id": "b"})
+        s.asteapta(5)
+        self.assertEqual([m["id"] for m in mesaje if m["ev"] == "rezultat"], ["a"])
+        self.assertEqual([m["id"] for m in mesaje if m["ev"] == "anulat"], ["b"])
+
+    def test_un_singur_motor_la_cereri_simultane(self):
+        create = []
+
+        def fabrica():
+            time.sleep(0.05)
+            create.append(1)
+            return MotorFals()
+
+        s, mesaje = porneste(motor_fabrica=fabrica)
+        for i in range(4):
+            s.executa({"cmd": "transcrie", "id": i, "cale": f"{i}.mp3"})
+        s.asteapta(5)
+        self.assertEqual(len(create), 1)
+
     def test_fara_microfon(self):
         s, mesaje = porneste(motor_fabrica=MotorFals, microfon_fabrica=lambda: MicrofonFals(eroare_la_pornire=True))
         s.executa({"cmd": "dictare_start", "id": "d"})
