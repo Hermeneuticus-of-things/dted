@@ -32,6 +32,10 @@ Totul se face **pe calculatorul tău**: după instalare, programul nu are nevoie
 - **Verificarea calculatorului** (memorie, disc, drivere, placă video, codecuri) și mesaje în română simplă.
 - **Actualizări opționale**, doar la apăsarea butonului „Caută actualizări”, cu verificare SHA-256.
 
+## Folosit din alte programe
+
+D&TED poate lucra și pentru alte programe, fără fereastră. Scribner (programul de scris cărți) îl folosește astfel pentru dictare direct în carte și pentru transcrierea fișierelor audio. Detalii: [`docs/SERVICIU.md`](docs/SERVICIU.md).
+
 ## Cerințe de sistem
 
 | | Minim | Recomandat |
