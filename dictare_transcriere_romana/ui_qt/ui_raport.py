@@ -52,7 +52,8 @@ def anonimizeaza(text: str) -> str:
     """Scurtează căile personale dintr-un text (fără nume de utilizator/proiect)."""
     text = text.replace(_HOME, "%UTILIZATOR%")
     text = re.sub(r"[A-Za-z]:\\Users\\[^\s\\\"']+", "%UTILIZATOR%", text)
-    text = re.sub(r"[A-Za-z]:\\OpenCode[^\s\\\"']*", "%PROIECT%", text)
+    # Any other folder on a drive (cartea, proiectul): only the file name stays.
+    text = re.sub(r"[A-Za-z]:\\(?![^\n\"']*%UTILIZATOR%)[^\n\"']*\\", r"%PROIECT%\\", text)
     return text
 
 
