@@ -141,6 +141,12 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+R"), self, self._comanda_asculta)  # 34: taste de redare
         QShortcut(QKeySequence("Ctrl+Shift+R"), self, self._opreste_ascultarea)
+        QShortcut(QKeySequence("F5"), self, self._toggle_dictare)
+        QShortcut(QKeySequence("F9"), self, self._comanda_asculta)
+        QShortcut(QKeySequence("Home"), self, lambda: self._sare_redare(0.0))
+        QShortcut(QKeySequence("End"), self, self._sare_la_capat)
+        QShortcut(QKeySequence("F7"), self, lambda: self._sare_redare(-5.0))
+        QShortcut(QKeySequence("F8"), self, lambda: self._sare_redare(+5.0))
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -305,6 +311,18 @@ class Aplicatie(QMainWindow):
         zona_layout.setSpacing(0)
         layout.addWidget(self._zona_pagini, stretch=0)
 
+        # Lista dictărilor (stil Express Dictate) — compactă și pliabilă;
+        # zona de text rămâne cea mai mare.
+        from .ui_dictari import ListaDictari
+
+        self._eticheta_lista = QLabel("▾ Dictările mele")
+        self._eticheta_lista.setFont(comun.fonturi("buton"))
+        self._eticheta_lista.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._eticheta_lista.mousePressEvent = lambda _e: self._pliaza_lista()
+        layout.addWidget(self._eticheta_lista)
+        self.lista_dictari = ListaDictari(self, self)
+        layout.addWidget(self.lista_dictari)
+
         # Editor integrat - ocupa cea mai mare parte din fereastră.
         self.editor = Editor(self, self.stare, la_actiune=self._dupa_scriere, inaltime=13)
         self._zona_editor = self.editor
@@ -328,6 +346,77 @@ class Aplicatie(QMainWindow):
             inaltime=32,
         )
         jos_layout.addWidget(self._buton_folder)
+
+        # Dock de redare profesionist (stil Express Scribe): transport + poziție.
+        # Apare doar când există o înregistrare de ascultat; editorul rămâne regele.
+        self._dock_redare = QFrame()
+        self._dock_redare.setObjectName("dock_redare")
+        dock_rand = QHBoxLayout(self._dock_redare)
+        dock_rand.setContentsMargins(14, 6, 14, 6)
+        dock_rand.setSpacing(10)
+
+        # Ca la Express Dictate: Record ROȘU, Play VERDE, Stop ALBASTRU.
+        self.btn_inregistreaza = Buton(
+            self._dock_redare, "⏺ Dictează (F5)", self._toggle_dictare, fel="pericol", latime=150, inaltime=36
+        )
+        dock_rand.addWidget(self.btn_inregistreaza)
+
+        self.btn_transport = Buton(
+            self._dock_redare, "▶ Ascultă", self._comanda_asculta, fel="succes", latime=110, inaltime=36
+        )
+        self.btn_transport.setToolTip("Ascultă / pauză (F9 sau Ctrl+R)")
+        dock_rand.addWidget(self.btn_transport)
+
+        self.btn_transport_stop = Buton(
+            self._dock_redare, "⏹ Stop", self._opreste_ascultarea, fel="principal", latime=90, inaltime=36
+        )
+        self.btn_transport_stop.setToolTip("Oprește (Esc)")
+        dock_rand.addWidget(self.btn_transport_stop)
+
+        btn_inapoi = QToolButton()
+        btn_inapoi.setText("⏪")
+        btn_inapoi.setFixedSize(40, 34)
+        btn_inapoi.setToolTip("Înapoi 5 s (F7)")
+        btn_inapoi.clicked.connect(lambda: self._sare_redare(-5.0))
+        dock_rand.addWidget(btn_inapoi)
+
+        btn_inainte = QToolButton()
+        btn_inainte.setText("⏩")
+        btn_inainte.setFixedSize(40, 34)
+        btn_inainte.setToolTip("Înainte 5 s (F8)")
+        btn_inainte.clicked.connect(lambda: self._sare_redare(+5.0))
+        dock_rand.addWidget(btn_inainte)
+
+        from PySide6.QtWidgets import QSlider
+        self._slider_redare = QSlider(Qt.Orientation.Horizontal)
+        self._slider_redare.setRange(0, 1000)
+        self._slider_redare.setToolTip("Trage pentru a sări în înregistrare")
+        self._slider_redare.sliderReleased.connect(self._cauta_din_slider)
+        dock_rand.addWidget(self._slider_redare, stretch=1)
+
+        self._eticheta_redare = QLabel("--:-- / --:--")
+        self._eticheta_redare.setFont(comun.fonturi("buton"))
+        self._eticheta_redare.setMinimumWidth(110)
+        dock_rand.addWidget(self._eticheta_redare)
+
+        # Volumul de ieșire (ca sliderul din Express Dictate).
+        from PySide6.QtWidgets import QSlider as _QSlider
+        from .. import nivele
+
+        self._slider_volum = _QSlider(Qt.Orientation.Horizontal)
+        self._slider_volum.setFixedWidth(120)
+        self._slider_volum.setRange(0, 100)
+        self._slider_volum.setToolTip("Volumul sunetului")
+        _volum_curent = nivele.volum_iesire()
+        if _volum_curent is not None:
+            self._slider_volum.setValue(int(_volum_curent * 100))
+        self._slider_volum.valueChanged.connect(
+            lambda valoare: nivele.seteaza_volum_iesire(valoare / 100.0)
+        )
+        dock_rand.addWidget(self._slider_volum)
+
+        self._dock_redare.hide()
+        layout.addWidget(self._dock_redare)
 
         # Starea rețelei și confidențialitatea — mici, în bara de jos (redesign UX):
         # rareori folosite, deci nu mai stau în bara principală.
@@ -360,6 +449,10 @@ class Aplicatie(QMainWindow):
         # dictat (paginile întregi de corectat). Ecranul de start e în „Instrumente ▾”.
         self._doar_textul()
         self._reimprospateaza_ultimele()
+        try:
+            self.lista_dictari.reimprospateaza()
+        except Exception:
+            pass
 
     def _doar_textul(self) -> None:
         """Ascunde toate ecranele și lasă numai editorul (spațiu maxim)."""
@@ -672,9 +765,13 @@ class Aplicatie(QMainWindow):
         activ = bool(pagina is not None and getattr(pagina, "_activ", False))
         if activ:
             self.btn_dictare.setText("⏹ Oprește dictarea")
+            if hasattr(self, "btn_inregistreaza"):
+                self.btn_inregistreaza.set_text("⏹ Oprește (F5)")
             self.btn_dictare.setToolTip("Oprește dictarea (Ctrl+Space)")
         else:
             self.btn_dictare.setText("🎤 Dictează")
+            if hasattr(self, "btn_inregistreaza"):
+                self.btn_inregistreaza.set_text("⏺ Dictează (F5)")
             self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
         self.btn_dictare.setProperty("dictare", "true" if activ else "false")
         stil = self.btn_dictare.style()
@@ -863,6 +960,8 @@ class Aplicatie(QMainWindow):
                 self._player_ascultare().incarca(pcm, rata)
                 self.btn_asculta.show()
                 self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+                self._dock_redare.show()
+                self._arata_stare_redare()
         except Exception as exc:
             jurnal.atentionare(f"Nu am putut păstra înregistrarea pentru ascultare: {exc}")
 
@@ -877,6 +976,7 @@ class Aplicatie(QMainWindow):
         if player.ruleaza():
             player.pauza()
             self.btn_asculta.setText("▶ Continuă (Ctrl+R)")
+            self.btn_transport.set_text("▶ Continuă")
             self.bara_stare.arata("Pauză", "ascultarea e pe pauză (Ctrl+R continuă).", "normal")
             return
         # cerința 32: ascultă zona semnului de lângă cursor
@@ -886,6 +986,7 @@ class Aplicatie(QMainWindow):
         if player.porneste(de_la):
             self._porneste_ceasul_ascultarii()
             self.btn_asculta.setText("⏸ Pauză (Ctrl+R)")
+            self.btn_transport.set_text("⏸ Pauză")
             unde = f"de la semnul {modul_redare.marca_din_secunde(de_la)}" if de_la else "de la început"
             self.bara_stare.arata("Redare", f"Ascult {unde}.", "lucru")
 
@@ -895,28 +996,108 @@ class Aplicatie(QMainWindow):
             return
         self._ascultator.opreste()
         self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
+        self.btn_transport.set_text("▶ Ascultă")
+        self._arata_stare_redare()
         self.bara_stare.arata("Oprit", "ascultarea s-a oprit.", "normal")
 
     def _porneste_ceasul_ascultarii(self) -> None:
-        from .. import redare as modul_redare
+        self._arata_stare_redare()
+        self.btn_transport.setText("⏸")
 
         def pas() -> None:
-            if not hasattr(self, "_ascultator") or not self._ascultator.ruleaza():
+            if not hasattr(self, "_ascultator") or not self._ascultator:
                 return
-            if self._ascultator.la_capat():
+            if self._ascultator.ruleaza() and self._ascultator.la_capat():
                 self._ascultator.opreste()
                 self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
-                return
-            pozitie = self._ascultator.pozitie()
-            self.bara_stare.arata(
-                "Redare",
-                f"▶ {modul_redare.marca_din_secunde(pozitie)} / "
-                f"{modul_redare.marca_din_secunde(self._ascultator.durata())}",
-                "lucru",
-            )
-            QTimer.singleShot(300, pas)
+                self.btn_transport.setText("▶")
+            self._arata_stare_redare()
+            if self._ascultator.ruleaza():
+                QTimer.singleShot(250, pas)
 
-        QTimer.singleShot(300, pas)
+        QTimer.singleShot(250, pas)
+
+    def _arata_stare_redare(self) -> None:
+        """Sliderul și eticheta de timp ale dock-ului de redare."""
+        from .. import redare as modul_redare
+
+        if not hasattr(self, "_ascultator") or not self._ascultator.are():
+            return
+        durata = self._ascultator.durata()
+        pozitie = self._ascultator.pozitie()
+        self._slider_redare.blockSignals(True)
+        self._slider_redare.setRange(0, max(1, int(durata * 10)))
+        self._slider_redare.setValue(int(pozitie * 10))
+        self._slider_redare.blockSignals(False)
+        self._eticheta_redare.setText(
+            f"{modul_redare.marca_din_secunde(pozitie)} / {modul_redare.marca_din_secunde(durata)}"
+        )
+
+    def _cauta_din_slider(self) -> None:
+        """Tragerea sliderului = sare în înregistrare (stil program profesionist)."""
+        if not hasattr(self, "_ascultator") or not self._ascultator.are():
+            return
+        secunde = self._slider_redare.value() / 10.0
+        rulea = self._ascultator.ruleaza()
+        if rulea:
+            self._ascultator.pauza()
+        self._ascultator._offset = min(secunde, max(0.0, self._ascultator.durata() - 0.2))
+        if rulea:
+            self._ascultator.porneste()
+        self._arata_stare_redare()
+
+    def _pliaza_lista(self) -> None:
+        """Ascunde/arată lista dictărilor (zona de text devine și mai mare)."""
+        vizibil = self.lista_dictari.isVisible()
+        self.lista_dictari.setVisible(not vizibil)
+        self._eticheta_lista.setText("▾ Dictările mele" if not vizibil else "▸ Dictările mele")
+
+    def deschide_dictare(self, cale_text, cale_audio) -> None:
+        """Un clic în lista dictărilor: textul în editor, sunetul gata de ascultat."""
+        from .. import biblioteca
+
+        try:
+            text_citit = biblioteca.citeste(Path(cale_text))
+        except Exception as exc:
+            comun.dialog_eroare(self, "Nu am putut deschide dictarea", exc)
+            return
+        self.editor.set_text(text_citit)
+        self.stare.text = text_citit
+        self.stare.document_cale = Path(cale_text)
+        self.stare.marca = biblioteca.marca_din_nume(Path(cale_text))
+        self.stare.marcheaza_salvat()
+        self.bara_stare.arata("Succes", f"Dictare deschisă: {Path(cale_text).stem}", "succes")
+        if cale_audio is not None and str(cale_audio).lower().endswith(".wav"):
+            try:
+                import soundfile as sf
+
+                sunet, rata = sf.read(str(cale_audio), dtype="float32")
+                if sunet.ndim > 1:
+                    sunet = sunet.mean(axis=1)
+                self.primeste_inregistrarea(
+                    type("I", (), {"pcm": sunet, "rata": int(rata)})()
+                )
+            except Exception:
+                pass
+
+    def _sare_redare(self, delta: float) -> None:
+        """F7/F8: sare înapoi/înainte în înregistrare (± secunde)."""
+        if not hasattr(self, "_ascultator") or not self._ascultator.are():
+            return
+        player = self._ascultator
+        rulea = player.ruleaza()
+        if rulea:
+            player.pauza()
+        tinta = min(max(0.0, player.pozitie() + delta), max(0.0, player.durata() - 0.2))
+        player._offset = tinta
+        if rulea:
+            player.porneste()
+        self._arata_stare_redare()
+
+    def _sare_la_capat(self) -> None:
+        """End: sărește la sfârșitul înregistrării."""
+        if hasattr(self, "_ascultator") and self._ascultator.are():
+            self._sare_redare(self._ascultator.durata())
 
     def _deschide_raport(self, descriere: str = "") -> None:
         """Ajutor → Raportează o problemă (detaliile tehnice vin din jurnal)."""
@@ -1370,7 +1551,11 @@ class Aplicatie(QMainWindow):
         )
 
     def _reimprospateaza_ultimele(self) -> None:
-        """Reîmprospătează submeniul „Recente” cu ultimele documente."""
+        """Reîmprospătează „Recente” și lista dictărilor."""
+        try:
+            self.lista_dictari.reimprospateaza()
+        except Exception:
+            pass
         self.menu_recente.clear()
         try:
             from .. import biblioteca
