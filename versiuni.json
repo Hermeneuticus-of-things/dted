@@ -1,6 +1,6 @@
 {
   "program": {
-    "versiune": "0.5.0"
+    "versiune": "0.6.0"
   },
   "model": {
     "versiune": "whisper-turbo-ro-en-ct2"
