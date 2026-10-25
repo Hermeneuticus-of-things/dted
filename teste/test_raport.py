@@ -18,12 +18,12 @@ from dictare_transcriere_romana.ui_qt import ui_raport
 
 def test_căile_personale_sunt_anonimizate():
     text = (
-        r"Eroare la C:\Users\utilizator\Documente\carte.docx și "
-        r"<folder local>\Progrma de dictate trensctiere text\motor.py"
+        r"Eroare la C:\Users\Nume\Documente\carte.docx și "
+        r"D:\Proiecte\Dictare\motor.py"
     )
     anonim = ui_raport.anonimizeaza(text)
-    assert "utilizator" not in anonim
-    assert "PROIECT-DEV" not in anonim
+    assert "Nume" not in anonim
+    assert "Proiecte" not in anonim
     assert "%UTILIZATOR%" in anonim or "%PROIECT%" in anonim
 
 
