@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="docs/img/principal.png" alt="D&TED în acțiune: text dictat cu semne [mm:ss], gata de ascultat și corectat" width="880">
+<img src="docs/img/principal.png" alt="D&TED v0.5.1: lista dictărilor, editor mare, transport de redare jos" width="880">
 
 # 🎙️ D&amp;ED · Dictare &amp; Transcriere Express Digital
 
@@ -34,10 +34,10 @@ irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-boo
 ## ✨ Funcții
 
 ### 🎤 Dictare pentru text de carte
-Textul apare **în timp ce vorbești**, pe bucăți mici — dictezi pagini întregi fără să aștepți. Semnele `[mm:ss]` (Ctrl+B) marchează locurile importante.
+Apasă butonul **roșu** (sau F5) și vorbește — textul apare **în timp ce vorbești**, direct în editorul mare. Semnele `[mm:ss]` (Ctrl+B) marchează locurile importante. Fără pagini separate: o singură fereastră de lucru, ca la Express Dictate.
 
 ### ▶ Ascultă și corectează
-Pune cursorul lângă un semn și apasă **Ctrl+R**: programul redă **exact bucata respectivă** din înregistrare, ca să auzi ce ai spus și să corectezi sigur. Pauză și oprire din taste rapide, poziția curentă în bara de jos.
+Pune cursorul lângă un semn și apasă **F9** (sau Ctrl+R): transportul de jos redă **exact bucata respectivă** — Play verde, Stop albastru, derulare, poziție `01:23 / 05:40` și volum.
 
 <div align="center">
 <img src="docs/img/vumetru-interfat.png" alt="Ecranul de dictare: vumetru în dB integrat, semne [mm:ss], buton de ascultare" width="840">
