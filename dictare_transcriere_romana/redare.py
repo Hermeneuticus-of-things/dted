@@ -57,6 +57,28 @@ def semn_la_cursor(text: str, pozitia: int) -> float | None:
     return cel_mai_bun
 
 
+def resampleaza(pcm, factor: float):
+    """Schimbă viteza de redare prin reeșantionare (1,0 = normal; 1,4 = rapid).
+
+    Întoarce tabloul original dacă factorul e 1 sau sunetul e gol.
+    """
+    import numpy as np
+
+    tablou = np.asarray(pcm, dtype=np.float32)
+    if factor == 1.0 or tablou.size == 0:
+        return tablou
+    nou = max(1, int(len(tablou) / factor))
+    return np.interp(
+        np.linspace(0, len(tablou) - 1, nou),
+        np.arange(len(tablou)),
+        tablou,
+    ).astype(np.float32)
+
+
+#: Vitezele de redare (ca la Express Scribe: F10/F11/F12).
+VITEZE = {"normal": 1.0, "lent": 0.7, "rapid": 1.4}
+
+
 class Redare:
     """Un „reportofon” pentru înregistrarea dictării, cu pauză și poziție.
 
@@ -72,6 +94,7 @@ class Redare:
         self._rata = 16000
         self._offset = 0.0
         self._pornit_la: float | None = None
+        self._viteza = 1.0
 
     # ------------------------------------------------------------------ încărcare
 
@@ -102,7 +125,8 @@ class Redare:
         start = max(0.0, min(start, max(0.0, self.durata() - 0.2)))
         if self._porneste_sunet is not None:
             try:
-                self._porneste_sunet(self._pcm[int(start * self._rata):], self._rata)
+                bucata = resampleaza(self._pcm[int(start * self._rata):], self._viteza)
+                self._porneste_sunet(bucata, self._rata)
             except Exception:
                 return False
         self._offset = start
@@ -140,8 +164,27 @@ class Redare:
             return 0.0
         if self._pornit_la is None:
             return min(self._offset, self.durata())
-        scurs = time.monotonic() - self._pornit_la
+        scurs = (time.monotonic() - self._pornit_la) * self._viteza
         return min(self._offset + scurs, self.durata())
+
+    def viteza(self) -> float:
+        """Viteza curentă (1,0 = normală)."""
+        return self._viteza
+
+    def seteaza_viteza(self, nume: str) -> bool:
+        """Pune viteza („normal”, „lent”, „rapid”); redă continua la noua viteză."""
+        factor = VITEZE.get(nume)
+        if factor is None:
+            return False
+        if self._viteza == factor:
+            return True
+        rulea = self.ruleaza()
+        if rulea:
+            self.pauza()
+        self._viteza = factor
+        if rulea:
+            return self.porneste()
+        return True
 
     def la_capat(self) -> bool:
         """A ajuns la sfârșit (redarea se oprește singură)."""

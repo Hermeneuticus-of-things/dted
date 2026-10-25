@@ -60,6 +60,8 @@ class Config:
     pregateste_audio: bool = False        # dictare: aduce volumul la un nivel potrivit (51)
     scurtaturi_globale: bool = False      # scurtăturile globale (Ctrl+Alt+D) — OPRITE implicit (53)
     asistent_microfon_vazut: bool = False # asistentul de microfon de la prima dictare (52)
+    activare_vocala: bool = False         # pornește singură dictarea când auzi vocea (Express Dictate)
+    prag_activare_db: int = -35           # pragul activării vocale, în dB
 
 
 def incarca() -> Config:

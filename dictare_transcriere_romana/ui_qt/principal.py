@@ -148,6 +148,10 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("End"), self, self._sare_la_capat)
         QShortcut(QKeySequence("F7"), self, lambda: self._sare_redare(-5.0))
         QShortcut(QKeySequence("F8"), self, lambda: self._sare_redare(+5.0))
+        QShortcut(QKeySequence("Shift+Esc"), self, self._opreste_ascultarea)  # Stop (Express Dictate)
+        QShortcut(QKeySequence("F10"), self, lambda: self._viteza_redare("normal"))
+        QShortcut(QKeySequence("F11"), self, lambda: self._viteza_redare("lent"))
+        QShortcut(QKeySequence("F12"), self, lambda: self._viteza_redare("rapid"))
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -447,6 +451,12 @@ class Aplicatie(QMainWindow):
         # dictat (paginile întregi de corectat). Ecranul de start e în „Instrumente ▾”.
         self._doar_textul()
         self._reimprospateaza_ultimele()
+        # Activare vocală (Express Dictate): arma microfonul dacă e bifată.
+        if getattr(self.configurare, "activare_vocala", False):
+            try:
+                self._ia_pagina("dictare").armare_va()
+            except Exception as exc:
+                jurnal.atentionare(f"Activare vocală la pornire: {exc}")
         # Captură self-service (documentație): DTED_CAPTURA=cale.png
         cale_captura = os.environ.get("DTED_CAPTURA", "")
         if cale_captura:
@@ -1092,6 +1102,15 @@ class Aplicatie(QMainWindow):
         if rulea:
             player.porneste()
         self._arata_stare_redare()
+
+    def _viteza_redare(self, nume: str) -> None:
+        """F10/F11/F12: viteza redării — normală / lentă / rapidă."""
+        if not hasattr(self, "_ascultator") or not self._ascultator.are():
+            return
+        if self._ascultator.seteaza_viteza(nume):
+            self._arata_stare_redare()
+            etichete = {"normal": "normală", "lent": "lentă (F11)", "rapid": "rapidă (F12)"}
+            self.bara_stare.arata("Viteză", f"redarea acum: {etichete[nume]}.", "normal")
 
     def _sare_la_capat(self) -> None:
         """End: sărește la sfârșitul înregistrării."""

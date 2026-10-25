@@ -415,6 +415,13 @@ class FereastraSetari(QDialog):
             "Ajustări opționale pentru sunetul dictat; toate sunt oprite la început, "
             "ca textul să rămână întocmai ce s-a auzit.",
         )
+        self.var_activare_vocala = bool(getattr(self.config, "activare_vocala", False))
+        self._rand_da_nu(
+            card,
+            "var_activare_vocala",
+            "Pornește singură dictarea când începi să vorbești (activare vocală, ca la Express Dictate)",
+            self.var_activare_vocala,
+        )
         self.var_auto_volum = bool(getattr(self.config, "auto_volum", True))
         self._rand_da_nu(
             card,
@@ -1316,6 +1323,10 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.blocare_dictare = self.var_blocare
+        except (AttributeError,):
+            pass
+        try:
+            self.config.activare_vocala = self.var_activare_vocala
         except (AttributeError,):
             pass
         try:

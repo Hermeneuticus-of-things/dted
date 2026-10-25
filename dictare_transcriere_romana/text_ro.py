@@ -241,9 +241,31 @@ def curata_repetari(text: str) -> str:
         anterior = text
         text = _REPETITIE.sub(r"\1", text)
     return text
-    anterior = None
-    while anterior != text:
-        anterior = text
-        text = _REPETITIE.sub(r"", text)
-    return text
 
+RAND_GOL = "\n\n"   # paragraf nou: rând gol între paragrafe
+RAND_SIMPLU = "\n"  # rând nou: doar trecerea pe rândul următor
+RAND_TRIPLU = re.compile(r"\n{3,}")  # max un rând gol între paragrafe
+
+_COMANDA_PARAGRAF_NOU = re.compile(
+    r"(?:^|[.!?]\s+|\s)paragraf(?:\s+nou)?(?:[\s,;.]+|$)",
+    re.IGNORECASE,
+)
+_COMANDA_RAND_NOU = re.compile(
+    r"(?:^|[.!?]\s+|\s)rând[\s,;.]+nou[\s,;.]*(?=[A-ZĂÂÎȘȚ0-9])",
+    re.IGNORECASE,
+)
+
+
+def marcaje_paragraf(text: str) -> str:
+    """Comenzile vocale de aliniere: „paragraf”/„paragraf nou” → rând gol.
+
+    Dictarea de carte cere paragrafe: utilizatorul spune „...frază. Paragraf
+    nou. Apoi...” și programul pune rândul gol acolo, deci textul iese
+    aliniat pe paragrafe, nu un bloc continuu. „Rând nou” face doar trecerea
+    pe rândul următor (fără rând gol).
+    """
+    if not text:
+        return text
+    text = _COMANDA_PARAGRAF_NOU.sub(RAND_GOL, text)
+    text = _COMANDA_RAND_NOU.sub(RAND_SIMPLU, text)
+    return re.sub(RAND_TRIPLU, RAND_GOL, text).strip()

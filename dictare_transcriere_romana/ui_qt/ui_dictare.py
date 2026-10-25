@@ -255,29 +255,30 @@ class PaginaDictare(QWidget):
             pass
 
 
-    def _porneste(self) -> None:
+    def _porneste(self, automat: bool = False) -> None:
         from ..inregistrare import Microfon, EroareMicrofon
 
-        if not avertizeaza(self, self.aplicatie.configurare, pentru_dictare=True, fortat=True):
-            # Nu avem avertizare (totul e închis) sau utilizatorul a continuat.
-            pass
+        if not automat:
+            if not avertizeaza(self, self.aplicatie.configurare, pentru_dictare=True, fortat=True):
+                # Nu avem avertizare (totul e închis) sau utilizatorul a continuat.
+                pass
 
-        # Cerinta 42: avertisment spatiu pe disc inainte de dictare.
-        try:
-            from .. import resurse, constante
-            liber = resurse.spatiu_liber_gb(str(Path.home()))
-            if liber < constante.DISC_MINIM_GB:
-                from PySide6.QtWidgets import QMessageBox
-                raspuns = QMessageBox.question(
-                    self,
-                    "Spatiu pe disc",
-                    f"Mai ai doar {liber:.1f} GB liberi. Pentru dictare si salvare sunt recomandate cel putin {constante.DISC_MINIM_GB:.0f} GB.\n\nContinui?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                )
-                if raspuns != QMessageBox.StandardButton.Yes:
-                    return
-        except Exception:
-            pass
+            # Cerinta 42: avertisment spatiu pe disc inainte de dictare.
+            try:
+                from .. import resurse, constante
+                liber = resurse.spatiu_liber_gb(str(Path.home()))
+                if liber < constante.DISC_MINIM_GB:
+                    from PySide6.QtWidgets import QMessageBox
+                    raspuns = QMessageBox.question(
+                        self,
+                        "Spatiu pe disc",
+                        f"Mai ai doar {liber:.1f} GB liberi. Pentru dictare si salvare sunt recomandate cel putin {constante.DISC_MINIM_GB:.0f} GB.\n\nContinui?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    )
+                    if raspuns != QMessageBox.StandardButton.Yes:
+                        return
+            except Exception:
+                pass
 
         if motor.biblioteci_disponibile() is False:
             dialog_eroare(
@@ -294,14 +295,18 @@ class PaginaDictare(QWidget):
             return
 
         try:
-            self._microfon = Microfon()
-            self._microfon.porneste()
+            if automat and getattr(self, "_va_microfon", None) is not None:
+                self._microfon = self._va_microfon  # deja pornit (activare vocală)
+                self._va_microfon = None
+            else:
+                self._microfon = Microfon()
+                self._microfon.porneste()
         except EroareMicrofon as exc:
             dialog_eroare(self, "Microfonul nu poate fi deschis", exc)
             return
 
         # Cerința 52: la prima dictare, un mic asistent arată cum se aude microfonul.
-        if not getattr(self.config, "asistent_microfon_vazut", False):
+        if not automat and not getattr(self.config, "asistent_microfon_vazut", False):
             self._asistent_microfon()
             try:
                 from .. import config as config_modul
@@ -385,6 +390,45 @@ class PaginaDictare(QWidget):
         QTimer.singleShot(6000, dialog.accept)
         dialog.exec()
 
+    def armare_va(self) -> None:
+        """Activare vocală: ține microfonul deschis și pornește dictarea la voce.
+
+        Ca la Express Dictate („Voice Activate Level”): când nivelul trece de
+        pragul din Setări, dictarea pornește singură. Pragul e în dB (0 = tare).
+        """
+        from ..inregistrare import Microfon
+
+        if not getattr(self.config, "activare_vocala", False):
+            return
+        if getattr(self, "_va_microfon", None) is not None or self._activ:
+            return
+        try:
+            self._va_microfon = Microfon()
+            self._va_microfon.porneste()
+        except Exception as exc:
+            jurnal.atentionare(f"Activare vocală: microfonul nu s-a putut deschide: {exc}")
+            return
+        if getattr(self, "_timer_va", None) is None:
+            self._timer_va = QTimer(self)
+            self._timer_va.timeout.connect(self._verifica_va)
+            self._timer_va.start(250)
+        self.aplicatie.bara_stare.arata(
+            "Activare vocală", "vorbește și dictarea pornește singură.", "normal"
+        )
+
+    def _verifica_va(self) -> None:
+        from .. import nivele
+
+        if self._activ or getattr(self, "_va_microfon", None) is None:
+            return
+        if not getattr(self.config, "activare_vocala", False):
+            return
+        prag = float(getattr(self.config, "prag_activare_db", -35) or -35)
+        db = nivele.amplitudine_in_db(float(getattr(self._va_microfon, "nivel", 0.0)))
+        if db >= prag:
+            jurnal.info(f"Activare vocală: nivel {db:.1f} dB ≥ prag {prag:.0f} dB.")
+            self._porneste(automat=True)
+
     def _opreste(self) -> None:        # Oprim captarea înaintea semnalului, ca firul de dictare să poată
         # transcrie apoi tot ce a rămas în coada microfonului.
         if self._microfon is not None:
@@ -408,6 +452,10 @@ class PaginaDictare(QWidget):
         if hasattr(self, "_timer_nivel"):
             self._timer_nivel.stop()
         self._sunet('stop')
+
+        # Activare vocală: rearăm microfonul pentru următoarea dictare.
+        if getattr(self.config, "activare_vocala", False):
+            self.armare_va()
 
         # N-3: dacă am blocat căile de ieșire la pornirea dictării, le aducem înapoi.
         if getattr(self, "_blocat_de_noi", False):
@@ -613,7 +661,7 @@ class PaginaDictare(QWidget):
         # (cerința 48): nu mai înlocuim tot textul prin set_text.
         from .. import inlocuiri, text_ro
 
-        fragment = text_ro.curata_repetari(inlocuiri.aplica(fragment))
+        fragment = text_ro.marcaje_paragraf(text_ro.curata_repetari(inlocuiri.aplica(fragment)))
         if not fragment:
             return
         self.editor.insereaza(fragment)
