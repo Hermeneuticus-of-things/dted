@@ -124,8 +124,8 @@ _METODA_SET_SCALAR = 7    # IAudioEndpointVolume::SetMasterVolumeLevelScalar
 _METODA_GET_SCALAR = 9    # IAudioEndpointVolume::GetMasterVolumeLevelScalar
 
 
-def _endpoint_volume():
-    """Obiectul IAudioEndpointVolume al microfonului implicit (sau None)."""
+def _endpoint_volume(tip: int = _ENDPOINT_CAPTURE):
+    """Obiectul IAudioEndpointVolume al dispozitivului cerut (sau None)."""
     if sys.platform != "win32":
         return None
     try:
@@ -151,7 +151,7 @@ def _endpoint_volume():
             ctypes.HRESULT, c_void_p, wintypes.UINT, wintypes.UINT, ctypes.POINTER(c_void_p)
         )(vtable_enum[_METODA_GET_DEFAULT])
         dispozitiv = c_void_p()
-        if get_default(enumerare, _ENDPOINT_CAPTURE, _CONSOLE, ctypes.byref(dispozitiv)) != 0:
+        if get_default(enumerare, tip, _CONSOLE, ctypes.byref(dispozitiv)) != 0:
             return None
         vtable_dispozitiv = (ctypes.c_void_p * 6).from_address(
             ctypes.cast(dispozitiv, ctypes.POINTER(c_void_p)).contents.value
@@ -171,6 +171,47 @@ def _endpoint_volume():
         return volum
     except Exception:
         return None
+
+
+_ENDPOINT_REDARE = 0  # difuzoare/căști
+
+
+def volum_iesire() -> float | None:
+    """Volumul de ieșire al Windows (0,0 – 1,0) sau None dacă nu se poate."""
+    volum = _endpoint_volume(_ENDPOINT_REDARE)
+    if volum is None:
+        return None
+    try:
+        vtable = (ctypes.c_void_p * 16).from_address(
+            ctypes.cast(volum, ctypes.POINTER(c_void_p)).contents.value
+        )
+        get_scalar = ctypes.WINFUNCTYPE(ctypes.HRESULT, c_void_p, ctypes.POINTER(c_float))(
+            vtable[_METODA_GET_SCALAR]
+        )
+        valoare = c_float()
+        if get_scalar(volum, ctypes.byref(valoare)) != 0:
+            return None
+        return float(valoare.value)
+    except Exception:
+        return None
+
+
+def seteaza_volum_iesire(valoare: float) -> bool:
+    """Pune volumul de ieșire al Windows (sliderul din transport)."""
+    valoare = min(1.0, max(0.0, float(valoare)))
+    volum = _endpoint_volume(_ENDPOINT_REDARE)
+    if volum is None:
+        return False
+    try:
+        vtable = (ctypes.c_void_p * 16).from_address(
+            ctypes.cast(volum, ctypes.POINTER(c_void_p)).contents.value
+        )
+        set_scalar = ctypes.WINFUNCTYPE(ctypes.HRESULT, c_void_p, c_float, ctypes.c_void_p)(
+            vtable[_METODA_SET_SCALAR]
+        )
+        return set_scalar(volum, c_float(valoare), None) == 0
+    except Exception:
+        return False
 
 
 def nivel_microfon() -> float | None:

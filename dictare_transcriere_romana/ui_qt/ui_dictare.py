@@ -191,18 +191,36 @@ class PaginaDictare(QWidget):
     # ------------------------------------------------------------------ microfon
 
     def _verifica_microfon(self) -> None:
-        from ..inregistrare import Microfon, EroareMicrofon
+        """Verifică microfonul ÎN FUNDAL (bug-hunt: încercarea configurațiilor
+        audio poate dura secunde și ar îngheța interfața dacă rula aici)."""
+        import threading
 
-        try:
-            test = Microfon()
-            test.porneste()
-            test.opreste()
-            self.eticheta_nivel.setText("Microfonul este gata. Apasă „Dictează”.")
-            seteaza_rol(self.eticheta_nivel, "succes")
-        except EroareMicrofon as exc:
-            self.eticheta_nivel.setText("Microfonul nu este disponibil.")
-            seteaza_rol(self.eticheta_nivel, "pericol")
-            jurnal.atentionare(f"Microfon: {exc}")
+        self.eticheta_nivel.setText("Verific microfonul…")
+        seteaza_rol(self.eticheta_nivel, "secundar")
+
+        def lucru() -> None:
+            from ..inregistrare import Microfon, EroareMicrofon
+
+            try:
+                test = Microfon()
+                test.porneste()
+                test.opreste()
+                mesaj, rol = "Microfonul este gata. Apasă „Dictează”.", "succes"
+            except EroareMicrofon as exc:
+                mesaj, rol = "Microfonul nu este disponibil.", "pericol"
+                jurnal.atentionare(f"Microfon: {exc}")
+            except Exception as exc:
+                mesaj, rol = "Microfonul nu este disponibil.", "pericol"
+                jurnal.atentionare(f"Microfon: {exc}")
+            self.aplicatie.coada.trimite(
+                self._dupe_verificare_microfon, mesaj, rol
+            )
+
+        threading.Thread(target=lucru, name="verificare-microfon", daemon=True).start()
+
+    def _dupe_verificare_microfon(self, mesaj: str, rol: str) -> None:
+        self.eticheta_nivel.setText(mesaj)
+        seteaza_rol(self.eticheta_nivel, rol)
 
     def _toggle(self) -> None:
         if self._activ:

@@ -375,6 +375,14 @@ def _aplica_qss_central() -> None:
             border: 1px solid {c.chenar};
             border-radius: 6px;
         }}
+        QFrame#dock_redare {{
+            border-top: 1px solid rgba(128, 128, 128, 110);
+            border-bottom: 1px solid rgba(128, 128, 128, 110);
+        }}
+        QFrame#dock_redare QToolButton {{
+            font-size: 15px;
+            font-weight: 600;
+        }}
         QFrame#drop {{
             background-color: {c.galben_fundal};
             border: 2px dashed {c.galben_text};
