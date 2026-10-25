@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import threading
 import time
@@ -446,6 +447,21 @@ class Aplicatie(QMainWindow):
         # dictat (paginile întregi de corectat). Ecranul de start e în „Instrumente ▾”.
         self._doar_textul()
         self._reimprospateaza_ultimele()
+        # Captură self-service (documentație): DTED_CAPTURA=cale.png
+        cale_captura = os.environ.get("DTED_CAPTURA", "")
+        if cale_captura:
+            def captureaza_singura() -> None:
+                from PySide6.QtWidgets import QApplication
+
+                text_proba = os.environ.get("DTED_CAPTURA_TEXT", "")
+                if text_proba:
+                    self.editor.set_text(text_proba)
+                aplicatie_locala = QApplication.instance()
+                if aplicatie_locala is not None:
+                    aplicatie_locala.processEvents()
+                self.grab().save(cale_captura)
+                self.close()
+            QTimer.singleShot(4000, captureaza_singura)
         try:
             self.lista_dictari.reimprospateaza()
         except Exception:

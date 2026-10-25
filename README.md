@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="docs/img/interfata-v051.png" alt="D&TED v0.5.1: lista dictărilor, editor mare, transport de redare jos" width="880">
+<img src="docs/img/interfata-v053.png" alt="D&TED v0.5.3: lista dictărilor, editor mare, transport cu vumetru dB jos" width="880">
 
 # 🎙️ D&amp;ED · Dictare &amp; Transcriere Express Digital
 
