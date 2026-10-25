@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="docs/img/interfata-v053.png" alt="D&TED v0.5.3: lista dictărilor, editor mare, transport cu vumetru dB jos" width="880">
+<img src="docs/img/interfata-v060.png" alt="D&TED v0.6.0: lista dictărilor cu notițe, editor cu paragrafe, transport complet jos" width="880">
 
 # 🎙️ D&amp;ED · Dictare &amp; Transcriere Express Digital
 
@@ -48,6 +48,12 @@ Vumetru profesional **cu gradații în dB** — 0 dB înseamnă distorsiune. Pro
 
 ### 🧠 Se învață din corecturile tale
 Corectezi un cuvânt scris greșit → perechea se salvează singură și **se repară automat la următoarele transcrieri**. Dicționarul se poate exporta și importa (TXT/CSV/JSON).
+
+### 📋 Gestionarea dictărilor
+Lista „Dictările mele” arată tot: **Data, Ora, Durata, Prioritatea, Numele și primele cuvinte** din text. Clic dreapta pe o dictare: **Deschide**, **Redenumește (F2)**, **Șterge (Ctrl+Delete)** — merge la Coșul de reciclare, nu dispare definitiv.
+
+### 🎙️ Activare vocală (opțional)
+Din Setări → Sunet: programul **pornește singur dictarea când începi să vorbești** (prag reglabil în dB, ca „Voice Activate Level” din Express Dictate). Oprești cu F5 și se rearmează singur.
 
 ### 🧹 Curățenie automată
 Bâlbâielile și buclele („nu, nu, nu") se strâng singure; dublările firești rămân.
@@ -150,10 +156,12 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
 
 ## 🗺️ Ce urmează (roadmap)
 
-- [ ] **Instalatorul online mic (V2)** — pentru cine nu vrea kitul mare: descarcă de pe internet doar dintr-o listă fixă de versiuni, cu sume verificate
+*Rămas după v0.6.0 — dictarea pentru cărți e completă:*
+
+- [x] ~~**Instalatorul online (V2), fără administrator**~~ — **gata**: comanda `irm … | iex` de sus face exact asta (descarcă versiunea fixă, verifică SHA-256, instalează per-utilizator)
 - [ ] **Modelul „pentru toți utilizatorii"** — instalare partajată (cere drepturi de administrator o singură dată)
 - [ ] **Tur de finisaj UX** — scalare perfectă pe ecrane mici (125–150%), ordinea Tab și Naratorul pentru nevăzători, mesaje de eroare unificate
-- [ ] **Filtru avansat de zgomot** — pentru dictare în încăperi zgomotoase
+- [ ] **Editare audio** — marcarea și ștergerea unor porțiuni din înregistrare (Ctrl+Shift+S/E/D, ca la Express Dictate)
 - [ ] **Recuperarea sunetului** la cădere (acum se recuperează textul)
 - [ ] **Alte modele noi pentru română** — pe măsură ce apar, se adaugă ca opțiune în Setări
 
