@@ -189,25 +189,13 @@ class Aplicatie(QMainWindow):
         btn_fisier.setToolTip("Fișier (Ctrl+N, Ctrl+O, Ctrl+S)")
         self.toolbar.addWidget(btn_fisier)
 
-        # Buton mare „🎤 Dictează” (distinct și colorat — vezi QSS #btn_dictare).
-        self.btn_dictare = QToolButton()
-        self.btn_dictare.setObjectName("btn_dictare")
-        self.btn_dictare.setText("🎤 Dictează")
-        self.btn_dictare.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_dictare.clicked.connect(self._toggle_dictare)
-        self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
-        self.toolbar.addWidget(self.btn_dictare)
+        # Vumetrul dB stă în bara de sus, lângă titlu (ca indicatorul din Express Dictate);
+        # se vede doar cât timp se dictează. Dictarea pornește din butonul roșu de jos.
+        self.btn_dictare = QToolButton()   # păstrat pentru stare/vumetru, dar INVIZIBIL
+        self.btn_dictare.hide()
 
         # Vumetru cu gradații dB (redesign UX) — vizibil DOAR cât se dictează.
         # 0 dB = distorsiune; verde -30…-6 dB e zona bună de dictare.
-        self.vumetru_bar = comun.VumetruDb()
-        self.vumetru_bar.hide()
-        self.toolbar.addWidget(self.vumetru_bar)
-        self.vumetru_text = QLabel("")
-        self.vumetru_text.setObjectName("vumetru_text")
-        self.vumetru_text.setFont(comun.fonturi("mica"))
-        self.vumetru_text.hide()
-        self.toolbar.addWidget(self.vumetru_text)
 
         # Buton mare „📂 Transcrie un fișier…”
         btn_transcrie = QToolButton()
@@ -400,6 +388,14 @@ class Aplicatie(QMainWindow):
         self._eticheta_redare.setFont(comun.fonturi("buton"))
         self._eticheta_redare.setMinimumWidth(110)
         dock_rand.addWidget(self._eticheta_redare)
+
+        # Vumetrul dB în transport (0 dB = distorsiune), ca indicatorul NCH.
+        from .comun import VumetruDb
+
+        self.vumetru_transport = VumetruDb(self._dock_redare)
+        self.vumetru_transport.setMinimumWidth(160)
+        self.vumetru_transport.setMaximumWidth(240)
+        dock_rand.addWidget(self.vumetru_transport)
 
         # Volumul de ieșire (ca sliderul din Express Dictate).
         from PySide6.QtWidgets import QSlider as _QSlider
@@ -788,30 +784,17 @@ class Aplicatie(QMainWindow):
         self._porneste_vumetru(activ)
 
     def _porneste_vumetru(self, activ: bool) -> None:
-        """Pornește/oprește vumetrul din bara de sus; când e oprit, îl golește
-        și îl ascunde (redesign UX: bara de sus rămâne doar cu des folositele)."""
+        """Vumetrul dB stă în transport (mereu vizibil); timerul pornește doar la dictare."""
         if not hasattr(self, "_timer_vumetru"):
             self._timer_vumetru = QTimer(self)
             self._timer_vumetru.timeout.connect(self._actualizeaza_vumetru)
-        self.vumetru_bar.setVisible(activ)
-        self.vumetru_text.setVisible(activ)
         if activ:
             self._timer_vumetru.start(60)  # ~16 actualizări pe secundă
         else:
             self._timer_vumetru.stop()
             from .. import nivele as _nivele
 
-            self.vumetru_bar.pune_db(_nivele.DB_MINIM)
-            self.vumetru_text.setText("microfon oprit")
-            # rămâne vizibil 6 s și după oprire, ca să-l observi liniștit
-            def ascunde_daca_inactiv() -> None:
-                pagina = self._pagini.get("dictare")
-                inactiv = pagina is None or not getattr(pagina, "_activ", False)
-                if inactiv:
-                    self.vumetru_bar.hide()
-                    self.vumetru_text.hide()
-
-            QTimer.singleShot(6000, ascunde_daca_inactiv)
+            self.vumetru_transport.pune_db(_nivele.DB_MINIM)
 
     def _actualizeaza_vumetru(self) -> None:
         """Citește nivelul microfonului și afișează bara + textul, în dB (cerința 36)."""
@@ -822,15 +805,7 @@ class Aplicatie(QMainWindow):
         if pagina is not None:
             amplitudine = float(min(1.0, getattr(pagina, "nivel_microfon", 0.0)))
         db = nivele.amplitudine_in_db(amplitudine)
-        self.vumetru_bar.pune_db(db)
-        self.vumetru_text.setText(nivele.text_db(db))
-        chunk = {"verde": "verde", "galben": "galben", "roșu": "roșu"}[nivele.zona_db(db)]
-        if self.vumetru_bar.property("chunk") != chunk:
-            self.vumetru_bar.setProperty("chunk", chunk)
-            stil = self.vumetru_bar.style()
-            if stil is not None:
-                stil.unpolish(self.vumetru_bar)
-                stil.polish(self.vumetru_bar)
+        self.vumetru_transport.pune_db(db)
 
     # ------------------------------------------------------------------ confidențialitate (5/9)
 
