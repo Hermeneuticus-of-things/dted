@@ -163,6 +163,8 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
 - [ ] **Tur de finisaj UX** — scalare perfectă pe ecrane mici (125–150%), ordinea Tab și Naratorul pentru nevăzători, mesaje de eroare unificate
 - [ ] **Editare audio** — marcarea și ștergerea unor porțiuni din înregistrare (Ctrl+Shift+S/E/D, ca la Express Dictate)
 - [ ] **Recuperarea sunetului** la cădere (acum se recuperează textul)
+- [ ] **Limbi suplimentare** — dictarea și în alte limbi (engleză prima, apoi cele cu model bun local); româna rămâne implicită și forțată ca astăzi
+- [ ] **Coloana Prioritate reală** — marchează o dictare „Urgentă” din listă (acasă momentan toate sunt „Normal”)
 - [ ] **Alte modele noi pentru română** — pe măsură ce apar, se adaugă ca opțiune în Setări
 
 ---
