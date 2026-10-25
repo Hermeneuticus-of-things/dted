@@ -143,19 +143,18 @@ class PaginaTranscriere(QWidget):
 
         corp = QWidget()
         corp_layout = QVBoxLayout(corp)
-        corp_layout.setContentsMargins(16, 12, 16, 12)
-        corp_layout.setSpacing(10)
+        corp_layout.setContentsMargins(16, 10, 16, 10)
+        corp_layout.setSpacing(8)
         zona.interior.layout().addWidget(corp)
 
         # Titlu.
-        titlu = eticheta(corp, "Transcriere fișier audio", "titlu")
+        titlu = eticheta(corp, "Transcriere fișier audio", "buton")
         corp_layout.addWidget(titlu)
 
         et_descriere = eticheta(
             corp,
-            "Alegeți un fișier audio (MP3, WAV, M4A, OGG sau FLAC) și programul scrie textul. "
-            "Transcrierea se face pe acest calculator: fișierul nu pleacă pe internet.",
-            "baza",
+            "Trage fișierele aici sau apasă butonul. Totul rămâne pe calculatorul tău.",
+            "mica",
         )
         et_descriere.setWordWrap(True)
         corp_layout.addWidget(et_descriere)

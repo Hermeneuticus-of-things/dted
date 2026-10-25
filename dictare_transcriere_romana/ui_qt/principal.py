@@ -750,13 +750,19 @@ class Aplicatie(QMainWindow):
         self.editor.actualizeaza_font()
 
     def _toggle_dictare(self) -> None:
-        """Porneste/opreste dictarea (F5 / Ctrl+Space)."""
-        # Găsește pagina de dictare și apasă butonul ei
+        """Porneste/oprește dictarea (F5 / Ctrl+Space / ⏺ roșu din transport).
+
+        Stil Express Dictate: o singură fereastră — textul curge direct în
+        editor; pagina de dictare rămâne ascunsă (motorul lucrează în ea).
+        """
         pagina = self._pagini.get("dictare")
         if pagina is None:
             pagina = self._ia_pagina("dictare")
-        if hasattr(pagina, "buton_start"):
-            pagina.buton_start.click()
+            pagina.hide()
+        if getattr(pagina, "_activ", False):
+            pagina._opreste()
+        else:
+            pagina._porneste()
         self._actualizeaza_buton_dictare()
 
     def _actualizeaza_buton_dictare(self) -> None:
@@ -1137,7 +1143,6 @@ class Aplicatie(QMainWindow):
         self.show()
         self.raise_()
         self.activateWindow()
-        self.arata_ecran("dictare")
         self._toggle_dictare()
 
     def _la_confidentialitate(self) -> None:
