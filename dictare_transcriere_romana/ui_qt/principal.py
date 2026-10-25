@@ -372,6 +372,8 @@ class Aplicatie(QMainWindow):
         )
         self.btn_transport_stop.setToolTip("Oprește (Esc)")
         dock_rand.addWidget(self.btn_transport_stop)
+        self.btn_transport.setEnabled(False)
+        self.btn_transport_stop.setEnabled(False)
 
         btn_inapoi = QToolButton()
         btn_inapoi.setText("⏪")
@@ -415,8 +417,7 @@ class Aplicatie(QMainWindow):
         )
         dock_rand.addWidget(self._slider_volum)
 
-        self._dock_redare.hide()
-        layout.addWidget(self._dock_redare)
+        layout.addWidget(self._dock_redare)  # mereu vizibil, ca la Express Dictate
 
         # Starea rețelei și confidențialitatea — mici, în bara de jos (redesign UX):
         # rareori folosite, deci nu mai stau în bara principală.
@@ -966,7 +967,8 @@ class Aplicatie(QMainWindow):
                 self._player_ascultare().incarca(pcm, rata)
                 self.btn_asculta.show()
                 self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
-                self._dock_redare.show()
+                self.btn_transport.setEnabled(True)
+                self.btn_transport_stop.setEnabled(True)
                 self._arata_stare_redare()
         except Exception as exc:
             jurnal.atentionare(f"Nu am putut păstra înregistrarea pentru ascultare: {exc}")
