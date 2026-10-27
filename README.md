@@ -94,38 +94,54 @@ Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid d
 
 ## 📥 Instalare (versiunea v0.6.3)
 
-### Varianta 1 — Bootstrap (o singură comandă PowerShell, recomandat)
+> **Unde sunt fișierele:** pagina de descărcare a versiunii actuale este
+> **[github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3)** — acolo găsești, la „Assets”:
+> `Setup.DTED-0.6.3.exe` + `Setup.DTED-0.6.3-1.bin` (instalatorul Windows, în 2 bucăți),
+> `program-0.6.3.zip` (actualizarea portabilă) și `dted-0.6.3-linux.tar.gz` (Linux).
+> Toate au sumele SHA-256 scrise în `SHA256SUMS.txt` (același release).
 
-Deschide **PowerShell** (Start → „powershell” → Enter) și lipește:
+### Varianta 1 — Bootstrap pentru Windows (o singură comandă, recomandat)
+
+Deschide **PowerShell** (Start → scrii „powershell” → Enter), lipești rândul de mai jos și Enter:
 
 ```powershell
 irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
 ```
 
-### Varianta 2 — Kit instalator descărcat manual (`Setup.DTED-0.6.3.exe`)
+Ce face, pe rând: descarcă **doar din versiunea fixă v0.6.3** instalatorul și cele 2 bucăți ale lui,
+**verifică SHA-256** pe fiecare bucată (amprentele sunt în script; dacă una nu se potrivește, REFUZĂ
+instalarea), apoi pornește instalatorul grafic. Fără drepturi de administrator. Scriptul, vizibil
+înainte de rulare: [dted-bootstrap.ps1](https://github.com/Hermeneuticus-of-things/dted/blob/main/dted-bootstrap.ps1).
 
-Ia [ultima versiune (**v0.6.3**)](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3): `Setup.DTED-0.6.3.exe` + `Setup.DTED-0.6.3-1.bin` + `SHA256SUMS.txt`, pune-le **în același folder**, apoi dublu clic pe `Setup.DTED-0.6.3.exe`. Modelul de transcriere și bibliotecile CUDA sunt **incluse** — instalarea merge 100% offline și fără drepturi de administrator.
+### Varianta 2 — Windows, manual (dublu clic pe instalator)
 
-### Varianta 3 — Actualizare rapidă din program / Portabil (`program-0.6.3.zip`)
+1. Intră pe **[releases/tag/v0.6.3](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3)**.
+2. Descarcă **`Setup.DTED-0.6.3.exe`** și **`Setup.DTED-0.6.3-1.bin`** (și opțional `SHA256SUMS.txt`).
+3. Pune-le **în același folder** (amândouă, altfel instalatorul nu găsește continuarea).
+4. Dublu clic pe `Setup.DTED-0.6.3.exe`. Modelul de transcriere și bibliotecile CUDA sunt **incluse** —
+   instalarea merge 100% offline, fără drepturi de administrator, iar wizard-ul îți arată o pagină
+   „Ce știe să facă D&TED” și verificarea calculatorului (CPU, RAM, disc, placă video + VRAM).
 
-Dacă ai deja D&TED instalat, apasă butonul **📦 Actualizări** din bara de sus (sau **⚙ Setări → Actualizări**) → **Caută actualizări (internet)**: programul descarcă doar arhiva ușoară [`program-0.6.3.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/program-0.6.3.zip) (~1,1 MB), îi verifică amprenta SHA-256, păstrează copia de siguranță a versiunii vechi și repornește la zi.
+### Varianta 3 — Windows, actualizare din program (cel mai ușor, dacă ai deja o versiune)
 
-<details>
-<summary><b>Verificarea sumelor SHA-256 (opțional, recomandat)</b></summary>
+Deschide D&TED → butonul **📦 Actualizări** din bara de sus (sau ⚙ Setări → „Instalare și actualizări”)
+→ **Caută actualizări (internet)**: programul îți arată „program: 0.6.2 → 0.6.3”, descarcă doar arhiva
+mică [`program-0.6.3.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/program-0.6.3.zip)
+(~1,2 MB), verifică amprenta SHA-256, păstrează copia versiunii vechi și, după repornire, **versiunea
+nouă chiar rulează**. Poți oricând apăsa „Revino la versiunea anterioară”.
 
-```powershell
-$fisiere = @("Setup.DTED-0.6.3.exe", "Setup.DTED-0.6.3-1.bin", "program-0.6.3.zip")
-foreach ($nume in $fisiere) {
-    if (-not (Test-Path ".\$nume")) { continue }
-    $rand = Get-Content .\SHA256SUMS.txt | Where-Object { $_ -match "\s+$([regex]::Escape($nume))$" }
-    $asteptat = ($rand -split '\s+')[0].ToUpper()
-    $real = (Get-FileHash ".\$nume" -Algorithm SHA256).Hash.ToUpper()
-    if ($real -ne $asteptat) { throw "Amprentă greșită pentru $nume" }
-    "OK      $nume"
-}
-```
+### Linux (x86_64) — script de instalare `install.sh`
 
-</details>
+Pe Linux nu există bootstrap cu o singură comandă `irm | iex` (acela e pentru Windows); instalarea se
+face cu scriptul inclus în arhivă:
+
+1. Descarcă **[`dted-0.6.3-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/dted-0.6.3-linux.tar.gz)** de la release.
+2. Dezarhivează: `tar -xzf dted-0.6.3-linux.tar.gz`
+3. Rulează: `./install.sh` — își face mediu Python propriu (fără administrator), pune lansatorul
+   `dted` în `~/.local/bin`, scurtătură în meniu, apoi descarcă modelul cu verificare SHA-256;
+   dacă există placă NVIDIA, adaugă și CUDA. Nucleul merge și pe CPU, tot cu calitate maximă.
+   Detalii și limite: [LINUX.md](LINUX.md).
+
 
 **Cerințe:** Windows 10/11 pe 64 de biți · 8 GB RAM recomandat · ~4 GB pe disc.
 
