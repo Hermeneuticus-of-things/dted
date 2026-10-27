@@ -126,7 +126,10 @@ class Serviciu:
             if self._dictare is not None:
                 self._eroare(id_, "Dictarea este deja pornită.", "Oprește dictarea de acum, apoi pornește alta.")
             else:
-                self._porneste_dictarea(id_, comanda.get("limba") or "ro", comanda.get("termeni") or "")
+                self._porneste_dictarea(
+                    id_, comanda.get("limba") or "ro", comanda.get("termeni") or "",
+                    lunga=comanda.get("lunga"), vad=comanda.get("vad"),
+                )
         elif cmd == "dictare_stop":
             # Doar dictarea cu acest id (o fereastră nu oprește dictarea alteia).
             if self._dictare is not None and (id_ is None or self._dictare["id"] == id_):
@@ -210,7 +213,7 @@ class Serviciu:
 
     # ------------------------------------------------------------------ dictare
 
-    def _porneste_dictarea(self, id_, limba: str, termeni: str) -> None:
+    def _porneste_dictarea(self, id_, limba: str, termeni: str, lunga=None, vad=None) -> None:
         try:
             microfon = self._microfon_fabrica()
             microfon.porneste()
@@ -218,6 +221,14 @@ class Serviciu:
             self._eroare(id_, exc, "Verifică microfonul în setările Windows (Confidențialitate → Microfon).")
             return
         stare = {"id": id_, "microfon": microfon, "oprit": threading.Event(), "anulat": False, "text": [], "limba": limba, "termeni": termeni}
+        # Dictarea lungă (Silero VAD + ferestre 30 s/7,5 s + LCP): "lunga": true în comandă
+        # sau DTED_DICTARE_LUNGA=1. Implicit: bucle clasice pe bucăți fixe, neschimbate.
+        if lunga is None:
+            from . import dictare_lunga  # noqa: PLC0415
+
+            lunga = dictare_lunga.activ(None)
+        stare["lunga"] = bool(lunga)
+        stare["vad"] = str(vad) if vad else None
         self._dictare = stare
         self.scrie({"ev": "dictare_pornita", "id": id_})
         stare["fir"] = self._porneste_fir(self._bucla_dictare, stare)
@@ -253,9 +264,71 @@ class Serviciu:
             stare["text"].append(text)
             self.scrie({"ev": "fragment", "id": stare["id"], "text": text})
 
+    def _asr_lunga(self, stare: dict, sunet, _anterior) -> str:
+        motor = self.motor()
+        with self._motor_blocare:
+            self._curent = f"d:{stare['id']}"
+            try:
+                rezultat = motor.transcrie(sunet, limba=stare["limba"], termeni=stare["termeni"], progres=None, faza=None)
+            finally:
+                self._curent = None
+        return rezultat.text or ""
+
+    def _bucla_dictare_lunga(self, stare: dict) -> None:
+        """Dictare lungă: VAD Silero → enunțuri/ferestre → commit LCP; „fragment” = text confirmat."""
+        from . import dictare_lunga  # noqa: PLC0415
+
+        microfon = stare["microfon"]
+        id_ = stare["id"]
+
+        def la_commit(c) -> None:
+            text = (c.text or "").strip()
+            if text and not stare["anulat"]:
+                stare["text"].append(text)
+                self.scrie({"ev": "fragment", "id": id_, "text": text, "idee": c.idee, "idee_noua": bool(c.idee_noua)})
+
+        def la_eveniment(ev: dict) -> None:
+            if ev.get("ev") == "idee" and not stare["anulat"]:
+                self.scrie({"ev": "idee", "id": id_, "idee": ev.get("idee"), "pauza_s": ev.get("pauza_s")})
+
+        def log(mesaj: str) -> None:
+            try:
+                from . import jurnal  # noqa: PLC0415
+
+                jurnal.atentionare(mesaj)
+            except Exception:  # noqa: BLE001
+                pass
+
+        strat = dictare_lunga.din_config(
+            None, lambda sunet, anterior: self._asr_lunga(stare, sunet, anterior), la_commit,
+            vad=dictare_lunga.creeaza_vad(stare.get("vad"), log=log), la_eveniment=la_eveniment, log=log,
+        )
+        try:
+            while not stare["oprit"].is_set():
+                stare["oprit"].wait(0.1)
+                self.scrie({"ev": "nivel", "id": id_, "nivel": round(float(getattr(microfon, "nivel", 0.0)), 2)})
+                strat.push(microfon.preia())
+            if stare["anulat"]:
+                microfon.anuleaza()
+            else:
+                strat.push(microfon.opreste().pcm)
+                strat.finish()
+        except Exception as exc:  # noqa: BLE001
+            if type(exc).__name__ != "Anulat":  # anularea calculului nu e o eroare
+                raise
+            try:
+                microfon.anuleaza()
+            except Exception:  # noqa: BLE001
+                pass
+        finally:
+            strat.close()
+
     def _bucla_dictare(self, stare: dict) -> None:
         microfon = stare["microfon"]
         try:
+            if stare.get("lunga"):
+                self._bucla_dictare_lunga(stare)
+                return
             while not stare["oprit"].is_set():
                 if microfon.scurgere() < self._secunde_bucata:
                     stare["oprit"].wait(0.1)
@@ -346,6 +419,32 @@ def _flux_windows(handle: int, mod: str):
         return None
 
 
+def _izoleaza_intrarea_windows(intrare):
+    """Windows: citim comenzile dintr-o copie a intrării și lăsăm intrarea standard pe NUL.
+
+    Bucla de comenzi stă într-un ReadFile sincron pe canalul de intrare. Un fir care pornește
+    un subproces (nvidia-smi, ffmpeg) cu ``capture_output`` duplică handle-ul intrării
+    standard, iar DuplicateHandle pe un canal sincron cu o citire în curs se blochează:
+    transcrierea rămânea agățată înainte de prima „faza”. Copiii primesc acum NUL.
+    """
+    if sys.platform != "win32":
+        return intrare
+    try:
+        import ctypes  # noqa: PLC0415
+        import msvcrt  # noqa: PLC0415
+        import os  # noqa: PLC0415
+
+        fd = intrare.fileno()
+        noua = open(os.dup(fd), "r", encoding="utf-8", errors="replace")  # noqa: SIM115
+        nul = os.open(os.devnull, os.O_RDONLY)
+        if fd == 0:
+            os.dup2(nul, 0)
+        ctypes.windll.kernel32.SetStdHandle(-10, msvcrt.get_osfhandle(nul))
+        return noua
+    except Exception:  # noqa: BLE001 — flux fără fd (teste) sau API indisponibil
+        return intrare
+
+
 def ruleaza(intrare=None, iesire=None, **optiuni) -> int:
     """Bucla serviciului: citește comenzi până la ``iesire`` sau sfârșitul intrării."""
     if intrare is None:
@@ -354,6 +453,8 @@ def ruleaza(intrare=None, iesire=None, **optiuni) -> int:
             intrare.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
         except Exception:  # noqa: BLE001
             pass
+        if intrare is not None:
+            intrare = _izoleaza_intrarea_windows(intrare)
     iesire = iesire or sys.stdout or _flux_windows(-11, "w")
     if intrare is None or iesire is None:
         return 2

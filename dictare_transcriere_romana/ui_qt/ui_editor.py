@@ -226,6 +226,23 @@ class Editor(QWidget):
         self._control.setTextCursor(cursor)
         self._control.setFocus()
 
+    def paragraf_nou(self) -> None:
+        """Pune un rând gol la cursor (paragraf nou), fără să dubleze unul existent.
+        Folosit de dictarea lungă când începe o idee nouă."""
+        cursor = self._control.textCursor()
+        if cursor.atStart():
+            return
+        temporar = QTextCursor(cursor)
+        temporar.movePosition(QTextCursor.MoveOperation.PreviousCharacter, QTextCursor.MoveMode.KeepAnchor, 2)
+        # QTextCursor.selectedText() întoarce U+2029 în loc de \n între blocuri.
+        precedent = temporar.selectedText().replace("\u2029", "\n")
+        if precedent.endswith("\n\n"):
+            return
+        cursor.beginEditBlock()
+        cursor.insertText("\n" if precedent.endswith("\n") else "\n\n")
+        cursor.endEditBlock()
+        self._control.setTextCursor(cursor)
+
     def sari_la(self, text: str) -> None:
         """Du cursorul la prima apariție a textului (folosit la „Mergi la semn”)."""
         if not text:

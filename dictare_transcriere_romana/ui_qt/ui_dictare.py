@@ -55,6 +55,71 @@ SECUNDE_MINIME_LA_OPRIRE = 0.5
 NIVEL_MAX = 1.0
 
 
+def secunde_fereastra(config) -> float:
+    """Lungimea unei bucăți de dictare (Setări → Expert → Fereastră), în secunde."""
+    try:
+        valoare = float(getattr(config, "expert_fereastra_sec", SECUNDE_BUCATA) or SECUNDE_BUCATA)
+    except (TypeError, ValueError):
+        return SECUNDE_BUCATA
+    return max(1.0, min(30.0, valoare))
+
+
+def text_anterior_pentru(config, text_acum: str) -> str:
+    """Coada textului deja dictat dată modelului ca „context” (Expert; 0 = nimic).
+
+    Se taie la granița unui cuvânt, ca modelul să nu primească jumătăți de cuvânt.
+    """
+    try:
+        buget = int(getattr(config, "expert_buget_text_anterior", 0) or 0)
+    except (TypeError, ValueError):
+        buget = 0
+    if buget <= 0 or not text_acum:
+        return ""
+    coada = text_acum[-buget:]
+    if len(text_acum) > buget and " " in coada:
+        coada = coada.split(" ", 1)[1]
+    return coada.strip()
+
+
+def context_pentru_fereastra(config, text_acum: str, memorie=None) -> str:
+    """Ce primește Whisper ca ``text_anterior`` (→ ``initial_prompt``) la fereastra următoare.
+
+    Cu memoria dictărilor lungi pornită (Setări → Sunet, ``rezumat_activ``), contextul vine
+    din rezumatorul C++ (rezumat verificat sau coada textului, după cele patru porți);
+    altfel rămâne coada din Expert (``expert_buget_text_anterior``), ca înainte.
+    """
+    if memorie is not None:
+        try:
+            prior = memorie.prior_text()
+        except Exception:
+            prior = ""
+        if prior:
+            return prior.strip()
+    return text_anterior_pentru(config, text_acum)
+
+
+def porneste_memoria(config):
+    """Memoria dictărilor lungi pentru o sesiune nouă, sau None dacă e oprită/nu pornește."""
+    from .. import memorie_dictare
+
+    if not memorie_dictare.activ(config):
+        return None
+    try:
+        return memorie_dictare.MemorieDictare(config).porneste()
+    except Exception as exc:
+        jurnal.atentionare(f"Memoria dictării nu a pornit: {exc}")
+        return None
+
+
+def tacere_depasita(config, ultima_vorbire: float, acum: float) -> bool:
+    """Adevărat dacă a trecut „Oprește după X s de tăcere” (Expert; 0 = niciodată)."""
+    try:
+        limita = int(getattr(config, "expert_timp_tacere_sec", 0) or 0)
+    except (TypeError, ValueError):
+        return False
+    return limita > 0 and ultima_vorbire > 0 and (acum - ultima_vorbire) >= limita
+
+
 def _gata_de_transcris(secunde: float, oprita: bool) -> bool:
     """La oprire, descarcă și coada mai scurtă decât o bucată normală."""
     return secunde >= SECUNDE_BUCATA or (oprita and secunde >= SECUNDE_MINIME_LA_OPRIRE)
@@ -348,6 +413,7 @@ class PaginaDictare(QWidget):
         self.buton_opreste.set_activ(True)
         self.aplicatie.bara_stare.arata("Dictează", "Vorbește în microfon.", "lucru")
 
+        self._ultima_vorbire = time.monotonic()
         self._fir = threading.Thread(target=self._bucla, name="dictare", daemon=True)
         self._fir.start()
 
@@ -473,6 +539,14 @@ class PaginaDictare(QWidget):
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
         self.buton_semn.set_activ(False)
+        # Butonul ⏺ din transport și pastila trebuie să afle și când dictarea se
+        # oprește singură (tăcere, eroare, sfârșitul buclei), nu doar la F5.
+        actualizeaza = getattr(self.aplicatie, "_actualizeaza_buton_dictare", None)
+        if callable(actualizeaza):
+            try:
+                actualizeaza()
+            except Exception:
+                pass
         from .. import nivele as _nivele
 
         self.nivel_bar.pune_db(_nivele.DB_MINIM)
@@ -532,6 +606,21 @@ class PaginaDictare(QWidget):
         seteaza_rol(self.eticheta_nivel, rol_eticheta)
         self.eticheta_nivel_cifra.setText(nivele.text_db(db))
         self._auto_volum(db)
+        # Expert → „Oprește singur după X s de tăcere” (pragul = cel de activare vocală).
+        acum = time.monotonic()
+        try:
+            prag = float(getattr(self.config, "prag_activare_db", -35) or -35)
+        except (TypeError, ValueError):
+            prag = -35.0
+        if db >= prag:
+            self._ultima_vorbire = acum
+        elif self._activ and tacere_depasita(self.config, getattr(self, "_ultima_vorbire", 0.0), acum):
+            secunde = int(getattr(self.config, "expert_timp_tacere_sec", 0) or 0)
+            jurnal.info(f"Dictare oprită automat după {secunde} s de tăcere.")
+            self._opreste()
+            self.aplicatie.bara_stare.arata(
+                "Gata", f"M-am oprit singur: {secunde} s de liniște (Setări → Expert).", "normal"
+            )
 
     def _auto_volum(self, db: float) -> None:
         """Aduce SINGURĂ volumul microfonului când e risc de distorsiune (0 dB)
@@ -585,69 +674,172 @@ class PaginaDictare(QWidget):
         if microfon is None:
             return
         text_acum = ""
+        secunde_bucata = secunde_fereastra(self.config)
+        # Memoria dictărilor lungi: lucrătorul C++ rulează pe firul lui, nu îl așteptăm.
+        memorie = porneste_memoria(self.config)
+        from .. import dictare_lunga
 
-        while True:
-            # Așteaptă o bucată completă, dar la oprire descarcă și restul scurt.
-            while microfon.scurgere() < SECUNDE_BUCATA and not self._anulat.is_set():
-                time.sleep(0.1)
-            secunde_buffer = microfon.scurgere()
-            oprita = self._anulat.is_set()
-            if not _gata_de_transcris(secunde_buffer, oprita):
-                if oprita:
-                    break
-                continue
-
+        if dictare_lunga.activ(self.config):
+            # Dictarea lungă: Silero VAD → ferestre 30 s / 7,5 s → commit LCP (dictare_lunga.py).
             try:
-                sunet = microfon.preia()
-            except Exception as exc:
-                jurnal.atentionare(f"Microfonul s-a oprit in timpul dictarii: {exc}")
-                self._sunet('eroare')
-                self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
-                self._anulat.set()
-                break
-            if len(sunet) < int(SECUNDE_MINIME_LA_OPRIRE * 16_000):  # prea puțin pentru recunoaștere
-                if self._anulat.is_set():
-                    break
-                continue
-            self._secunde_audio += len(sunet) / 16_000.0
+                self._bucla_lunga(microfon, memorie)
+            finally:
+                if memorie is not None:
+                    memorie.opreste()
+            self.aplicatie.coada.trimite(self._opreste)
+            return
+        try:
+            while True:
+                # Așteaptă o bucată completă, dar la oprire descarcă și restul scurt.
+                while microfon.scurgere() < secunde_bucata and not self._anulat.is_set():
+                    time.sleep(0.1)
+                secunde_buffer = microfon.scurgere()
+                oprita = self._anulat.is_set()
+                if not _gata_de_transcris(secunde_buffer, oprita):
+                    if oprita:
+                        break
+                    continue
 
-            # Pregătirea sunetului, opțională (51/52): întâi volumul, apoi pauzele.
-            if getattr(self.config, "pregateste_audio", False) or getattr(
-                self.config, "scurteaza_pauze", False
-            ):
-                from .. import codecuri
-
-                if getattr(self.config, "pregateste_audio", False):
-                    sunet = codecuri.normalizeaza(sunet)
-                if getattr(self.config, "scurteaza_pauze", False):
-                    sunet = codecuri.scurteaza_pauzele(sunet, rate=16_000)
-
-            try:
-                # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
                 try:
-                    self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
-                except Exception:
-                    pass
-                motor_local = self.aplicatie._motor
-                rezultat = motor_local.transcrie(
-                    sunet,
-                    limba=getattr(self.config, "limba", "ro") or "ro",
-                    termeni=getattr(self.config, "termeni", "") or "",
-                    progres=None,
-                    faza=None,
-                )
-            except motor.Anulat:
-                break
-            except Exception as exc:
-                jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
-                continue
+                    sunet = microfon.preia()
+                except Exception as exc:
+                    jurnal.atentionare(f"Microfonul s-a oprit in timpul dictarii: {exc}")
+                    self._sunet('eroare')
+                    self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
+                    self._anulat.set()
+                    break
+                if len(sunet) < int(SECUNDE_MINIME_LA_OPRIRE * 16_000):  # prea puțin pentru recunoaștere
+                    if self._anulat.is_set():
+                        break
+                    continue
+                self._secunde_audio += len(sunet) / 16_000.0
 
-            fragment = (rezultat.text or "").strip()
-            if fragment:
-                text_acum += (" " if text_acum else "") + fragment
-                self.aplicatie.coada.trimite(self._adauga_text, fragment)
+                # Pregătirea sunetului, opțională (51/52): întâi volumul, apoi pauzele.
+                if getattr(self.config, "pregateste_audio", False) or getattr(
+                    self.config, "scurteaza_pauze", False
+                ):
+                    from .. import codecuri
 
+                    if getattr(self.config, "pregateste_audio", False):
+                        sunet = codecuri.normalizeaza(sunet)
+                    if getattr(self.config, "scurteaza_pauze", False):
+                        sunet = codecuri.scurteaza_pauzele(sunet, rate=16_000)
+
+                try:
+                    # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
+                    try:
+                        self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
+                    except Exception:
+                        pass
+                    motor_local = self.aplicatie._motor
+                    optiuni = {}
+                    anterior = context_pentru_fereastra(self.config, text_acum, memorie)
+                    if anterior:  # memoria (rezumat/coadă) sau Expert: contextul deja dictat
+                        optiuni["text_anterior"] = anterior
+                    rezultat = motor_local.transcrie(
+                        sunet,
+                        limba=getattr(self.config, "limba", "ro") or "ro",
+                        termeni=getattr(self.config, "termeni", "") or "",
+                        progres=None,
+                        faza=None,
+                        **optiuni,
+                    )
+                except motor.Anulat:
+                    break
+                except Exception as exc:
+                    jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
+                    continue
+
+                fragment = (rezultat.text or "").strip()
+                if fragment:
+                    text_acum += (" " if text_acum else "") + fragment
+                    if memorie is not None:  # session.jsonl + lucrătorul C++ (O(1), fără blocare)
+                        memorie.la_fragment(fragment)
+                    self.aplicatie.coada.trimite(self._adauga_text, fragment)
+        finally:
+            if memorie is not None:
+                memorie.opreste()
         self.aplicatie.coada.trimite(self._opreste)
+
+    def _bucla_lunga(self, microfon, memorie) -> None:
+        """Dictarea lungă: tot sunetul trece prin Silero VAD; la ASR merg doar enunțurile
+        (ferestre de max. 30 s cu 7,5 s suprapunere), iar textul se confirmă prin LCP.
+        O pauză lungă (implicit 2 s) începe o idee nouă = paragraf nou în editor."""
+        from .. import dictare_lunga
+
+        stare = {"text": ""}
+
+        def asr(sunet, _anterior_commit):
+            try:
+                self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
+            except Exception:
+                pass
+            optiuni = {}
+            anterior = context_pentru_fereastra(self.config, stare["text"], memorie)
+            if anterior:
+                optiuni["text_anterior"] = anterior
+            rezultat = self.aplicatie._motor.transcrie(
+                sunet,
+                limba=getattr(self.config, "limba", "ro") or "ro",
+                termeni=getattr(self.config, "termeni", "") or "",
+                progres=None,
+                faza=None,
+                **optiuni,
+            )
+            return rezultat.text or ""
+
+        def la_commit(commit) -> None:
+            fragment = (commit.text or "").strip()
+            if not fragment:
+                return
+            stare["text"] += (" " if stare["text"] else "") + fragment
+            if memorie is not None:  # session.jsonl + rezumatorul, ca la dictarea clasică
+                memorie.la_fragment(fragment)
+            self.aplicatie.coada.trimite(self._adauga_text_idee, fragment, bool(commit.idee_noua))
+
+        strat = dictare_lunga.din_config(
+            self.config, asr, la_commit,
+            # Fără memorie (rezumat oprit), stratul își scrie singur session.jsonl.
+            sesiune=None if memorie is not None else dictare_lunga.cale_sesiune_noua(),
+            log=jurnal.atentionare,
+        )
+        jurnal.info(f"Dictare lungă pornită (VAD: {strat.stats.vad}).")
+        try:
+            while True:
+                oprita = self._anulat.is_set()
+                try:
+                    sunet = microfon.preia()
+                except Exception as exc:
+                    if not oprita:
+                        jurnal.atentionare(f"Microfonul s-a oprit in timpul dictarii: {exc}")
+                        self._sunet('eroare')
+                        self.aplicatie.coada.trimite(self._eroare_microfon_qt, exc)
+                        self._anulat.set()
+                    break
+                if len(sunet):
+                    self._secunde_audio += len(sunet) / 16_000.0
+                    strat.push(sunet)
+                if oprita:  # ultimul preia() de după oprire a luat și coada microfonului
+                    break
+                time.sleep(0.1)
+            strat.finish()
+        except motor.Anulat:
+            pass
+        finally:
+            strat.close()
+            s = strat.stats
+            jurnal.info(
+                f"Dictare lungă: {s.audio_s:.0f} s audio, {s.enunturi} enunțuri, {s.idei} idei, "
+                f"{s.ferestre} ferestre, ASR {s.asr_ms / 1000:.1f} s."
+            )
+
+    def _adauga_text_idee(self, fragment: str, idee_noua: bool) -> None:
+        """Ca ``_adauga_text``, dar o idee nouă (pauză lungă) începe pe paragraf nou."""
+        if idee_noua and self.editor.text().strip():
+            paragraf = getattr(self.editor, "paragraf_nou", None)
+            if paragraf is not None:
+                paragraf()
+        self._adauga_text(fragment)
 
     def _spune_procesare(self, secunde: float) -> None:
         """Arată în bara de stare că ultimele secunde se transformă în text."""

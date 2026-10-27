@@ -13,12 +13,28 @@
 9. Aspect — luminos / întunecat / ca Windows
 10. Parolă și criptare — parolă pentru documente + criptare la salvare
 11. Confidențialitate — blocarea căilor de ieșire în timpul dictării
+
+Trei niveluri (comutatorul de sus, stil Fluent 2):
+
+* **Bază** — tot ce are nevoie oricine: motorul (procesor / placă video),
+  modelul, cu explicații pe înțelesul tuturor și „Recomandat pentru acest
+  calculator”, plus secțiunile obișnuite de mai sus;
+* **Descărcări** — modelele instalate / lipsă, cu descărcare și bară de
+  progres (``pregatire.asigura_model``), bibliotecile plăcii video și
+  „Caută actualizări” (``actualizare``) — doar la buton, nimic în fundal;
+* **Expert** — pliat implicit: pragul VAD, tamponul audio, fereastra și
+  suprapunerea, contextul din textul anterior, beam size, felul de calcul,
+  pragul de activare vocală, oprirea după tăcere și „Revino la implicit”.
 """
 
 from __future__ import annotations
 
+import os
+
 from dataclasses import asdict
 from pathlib import Path
+
+import threading
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
@@ -26,8 +42,13 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
+    QFormLayout,
     QFrame,
     QHBoxLayout,
+    QMessageBox,
+    QProgressBar,
+    QSpinBox,
     QInputDialog,
     QLabel,
     QLineEdit,
@@ -52,7 +73,7 @@ from .. import (
     programe_scris,
     sisteme,
 )
-from . import comun
+from . import comun, fluent
 from .comun import (
     BaraStare,
     Buton,
@@ -84,14 +105,105 @@ AUTOMAT = "Automat (cel ales de Windows)"
 #: Secțiunile ferestrei de setări (listă stânga + pagini dreapta, UX-17).
 #: Fiecare secțiune e o listă de metode ``_rand_*`` care îi construiesc rândurile.
 SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Motor și model", ("_rand_transcriere", "_rand_model")),
     ("Documente", ("_rand_folder",)),
     ("Limbă și termeni", ("_rand_limba", "_rand_termeni", "_rand_dictionar")),
     ("Sunet", ("_rand_microfon", "_rand_difuzor", "_rand_dictare")),
-    ("Transcriere și salvare", ("_rand_transcriere", "_rand_salvare", "_rand_program")),
+    ("Salvare și program", ("_rand_salvare", "_rand_program")),
     ("Parolă și criptare", ("_rand_parola",)),
     ("Confidențialitate", ("_rand_blocare",)),
     ("Aspect", ("_rand_afisare", "_rand_aspect")),
+    ("Descărcări și actualizări", ("_rand_descarcari", "_rand_actualizari")),
+    ("Expert", ("_rand_expert",)),
 )
+
+#: Nivelurile comutatorului de sus și secțiunile din fiecare (restul = „Bază”).
+NIVELURI: tuple[str, ...] = ("Bază", "Descărcări", "Expert")
+NIVEL_SECTIUNE: dict[str, int] = {"Descărcări și actualizări": 1, "Expert": 2}
+
+
+def nivel_sectiune(titlu: str) -> int:
+    """0 = Bază, 1 = Descărcări, 2 = Expert."""
+    return NIVEL_SECTIUNE.get(titlu, 0)
+
+
+#: Explicațiile modelelor, pe înțelesul tuturor: (nume scurt, ce câștigi / ce pierzi).
+INFO_MODELE: dict[str, tuple[str, str]] = {
+    "auto": (
+        "Automat",
+        "Programul folosește modelul optimizat pentru română (singurul model activ).",
+    ),
+    constante.WHISPER_NUME_EEK: (
+        "Optimizat pentru română",
+        "Greșește cel mai puțin la română (cam 6 cuvinte din 100) și înțelege și engleza. "
+        "Ocupă 820 MB și merge repede și pe procesor. Licență liberă (MIT).",
+    ),
+    # Modelele arhivate (standard turbo, TransferRapid RO) nu mai apar în Setări:
+    # vezi docs/MODELS_ARHIVA.md.
+}
+
+
+def model_instalat(nume: str) -> bool:
+    """Adevărat dacă modelul ``nume`` e în kit (``_MEIPASS``) sau în folderul de instalare."""
+    import sys as _sys
+
+    radacini = []
+    ambalat = getattr(_sys, "_MEIPASS", None)
+    if ambalat:
+        radacini.append(Path(ambalat))
+    radacini.append(cai.director_model())
+    return any((radacina / "model" / nume / "model.bin").is_file() for radacina in radacini)
+
+
+def marime_model_mb(nume: str) -> int:
+    """Cât se descarcă pentru modelul ``nume`` (MB; 0 dacă nu știm)."""
+    from .. import pregatire
+
+    manifest = pregatire._manifest(Path(nume))
+    if not manifest:
+        return 0
+    return int(round(sum(m for m, _ in manifest[0].values()) / 1_000_000))
+
+
+def recomandare_pc(
+    are_nvidia: bool, ram_gb: float, limba: str = "ro"
+) -> tuple[str, str, str]:
+    """(dispozitiv, model, motiv) recomandate pentru acest calculator.
+
+    Funcție pură (testabilă): primește ce s-a citit despre calculator.
+    """
+    limba = (limba or "ro").lower()
+    # Un singur model activ (eek); limba rămâne parametru pentru compatibilitate.
+    model = constante.WHISPER_NUME_EEK
+    nume_model = INFO_MODELE[model][0].lower()
+    if are_nvidia:
+        motiv = (
+            f"Ai placă video NVIDIA: lasă „Automat” (folosește placa video, cel mai rapid) "
+            f"și modelul {nume_model}."
+        )
+        return "auto", model, motiv
+    ram = f"{ram_gb:.0f} GB RAM" if ram_gb > 0 else "memoria necunoscută"
+    if 0 < ram_gb < constante.WHISPER_MIN_RAM_GB:
+        motiv = (
+            f"Fără placă video NVIDIA și cu {ram}: procesorul și modelul {nume_model}; "
+            "închide alte programe cât dictezi (în Expert, felul de calcul „int8” folosește mai puțină memorie)."
+        )
+    else:
+        motiv = f"Fără placă video NVIDIA ({ram}): procesorul și modelul {nume_model}."
+    return "cpu", model, motiv
+
+
+def stare_motor_audio() -> str:
+    """Textul despre motorul audio (C++ nativ sau Python, de rezervă)."""
+    try:
+        from .. import audio_engine_native
+
+        stare = audio_engine_native.status()
+    except Exception:
+        return "Motorul audio: Python (obișnuit)."
+    if stare.get("backend") == "cpp":
+        return "Motorul audio: nativ (C++), cu întârziere mică."
+    return "Motorul audio: Python (obișnuit). Motorul nativ C++ nu e instalat — nu e nevoie de el."
 
 
 class _DialogAlegere(QDialog):
@@ -191,6 +303,13 @@ class FereastraSetari(QDialog):
         et.setWordWrap(True)
         layout.addWidget(et)
 
+        # Nivelurile (Fluent: comutator segmentat): Bază / Descărcări / Expert.
+        self.comutator_nivel = fluent.ComutatorSegmentat(NIVELURI, self)
+        self.comutator_nivel.schimbat.connect(self._arata_nivel)
+        layout.addWidget(self.comutator_nivel, 0, Qt.AlignmentFlag.AlignLeft)
+        self.coada = comun.CoadaUI(self)
+        self._descarcare_activa = False
+
         # Listă stânga (secțiuni) + pagini dreapta (UX-17).
         rand_central = QHBoxLayout()
         rand_central.setSpacing(10)
@@ -224,6 +343,7 @@ class FereastraSetari(QDialog):
 
         self.lista_sectiuni.setCurrentRow(0)
         self._arata_sectiune(0)
+        self._arata_nivel(0)
 
         self.linie_stare = BaraStare(self)
         layout.addWidget(self.linie_stare)
@@ -246,6 +366,33 @@ class FereastraSetari(QDialog):
         """Afișează pagina din dreapta pentru secțiunea aleasă în listă."""
         if 0 <= index < self.stack.count():
             self.stack.setCurrentIndex(index)
+
+    def _arata_nivel(self, nivel: int) -> None:
+        """Arată în listă doar secțiunile nivelului ales (Bază / Descărcări / Expert)."""
+        primul = -1
+        for rand, (titlu, _metode) in enumerate(SECTIUNI):
+            ascuns = nivel_sectiune(titlu) != nivel
+            self.lista_sectiuni.setRowHidden(rand, ascuns)
+            if not ascuns and primul < 0:
+                primul = rand
+        curent = self.lista_sectiuni.currentRow()
+        if curent < 0 or self.lista_sectiuni.isRowHidden(curent):
+            if primul >= 0:
+                self.lista_sectiuni.setCurrentRow(primul)
+                self._arata_sectiune(primul)
+        if nivel == 1:
+            self._reimprospateaza_descarcari()
+
+    def arata_sectiunea(self, titlu: str) -> bool:
+        """Deschide direct o secțiune (și nivelul ei); întoarce False dacă nu există."""
+        for rand, (nume, _metode) in enumerate(SECTIUNI):
+            if nume == titlu:
+                self.comutator_nivel.alege(nivel_sectiune(nume), emite=False)
+                self._arata_nivel(nivel_sectiune(nume))
+                self.lista_sectiuni.setCurrentRow(rand)
+                self._arata_sectiune(rand)
+                return True
+        return False
 
     def _card(self, titlu: str, explicatie: str) -> QWidget:
         """Un rând de setare: titlu, explicație și un container pentru controale."""
@@ -449,6 +596,47 @@ class FereastraSetari(QDialog):
             "var_scurtaturi",
             "Scurtătură globală Ctrl+Alt+D pornește/oprește dictarea din orice program (cerința 53)",
             self.var_scurtaturi,
+        )
+        # Memoria dictărilor lungi (rezumatorul OpenLLM-Ro, memorie_dictare.py) — oprită implicit.
+        card_rezumat = self._card(
+            "Memorie la dictări lungi",
+            "La dictările lungi, programul ține minte pe scurt ce ai spus până acum, ca "
+            "frazele noi să se lege mai bine. Rezumatul se face pe calculator, în fundal, și "
+            "se folosește doar dacă se potrivește cuvânt cu cuvânt cu ce ai dictat; altfel "
+            "se ia simplu finalul textului. Oprit implicit.",
+        )
+        self.var_rezumat = getattr(self.config, "rezumat_activ", False) is True
+        self._rand_da_nu(
+            card_rezumat,
+            "var_rezumat",
+            "Folosește memoria la dictări lungi (rezumat verificat al textului deja dictat)",
+            self.var_rezumat,
+        )
+        # Dictarea lungă (dictare_lunga.py): Silero VAD → ferestre 30 s / 7,5 s → commit stabil.
+        # Oprită implicit; $DTED_DICTARE_LUNGA=1/0 are prioritate față de bifă.
+        card_lunga = self._card(
+            "Dictare lungă",
+            "Pentru dictări lungi, fără cuvinte tăiate: programul aude când vorbești (detector "
+            "de vorbire Silero), trimite bucăți de până la 30 de secunde care se suprapun și scrie "
+            "doar textul care nu se mai schimbă. După o pauză de peste 2 secunde începe un paragraf "
+            "nou. Oprită implicit — dictarea obișnuită rămâne neschimbată.",
+        )
+        self.var_dictare_lunga = getattr(self.config, "dictare_lunga", False) is True
+        self._rand_da_nu(
+            card_lunga,
+            "var_dictare_lunga",
+            "Folosește dictarea lungă (ferestre de 30 s cu suprapunere, paragraf nou după pauză)",
+            self.var_dictare_lunga,
+        )
+        env_lunga = (os.environ.get("DTED_DICTARE_LUNGA") or "").strip()
+        self.eticheta_dictare_lunga_mediu = self._valoare(
+            card_lunga,
+            (
+                f"Atenție: DTED_DICTARE_LUNGA={env_lunga} e setată în Windows și are prioritate "
+                "față de această bifă."
+            )
+            if env_lunga
+            else "",
         )
 
     # ------------------------------------------------------- parolă și criptare
@@ -665,27 +853,29 @@ class FereastraSetari(QDialog):
 
     def _rand_transcriere(self) -> None:
         card = self._card(
-            "Cum transcrie",
-            "Ce folosește programul la transcriere. „Automat” merge bine pe aproape orice calculator.",
+            "Pe ce lucrează transcrierea",
+            "„Automat” merge bine pe aproape orice calculator: folosește placa video "
+            "dacă există, altfel procesorul.",
         )
         valoare = self.config.dispozitiv if self.config.dispozitiv in ("auto", "cpu", "cuda") else "auto"
         self.var_dispozitiv = valoare
-        rand = QHBoxLayout()
+        self._casute_dispozitiv: list[tuple[str, QCheckBox]] = []
         for cod, text, explicatie in OPTIUNI_TRANSCRIERE:
+            rand = QHBoxLayout()
             rb = QCheckBox(text)
             rb.setFont(fonturi("baza"))
             rb.setChecked(cod == valoare)
+            rb.setMinimumWidth(280)
             rb.toggled.connect(lambda checked, c=cod: self._seteaza_dispozitiv(c, checked))
             rand.addWidget(rb)
+            self._casute_dispozitiv.append((cod, rb))
             et = QLabel(explicatie)
             et.setFont(fonturi("mica"))
             seteaza_rol(et, "secundar")
             et.setWordWrap(True)
-            et.setMinimumWidth(400)
-            et.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-            rand.addWidget(et)
-            rand.addStretch(1)
-        card.layout().addLayout(rand)
+            et.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            rand.addWidget(et, 1)
+            card.layout().addLayout(rand)
         # Starea plăcii video, citită acum (motor.STARE_PLACA_VIDEO).
         from .. import motor
 
@@ -703,6 +893,19 @@ class FereastraSetari(QDialog):
         self.buton_cuda.setFont(fonturi("baza"))
         self.buton_cuda.clicked.connect(self._descarca_cuda)
         card.layout().addWidget(self.buton_cuda)
+        self.eticheta_motor_audio = QLabel(stare_motor_audio())
+        self.eticheta_motor_audio.setFont(fonturi("mica"))
+        seteaza_rol(self.eticheta_motor_audio, "secundar")
+        self.eticheta_motor_audio.setWordWrap(True)
+        card.layout().addWidget(self.eticheta_motor_audio)
+        self.actualizeaza_placa_video()
+
+    def _rand_model(self) -> None:
+        card = self._card(
+            "Modelul de transcriere",
+            "„Creierul” care ascultă și scrie. Cele marcate „(lipsește)” se pot descărca "
+            "din „Descărcări”.",
+        )
         # Modelul de transcriere (v0.1.2): cel îmbunătățit pentru română, dacă există.
         rand_model = QHBoxLayout()
         et_model = QLabel("Modelul de transcriere:")
@@ -710,40 +913,90 @@ class FereastraSetari(QDialog):
         rand_model.addWidget(et_model)
         self.combo_model = QComboBox()
         self.combo_model.setFont(fonturi("baza"))
+        self.combo_model.setAccessibleName("Modelul de transcriere")
         self._umple_modele()
         rand_model.addWidget(self.combo_model, 1)
         card.layout().addLayout(rand_model)
-        self.actualizeaza_placa_video()
+        self.eticheta_model_info = QLabel("")
+        self.eticheta_model_info.setFont(fonturi("baza"))
+        self.eticheta_model_info.setWordWrap(True)
+        seteaza_rol(self.eticheta_model_info, "secundar")
+        card.layout().addWidget(self.eticheta_model_info)
+        self.combo_model.currentIndexChanged.connect(self._arata_info_model)
+        self._arata_info_model()
+        # „Recomandat pentru acest calculator”.
+        rand_rec = QHBoxLayout()
+        self.eticheta_recomandare = QLabel("")
+        self.eticheta_recomandare.setFont(fonturi("baza"))
+        self.eticheta_recomandare.setWordWrap(True)
+        seteaza_rol(self.eticheta_recomandare, "principal")
+        rand_rec.addWidget(self.eticheta_recomandare, 1)
+        self.buton_recomandare = Buton(
+            card, "Folosește recomandarea", self._aplica_recomandarea, latime=220, inaltime=36
+        )
+        rand_rec.addWidget(self.buton_recomandare)
+        card.layout().addLayout(rand_rec)
+        self._calculeaza_recomandarea()
+
+    def _calculeaza_recomandarea(self) -> None:
+        from .. import pregatire, resurse
+
+        try:
+            nvidia = bool(pregatire.are_placa_nvidia())
+        except Exception:
+            nvidia = False
+        try:
+            ram = float(resurse.memorie_ram_gb())
+        except Exception:
+            ram = 0.0
+        self._recomandare = recomandare_pc(nvidia, ram, getattr(self.config, "limba", "ro"))
+        dispozitiv, model, motiv = self._recomandare
+        lipsa = "" if model_instalat(model) else " (modelul trebuie descărcat întâi — vezi „Descărcări”)"
+        self.eticheta_recomandare.setText(f"Recomandat pentru acest calculator: {motiv}{lipsa}")
+
+    def _aplica_recomandarea(self) -> None:
+        dispozitiv, model, _motiv = getattr(self, "_recomandare", ("auto", "auto", ""))
+        for cod, rb in self._casute_dispozitiv:
+            rb.setChecked(cod == dispozitiv)
+        self.var_dispozitiv = dispozitiv
+        if model_instalat(model):
+            self._alege_model(model)
+        else:
+            self._alege_model("auto")
+            self.arata_sectiunea("Descărcări și actualizări")
+        self.linie_stare.arata("Recomandare", "am ales motorul potrivit; apasă «Salvează setările».", "normal")
+
+    def _alege_model(self, nume: str) -> None:
+        for index in range(self.combo_model.count()):
+            if self.combo_model.itemData(index) == nume:
+                self.combo_model.setCurrentIndex(index)
+                return
+
+    def _arata_info_model(self, *_args) -> None:
+        nume = self.combo_model.currentData() or "auto"
+        titlu, text = INFO_MODELE.get(nume, ("", ""))
+        self.eticheta_model_info.setText(f"{titlu}: {text}" if titlu else "")
 
     def _umple_modele(self) -> None:
         """Populează lista de modele instalate (kitul sau folderul de instalare)."""
-        import sys as _sys
-
-        from .. import cai
         from ..constante import MODELE_TRANSCRIBERE
 
-        radacini = []
-        ambalat = getattr(_sys, "_MEIPASS", None)
-        if ambalat:
-            radacini.append(Path(ambalat))
-        radacini.append(cai.director_model())
-
-        def instalat(nume: str) -> bool:
-            return any(
-                (radacina / "model" / nume / "model.bin").is_file() for radacina in radacini
-            )
-
+        ales_acum = self.combo_model.currentData() if self.combo_model.count() else None
+        self.combo_model.blockSignals(True)
+        self.combo_model.clear()
         self.combo_model.addItem("Automat — românescul, dacă există", "auto")
         for nume, descriere in MODELE_TRANSCRIBERE.items():
-            self.combo_model.addItem(descriere if instalat(nume) else f"{descriere} (lipsește)", nume)
-            if not instalat(nume):
+            instalat = model_instalat(nume)
+            self.combo_model.addItem(descriere if instalat else f"{descriere} (lipsește)", nume)
+            if not instalat:
                 model_index = self.combo_model.count() - 1
                 self.combo_model.model().item(model_index).setEnabled(False)
-        preferat = getattr(self.config, "model_preferat", "auto") or "auto"
+        preferat = ales_acum or getattr(self.config, "model_preferat", "auto") or "auto"
         for index in range(self.combo_model.count()):
             if self.combo_model.itemData(index) == preferat:
                 self.combo_model.setCurrentIndex(index)
                 break
+        self.combo_model.blockSignals(False)
 
     def _aplicatia_principala(self):
         widget = self.parent()
@@ -952,13 +1205,429 @@ class FereastraSetari(QDialog):
         rand.addWidget(self.combo_mod)
         rand.addStretch(1)
         card.layout().addLayout(rand)
+        self.var_accent_sistem = bool(getattr(self.config, "accent_sistem", True))
+        self._rand_da_nu(
+            card,
+            "var_accent_sistem",
+            "Butoanele principale iau culoarea de accent din Windows",
+            self.var_accent_sistem,
+        )
+        self.var_pastila = bool(getattr(self.config, "pastila_inregistrare", True))
+        self._rand_da_nu(
+            card,
+            "var_pastila",
+            "Arată pastila plutitoare „Înregistrez” când fereastra e ascunsă în timpul dictării",
+            self.var_pastila,
+        )
 
     def _aplica_mod(self, val: str) -> None:
         try:
             self.config.mod_afisare = val
-            comun.aplica_tema(val)
+            comun.aplica_tema(val, accent=bool(getattr(self, "var_accent_sistem", True)))
         except Exception as exc:
             jurnal.atentionare(f"Modul de afișare nu a putut fi aplicat: {exc}")
+
+    # ------------------------------------------------------------------ Descărcări
+
+    def _rand_descarcari(self) -> None:
+        card = self._card(
+            "Modele de transcriere",
+            "Ce e instalat și ce se mai poate descărca. Fiecare fișier se verifică (SHA-256); "
+            "totul rămâne în folderul programului, fără drepturi de administrator.",
+        )
+        self._randuri_model: dict[str, dict] = {}
+        from ..constante import MODELE_TRANSCRIBERE
+
+        for nume in MODELE_TRANSCRIBERE:
+            cadru = QFrame(card)
+            cadru.setObjectName("rand_model")
+            vertical = QVBoxLayout(cadru)
+            vertical.setContentsMargins(0, 4, 0, 4)
+            rand = QHBoxLayout()
+            titlu = QLabel(INFO_MODELE.get(nume, (nume, ""))[0])
+            titlu.setFont(fonturi("baza"))
+            titlu.setStyleSheet("font-weight: 600;")
+            rand.addWidget(titlu)
+            stare = QLabel("")
+            stare.setFont(fonturi("mica"))
+            rand.addWidget(stare, 1)
+            buton = Buton(cadru, "Descarcă", lambda n=nume: self._descarca_model(n), latime=150, inaltime=34)
+            buton.setIcon(fluent.iconita("descarca", "#0F6CBD"))
+            rand.addWidget(buton)
+            vertical.addLayout(rand)
+            bara = QProgressBar(cadru)
+            bara.setRange(0, 1000)
+            bara.setTextVisible(False)
+            bara.setFixedHeight(6)
+            bara.setVisible(False)
+            vertical.addWidget(bara)
+            detaliu = QLabel("")
+            detaliu.setFont(fonturi("mica"))
+            seteaza_rol(detaliu, "secundar")
+            detaliu.setWordWrap(True)
+            detaliu.setVisible(False)
+            vertical.addWidget(detaliu)
+            card.layout().addWidget(cadru)
+            self._randuri_model[nume] = {
+                "stare": stare, "buton": buton, "bara": bara, "detaliu": detaliu,
+            }
+        # Placa video (CUDA): starea și butonul de descărcare, aceleași ca în „Bază”.
+        self.eticheta_cuda_descarcari = QLabel("")
+        self.eticheta_cuda_descarcari.setFont(fonturi("baza"))
+        self.eticheta_cuda_descarcari.setWordWrap(True)
+        card.layout().addWidget(self.eticheta_cuda_descarcari)
+        self.buton_cuda_descarcari = Buton(
+            card, "Descarcă bibliotecile pentru placa video", self._descarca_cuda, latime=380, inaltime=36
+        )
+        card.layout().addWidget(self.buton_cuda_descarcari)
+        self._reimprospateaza_descarcari()
+
+    def _reimprospateaza_descarcari(self) -> None:
+        """Recitește ce modele sunt instalate (după o descărcare sau la deschidere)."""
+        from .. import pregatire
+
+        for nume, rand in getattr(self, "_randuri_model", {}).items():
+            instalat = model_instalat(nume)
+            descarcabil = pregatire.model_descarcabil(nume)
+            marime = marime_model_mb(nume)
+            if instalat:
+                text, rol = "✔ Instalat", "verde"
+                rand["buton"].setText("Verifică / repară")
+            elif descarcabil:
+                text = "Disponibil" + (f" — {marime:,} MB".replace(",", ".") if marime else "")
+                rol = "secundar"
+                rand["buton"].setText("Descarcă")
+            else:
+                text, rol = "Doar în kitul offline (nu se descarcă din program)", "secundar"
+            rand["stare"].setText(text)
+            seteaza_rol(rand["stare"], rol)
+            rand["buton"].setVisible(descarcabil)
+            rand["buton"].setEnabled(not self._descarcare_activa)
+        try:
+            extra = pregatire.text_stare_cuda(self.config)
+        except Exception:
+            extra = ""
+        if hasattr(self, "eticheta_cuda_descarcari"):
+            aplicatie = self._aplicatia_principala()
+            self.eticheta_cuda_descarcari.setText(
+                "Placa video: " + (extra or "nu e nevoie de biblioteci în plus.")
+            )
+            self.buton_cuda_descarcari.setVisible(bool(extra) and aplicatie is not None)
+
+    def _descarca_model(self, nume: str) -> None:
+        """Descarcă (sau repară) modelul ``nume`` într-un fir, cu bară de progres."""
+        from .. import pregatire
+
+        if self._descarcare_activa or nume not in self._randuri_model:
+            return
+        rand = self._randuri_model[nume]
+        self._descarcare_activa = True
+        for alt in self._randuri_model.values():
+            alt["buton"].setEnabled(False)
+        rand["bara"].setValue(0)
+        rand["bara"].setVisible(True)
+        rand["detaliu"].setVisible(True)
+        rand["detaliu"].setText("Pornesc descărcarea…")
+        folder = pregatire.folder_descarcare_model(nume)
+
+        def progres(text: str, fractie: float) -> None:
+            self.coada.trimite(self._progres_model, nume, text, fractie)
+
+        def lucru() -> None:
+            try:
+                pregatire.asigura_model(progres, 0.0, 1.0, folder=folder)
+                gresite = pregatire.fisiere_model_gresite(folder=folder)
+                self.coada.trimite(self._dupa_descarcare_model, nume, not gresite, "")
+            except Exception as exc:
+                self.coada.trimite(self._dupa_descarcare_model, nume, False, str(exc))
+
+        threading.Thread(target=lucru, name=f"descarca-{nume}", daemon=True).start()
+
+    def _progres_model(self, nume: str, text: str, fractie: float) -> None:
+        rand = self._randuri_model.get(nume)
+        if not rand:
+            return
+        rand["bara"].setValue(int(max(0.0, min(1.0, float(fractie))) * 1000))
+        rand["detaliu"].setText(text)
+
+    def _dupa_descarcare_model(self, nume: str, reusit: bool, eroare: str) -> None:
+        self._descarcare_activa = False
+        rand = self._randuri_model.get(nume)
+        if rand:
+            rand["bara"].setVisible(False)
+            if reusit:
+                rand["detaliu"].setText("Gata: modelul e descărcat și verificat.")
+                seteaza_rol(rand["detaliu"], "verde")
+            else:
+                rand["detaliu"].setText(
+                    "Descărcarea nu a reușit"
+                    + (f" ({eroare})" if eroare else "")
+                    + ". Verifică internetul și încearcă din nou; ce era bun a rămas pe disc."
+                )
+                seteaza_rol(rand["detaliu"], "pericol")
+        self._umple_modele()
+        self._reimprospateaza_descarcari()
+        if hasattr(self, "eticheta_recomandare"):
+            self._calculeaza_recomandarea()
+
+    # ------------------------------------------------------------------ Actualizări
+
+    def _rand_actualizari(self) -> None:
+        card = self._card(
+            "Actualizări",
+            "Programul NU caută nimic singur. La buton, compară versiunile instalate cu lista "
+            "oficială și descarcă doar ce s-a schimbat; versiunea veche se păstrează.",
+        )
+        self.eticheta_versiuni = QLabel(self._text_versiuni())
+        self.eticheta_versiuni.setFont(fonturi("baza"))
+        self.eticheta_versiuni.setWordWrap(True)
+        card.layout().addWidget(self.eticheta_versiuni)
+        self.btn_actualizari = Buton(
+            card, "Caută actualizări", self._cauta_actualizari, fel="principal", latime=220, inaltime=38
+        )
+        self.btn_actualizari.setIcon(fluent.iconita("reincarca", "#FFFFFF"))
+        rand_buton = QHBoxLayout()
+        rand_buton.addWidget(self.btn_actualizari)
+        rand_buton.addStretch(1)
+        card.layout().addLayout(rand_buton)
+        self.bara_actualizari = QProgressBar(card)
+        self.bara_actualizari.setRange(0, 1000)
+        self.bara_actualizari.setTextVisible(False)
+        self.bara_actualizari.setFixedHeight(6)
+        self.bara_actualizari.setVisible(False)
+        card.layout().addWidget(self.bara_actualizari)
+        self.et_actualizari = QLabel("")
+        self.et_actualizari.setFont(fonturi("baza"))
+        self.et_actualizari.setWordWrap(True)
+        card.layout().addWidget(self.et_actualizari)
+
+    def _text_versiuni(self) -> str:
+        from .. import actualizare
+
+        try:
+            instalate = actualizare.versiuni_instalate()
+        except Exception:
+            instalate = {}
+        parti = [f"Programul: {constante.VERSIUNE}"]
+        for nume, meta in instalate.items():
+            if nume != "program":
+                parti.append(f"{nume}: {meta.get('versiune', '—')}")
+        return "Instalat acum — " + "; ".join(parti) + "."
+
+    def _cauta_actualizari(self) -> None:
+        """Caută DOAR la buton: descarcă manifestul și compară (ca în Întreținere)."""
+        import json
+
+        self.btn_actualizari.setEnabled(False)
+        self.bara_actualizari.setVisible(True)
+        self.bara_actualizari.setRange(0, 0)  # nedeterminat cât timp citim lista
+        self.et_actualizari.setText("Se caută actualizări pe internet…")
+        seteaza_rol(self.et_actualizari, "secundar")
+
+        def lucru() -> None:
+            from .. import actualizare as act
+
+            try:
+                if not act.versiuni_instalate():
+                    instalate: dict[str, dict] = {"program": {"versiune": constante.VERSIUNE}}
+                    try:
+                        folder_model = cai.fisier_model().parent
+                        if folder_model.exists():
+                            instalate["model"] = {"versiune": folder_model.name}
+                    except Exception:
+                        pass
+                    act.scrie_versiuni(instalate)
+                temporar = act.fisier_versiuni().parent / "manifest-descarcat.json"
+                if not act.descarca(constante.URL_MANIFEST_ACTUALIZARI, temporar):
+                    self.coada.trimite(self._eroare_actualizari)
+                    return
+                try:
+                    manifest = json.loads(temporar.read_text(encoding="utf-8"))
+                finally:
+                    temporar.unlink(missing_ok=True)
+                self.coada.trimite(self._dupa_cautare_actualizari, act.ce_s_a_schimbat(manifest), manifest)
+            except Exception:
+                self.coada.trimite(self._eroare_actualizari)
+
+        threading.Thread(target=lucru, name="cauta-actualizari-setari", daemon=True).start()
+
+    def _eroare_actualizari(self) -> None:
+        self.btn_actualizari.setEnabled(True)
+        self.bara_actualizari.setVisible(False)
+        self.bara_actualizari.setRange(0, 1000)
+        self.et_actualizari.setText(
+            "Nu am putut căuta actualizări: fie nu e internet, fie lista oficială nu răspunde. "
+            "Nimic nu s-a schimbat."
+        )
+        seteaza_rol(self.et_actualizari, "pericol")
+
+    def _dupa_cautare_actualizari(self, schimbari: list, manifest: dict) -> None:
+        self.btn_actualizari.setEnabled(True)
+        self.bara_actualizari.setVisible(False)
+        self.bara_actualizari.setRange(0, 1000)
+        if not schimbari:
+            self.et_actualizari.setText("Ești la zi: toate componentele au ultima versiune.")
+            seteaza_rol(self.et_actualizari, "verde")
+            return
+        descarcabile = [
+            s for s in schimbari if str((manifest or {}).get(s.nume, {}).get("url", "")).strip()
+        ]
+        lista = "\n".join(f"• {s.eticheta}" for s in schimbari)
+        if not descarcabile:
+            self.et_actualizari.setText("Update-uri disponibile:\n" + lista)
+            seteaza_rol(self.et_actualizari, "secundar")
+            return
+        raspuns = QMessageBox.question(
+            self,
+            "Instalez actualizările?",
+            f"{lista}\n\nDescarc și înlocuiesc doar aceste componente?\n"
+            "Cele vechi se păstrează și poți reveni oricând la ele (Întreținere).",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if raspuns != QMessageBox.StandardButton.Yes:
+            self.et_actualizari.setText("Update-uri disponibile:\n" + lista + "\n\nNimic nu s-a descărcat.")
+            seteaza_rol(self.et_actualizari, "secundar")
+            return
+        self._aplica_actualizari(descarcabile, manifest)
+
+    def _aplica_actualizari(self, schimbari: list, manifest: dict) -> None:
+        self.btn_actualizari.setEnabled(False)
+        self.bara_actualizari.setValue(0)
+        self.bara_actualizari.setVisible(True)
+
+        def progres(primiti: int, total: int) -> None:
+            if total > 0:
+                self.coada.trimite(self._progres_actualizari, primiti / total)
+
+        def lucru() -> None:
+            from .. import actualizare as act
+
+            rapoarte: list[str] = []
+            for schimbare in schimbari:
+                meta = (manifest or {}).get(schimbare.nume, {})
+                pachet = cai.director_descarcari() / f"{schimbare.nume}-{schimbare.noua}"
+                ok = act.descarca(
+                    str(meta.get("url", "")), pachet, str(meta.get("sha256", "")), progres=progres
+                )
+                if not ok:
+                    rapoarte.append(f"✘ {schimbare.nume}: descărcarea a eșuat (sumă sau rețea)")
+                    continue
+                try:
+                    act.aplica(schimbare.nume, schimbare.noua, pachet)
+                    rapoarte.append(f"✔ {schimbare.eticheta} — instalat")
+                except Exception as exc:
+                    rapoarte.append(f"✘ {schimbare.nume}: instalarea a eșuat ({exc})")
+            self.coada.trimite(self._dupa_actualizari, rapoarte)
+
+        threading.Thread(target=lucru, name="aplica-actualizari-setari", daemon=True).start()
+
+    def _progres_actualizari(self, fractie: float) -> None:
+        self.bara_actualizari.setValue(int(max(0.0, min(1.0, fractie)) * 1000))
+        self.et_actualizari.setText(f"Se descarcă… {fractie * 100:.0f}%")
+
+    def _dupa_actualizari(self, rapoarte: list[str]) -> None:
+        self.btn_actualizari.setEnabled(True)
+        self.bara_actualizari.setVisible(False)
+        self.et_actualizari.setText("\n".join(rapoarte))
+        rol = "pericol" if any(r.startswith("✘") for r in rapoarte) else "verde"
+        seteaza_rol(self.et_actualizari, rol)
+        self.eticheta_versiuni.setText(self._text_versiuni())
+        self._umple_modele()
+        self._reimprospateaza_descarcari()
+
+    # ------------------------------------------------------------------ Expert
+
+    #: (cheie config, etichetă, explicație, pas, zecimale; 0 = număr întreg).
+    _CAMPURI_EXPERT: tuple[tuple[str, str, str, float, int], ...] = (
+        ("expert_vad_prag", "Prag de vorbire (VAD)",
+         "Cât de sigur trebuie să fie că e vorbire (0,1–0,9). Mai mare = ignoră mai mult zgomotul.", 0.05, 2),
+        ("prag_activare_db", "Activare vocală (dB)",
+         "Sub acest nivel, microfonul e socotit liniște (−70 … −5 dB).", 1, 0),
+        ("expert_timp_tacere_sec", "Oprește după tăcere (s)",
+         "Dictarea se oprește singură după atâtea secunde de liniște; 0 = niciodată.", 5, 0),
+        ("expert_fereastra_sec", "Fereastră de dictare (s)",
+         "Cât sunet se transcrie o dată. Mai mare = mai precis, dar textul apare mai târziu.", 0.5, 1),
+        ("expert_suprapunere_sec", "Suprapunere (s)",
+         "Cât se reia din bucata anterioară — doar cu motorul audio nativ.", 0.25, 2),
+        ("expert_ring_buffer_ms", "Tampon audio (ms)",
+         "Cât sunet ține minte motorul audio nativ (ring buffer).", 100, 0),
+        ("expert_buget_text_anterior", "Context din textul anterior (caractere)",
+         "Câte caractere din ce s-a scris deja primește modelul ca indiciu; 0 = deloc.", 20, 0),
+        ("expert_beam_size", "Beam size",
+         "Câte variante încearcă modelul (1–10). Mai mare = puțin mai precis, mai lent.", 1, 0),
+    )
+
+    def _rand_expert(self) -> None:
+        card = self._card(
+            "Expert",
+            "Pentru cine știe ce face. Valorile implicite merg bine pentru aproape oricine; "
+            "„Revino la valorile implicite” le pune la loc.",
+        )
+        self.pliabil_expert = fluent.SectiunePliabila("Setări pentru cunoscători", card, deschisa=False)
+        card.layout().addWidget(self.pliabil_expert)
+        formular = QFormLayout()
+        formular.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
+        self.pliabil_expert.continut_layout.addLayout(formular)
+        self._spinuri_expert: dict[str, QSpinBox | QDoubleSpinBox] = {}
+        for cheie, eticheta_text, explicatie, pas, zecimale in self._CAMPURI_EXPERT:
+            minim, maxim = config_modul.LIMITE_EXPERT[cheie]
+            if zecimale:
+                spin: QSpinBox | QDoubleSpinBox = QDoubleSpinBox()
+                spin.setDecimals(zecimale)
+            else:
+                spin = QSpinBox()
+                minim, maxim, pas = int(minim), int(maxim), int(pas)
+            spin.setRange(minim, maxim)
+            spin.setSingleStep(pas)
+            spin.setValue(getattr(self.config, cheie))
+            spin.setToolTip(explicatie)
+            spin.setAccessibleName(eticheta_text)
+            spin.setAccessibleDescription(explicatie)
+            spin.setMinimumWidth(120)
+            eticheta_camp = QLabel(eticheta_text)
+            eticheta_camp.setFont(fonturi("baza"))
+            eticheta_camp.setToolTip(explicatie)
+            formular.addRow(eticheta_camp, spin)
+            self._spinuri_expert[cheie] = spin
+        self.combo_calcul = QComboBox()
+        self.combo_calcul.addItems(list(config_modul.FELURI_CALCUL))
+        self.combo_calcul.setCurrentText(getattr(self.config, "expert_compute_type", "auto"))
+        self.combo_calcul.setToolTip(
+            "Felul de calcul (compute_type). „auto” = float32 pe procesor, float16 pe placa video; „int8” = mai puțină memorie."
+        )
+        self.combo_calcul.setAccessibleName("Felul de calcul")
+        formular.addRow(QLabel("Felul de calcul (compute_type)"), self.combo_calcul)
+        self.bifa_text_anterior = QCheckBox("Ține cont de textul anterior (condition_on_previous_text)")
+        self.bifa_text_anterior.setChecked(bool(getattr(self.config, "expert_text_anterior", False)))
+        self.bifa_text_anterior.setToolTip(
+            "Mai coerent la fraze lungi, dar o greșeală se poate repeta. Implicit oprit."
+        )
+        formular.addRow(self.bifa_text_anterior)
+        self.btn_expert_implicit = Buton(
+            card, "Revino la valorile implicite", self._expert_implicit, latime=280, inaltime=36
+        )
+        self.btn_expert_implicit.setIcon(fluent.iconita("reincarca", "#5C5C5C"))
+        rand_implicit = QHBoxLayout()
+        rand_implicit.addWidget(self.btn_expert_implicit)
+        rand_implicit.addStretch(1)
+        self.pliabil_expert.continut_layout.addLayout(rand_implicit)
+        nota = QLabel(
+            "Suprapunerea și tamponul audio se folosesc doar cu motorul audio nativ (C++); "
+            "felul de calcul și modelul se schimbă la următoarea transcriere."
+        )
+        nota.setFont(fonturi("mica"))
+        nota.setWordWrap(True)
+        seteaza_rol(nota, "secundar")
+        self.pliabil_expert.continut_layout.addWidget(nota)
+
+    def _expert_implicit(self) -> None:
+        """„Revino la valorile implicite” pentru toate setările Expert."""
+        implicite = config_modul.valori_expert_implicite()
+        for cheie, spin in self._spinuri_expert.items():
+            spin.setValue(implicite[cheie])
+        self.combo_calcul.setCurrentText(implicite.get("expert_compute_type", "auto"))
+        self.bifa_text_anterior.setChecked(bool(implicite.get("expert_text_anterior", False)))
+        self.linie_stare.arata("Expert", "valorile implicite sunt puse; apasă «Salvează setările».", "normal")
 
     # ------------------------------------------------------------------ arătare valori
 
@@ -1346,6 +2015,14 @@ class FereastraSetari(QDialog):
         except (AttributeError,):
             pass
         try:
+            self.config.rezumat_activ = bool(self.var_rezumat)
+        except (AttributeError,):
+            pass
+        try:
+            self.config.dictare_lunga = bool(self.var_dictare_lunga)
+        except (AttributeError,):
+            pass
+        try:
             avertizari = self.var_avertizari
             for cheie in (
                 "avertizeaza_internet",
@@ -1356,6 +2033,19 @@ class FereastraSetari(QDialog):
                 setattr(self.config, cheie, avertizari)
         except (AttributeError,):
             pass
+        try:
+            self.config.accent_sistem = bool(self.var_accent_sistem)
+            self.config.pastila_inregistrare = bool(self.var_pastila)
+        except AttributeError:
+            pass
+        try:
+            for cheie, spin in self._spinuri_expert.items():
+                setattr(self.config, cheie, spin.value())
+            self.config.expert_compute_type = self.combo_calcul.currentText()
+            self.config.expert_text_anterior = self.bifa_text_anterior.isChecked()
+        except AttributeError:
+            pass
+        config_modul.limiteaza_expert(self.config)
 
     def _schimbari(self) -> bool:
         try:
