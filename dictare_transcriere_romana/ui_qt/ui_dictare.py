@@ -701,37 +701,41 @@ class PaginaDictare(QWidget):
             pauza_detectata = False
             liniste_secunde = getattr(self, "_liniste_secunde", 0.0)
             pauza_recenta = getattr(self, "_pauza_recenta", 0.0)
+            masura_anterioara = time.monotonic()
             while not self._anulat.is_set():
                 time.sleep(0.04)
                 sec_curent = microfon.scurgere()
-                # Pauzele lungi structurează singure textul: liniște > 4 s →
-                # linie nouă; > 8 s → paragraf nou (bucata următoare le primește).
+                acum = time.monotonic()
+                interval = min(0.5, max(0.0, acum - masura_anterioara))
+                masura_anterioara = acum
+                # Pauzele lungi structurează singure textul: liniște > pragul ales →
+                # rând nou; peste pragul de paragraf → paragraf nou. O singură
+                # citire a ferestrei serveste și detectării de pauză, și contorului.
+                fereastra = None
                 try:
                     import numpy as _np
 
-                    fen = microfon.fereastra_curenta()
-                    if len(fen) >= int(0.2 * 16_000):
-                        coada_sil = fen[-int(0.2 * 16_000):]
+                    fereastra = microfon.fereastra_curenta()
+                    if len(fereastra) >= int(0.2 * 16_000):
+                        coada_sil = fereastra[-int(0.2 * 16_000):]
                         if float(_np.sqrt(_np.mean(coada_sil ** 2))) < PRAG_RMS_LINISTE:
-                            liniste_secunde += 0.04
+                            liniste_secunde += interval
                         else:
                             if liniste_secunde >= prag_rand:
                                 pauza_recenta = liniste_secunde  # pauza s-a încheiat: o ținem minte
                             liniste_secunde = 0.0
                 except Exception:
                     pass
-                if sec_curent >= SECUNDE_MINIME_PAUZA and hasattr(microfon, "fereastra_curenta"):
+                if sec_curent >= SECUNDE_MINIME_PAUZA and fereastra is not None and len(fereastra) >= int(SECUNDE_MINIME_PAUZA * 16_000):
                     try:
                         import numpy as np
 
-                        fereastra = microfon.fereastra_curenta()
-                        if len(fereastra) >= int(SECUNDE_MINIME_PAUZA * 16_000):
-                            coada_liniste = fereastra[-int(0.20 * 16_000):]
-                            rms_coada = float(np.sqrt(np.mean(coada_liniste ** 2)))
-                            rms_peak = float(np.sqrt(np.mean(fereastra ** 2)))
-                            if rms_coada < PRAG_RMS_LINISTE or (rms_peak > 0.03 and rms_coada < 0.22 * rms_peak):
-                                pauza_detectata = True
-                                break
+                        coada_liniste = fereastra[-int(0.20 * 16_000):]
+                        rms_coada = float(np.sqrt(np.mean(coada_liniste ** 2)))
+                        rms_peak = float(np.sqrt(np.mean(fereastra ** 2)))
+                        if rms_coada < PRAG_RMS_LINISTE or (rms_peak > 0.03 and rms_coada < 0.22 * rms_peak):
+                            pauza_detectata = True
+                            break
                     except Exception:
                         pass
                 if sec_curent >= SECUNDE_BUCATA:
@@ -858,17 +862,19 @@ class PaginaDictare(QWidget):
             fragment = (rezultat.text or "").strip()
             if not fragment:
                 continue
-            if prefix:
-                fragment = prefix + fragment  # pauza lungă a decis structura
             if fel == "provizoriu":
                 self.aplicatie.coada.trimite(self._adauga_text_live, fragment)
             else:
                 from .. import inlocuiri, text_ro
 
                 curatat = text_ro.marcaje_paragraf(
-                    text_ro.curata_repetari(inlocuiri.aplica(fragment))
+                    text_ro.curata_repetari(
+                        text_ro.proceseaza_comenzi_vocale(inlocuiri.aplica(fragment))
+                    )
                 )
                 if curatat:
+                    if prefix:
+                        curatat = prefix + curatat  # pauza lungă a decis structura
                     self._text_dictare += (" " if self._text_dictare else "") + curatat
                     try:
                         biblioteca.scrie_recuperare(
@@ -969,7 +975,11 @@ class PaginaDictare(QWidget):
 
         if not self._activ:
             return  # dictarea s-a oprit între timp: nu mai afișăm provizorii rămași
-        fragment = text_ro.marcaje_paragraf(text_ro.curata_repetari(inlocuiri.aplica(fragment)))
+        fragment = text_ro.marcaje_paragraf(
+            text_ro.curata_repetari(
+                text_ro.proceseaza_comenzi_vocale(inlocuiri.aplica(fragment))
+            )
+        )
         if not fragment:
             return
         if hasattr(self.editor, "arata_provizoriu"):
@@ -1013,6 +1023,15 @@ class PaginaDictare(QWidget):
             except Exception:
                 pass
             self.stare.text = self.editor.text()
+            # recuperarea la cădere trebuie să reflecte textul rămas, nu fraza ștearsă
+            self._text_dictare = self.editor.text()
+            try:
+                if self._text_dictare.strip():
+                    biblioteca.scrie_recuperare(
+                        self._text_dictare, getattr(self, "_marca_dictare", "") or "dictare"
+                    )
+            except Exception:
+                pass
         self.aplicatie.bara_stare.arata(
             "P alineat", "fraza ștearsă — scrii într-un paragraf nou, fără alineat.", "lucru"
         )
@@ -1029,6 +1048,14 @@ class PaginaDictare(QWidget):
             except Exception:
                 pass
             self.stare.text = self.editor.text()
+            self._text_dictare = self.editor.text()
+            try:
+                if self._text_dictare.strip():
+                    biblioteca.scrie_recuperare(
+                        self._text_dictare, getattr(self, "_marca_dictare", "") or "dictare"
+                    )
+            except Exception:
+                pass
         self.aplicatie.bara_stare.arata(
             "I alineat", "fraza ștearsă — scrii într-un paragraf nou, cu alineat (tab).", "lucru"
         )

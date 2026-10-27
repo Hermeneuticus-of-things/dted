@@ -539,6 +539,7 @@ class Aplicatie(QMainWindow):
         layout.addWidget(self._bara_sfaturi)
         self._sfat_index = 0
         self._sfat_context = ""
+        self._bara_sfaturi.hide()  # apare cu primul sfat, după ce s-a așezat interfața
         self._timer_sfaturi = QTimer(self)
         self._timer_sfaturi.timeout.connect(self._alt_sfat)
         self._timer_sfaturi.start(45000)

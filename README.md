@@ -119,6 +119,15 @@ Setări → Aspect).
   ascultarea și corecturile care se învață; la pornire, primii pași. Cu „↻” alt sfat, „×” liniște,
   și comutator permanent în Setări → Aspect.
 
+### 🆕 Ce e nou în v0.6.8
+
+- **Vânătoare de bug-uri pe toate dimensiunile** (cod, motor, grafică, workflow, română):
+  - **comenzile vocale funcționează acum cu adevărat la dictare** — „punct”, „virgulă”, „deschide ghilimele”, „linie de dialog” etc. erau implementate, dar nu erau chemate niciodată din fluxul de dictare;
+  - fraza ștearsă cu **⏎ P alineat / ⇥ I alineat** nu mai reapărea în recuperarea după o cădere a programului;
+  - prefixul de pauză (rând/paragraf nou) nu se mai pierdea la confirmarea bucății;
+  - liniștea se măsoară în **timp real** (nu în pași de 40 ms) și fereastra audio se citește o singură dată pe sondaj (mai puțin consum);
+  - bara de sfaturi nu mai clipește goală la pornirea programului.
+
 ## 🗺 Ce urmează
 
 - [ ] **Aplicație pentru macOS** — aceeași experiență de dictare, nativ pe Mac

@@ -323,3 +323,43 @@ def test_comenzi_vocale_extinse():
     assert text_ro.proceseaza_comenzi_vocale("zece procent slash tot") == "zece% / tot"
     # fără spațiu înaintea punctuației
     assert text_ro.proceseaza_comenzi_vocale("cuvânt punct altcuvânt") == "cuvânt. altcuvânt"
+
+
+def test_dictarea_aplica_comenzile_vocale_si_recuperarea_corespunde():
+    """Comenzile rostite devin semne în dictare; recuperarea reflectă textul rămas."""
+    import numpy as np
+
+    from dictare_transcriere_romana.ui_qt.ui_dictare import PaginaDictare
+
+    class MotorTest:
+        def transcrie(self, sunet, **_optiuni):
+            return SimpleNamespace(text="am ajuns punct deschide ghilimele bravo")
+
+    class CoadaTest:
+        def trimite(self, functie, *argumente):
+            functie(*argumente)
+
+    class DictareTest:
+        pass
+
+    d = DictareTest()
+    d._anulat_pana = 0.0
+    d._text_dictare = ""
+    d._marca_dictare = "test"
+    d.config = SimpleNamespace(limba="ro", termeni="")
+    d.motor = MotorTest()
+    d.aplicatie = SimpleNamespace(_motor=d.motor, coada=CoadaTest())
+    d._coada_transcriere = queue.Queue()
+    primite = []
+    d._adauga_text = lambda fragment: primite.append(fragment)
+    d._adauga_text_live = lambda fragment: None
+
+    d._coada_transcriere.put(("final", np.zeros(32_000, dtype=np.float32), 10.0, ""))
+    d._coada_transcriere.put(("final", np.zeros(32_000, dtype=np.float32), 11.0, "\n\n"))
+    d._coada_transcriere.put(("gata", None, 0.0, ""))
+    PaginaDictare._bucla_transcriere(d)
+
+    # „punct” → „.”, „deschide ghilimele” → „”; prefixul de pauză merge în față
+    assert primite[0] == "am ajuns. „bravo"
+    assert primite[1].startswith("\n\n")  # pauza lungă a decis structura
+    assert "am ajuns. „bravo" in d._text_dictare

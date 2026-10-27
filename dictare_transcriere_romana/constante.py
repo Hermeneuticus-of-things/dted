@@ -26,7 +26,7 @@ NUME_SCURTATURA = f"{NUME_SCURT} – {NUME_AFISAT}"
 NUME_EXE = "DTED"
 NUME_PACHET = "dictare_transcriere_romana"  # numele tehnic (fără diacritice)
 NUME_PUBLICATOR = "D&TED"
-VERSIUNE = "0.6.7"
+VERSIUNE = "0.6.8"
 VERSIUNE_COMPLETA = f"{VERSIUNE}-beta (2026-10)"
 
 #: Variabila de mediu care poate muta instalarea în alt folder.
