@@ -1,8 +1,8 @@
-"""Fereastra mică „mereu deasupra”: vumetru + oprire, în timpul dictării.
+"""Fereastra mică „mereu deasupra”: pornire + vumetru + oprire, în timpul dictării.
 
 Înlocuiește nimic în Tkinter (cerința 40 / D-8). Stă deasupra celorlalte
-ferestre, ca să vezi nivelul microfonului și să oprești dictarea chiar când
-lucrezi în alt program.
+ferestre, ca să pornești dictarea, să vezi nivelul microfonului și să oprești
+dictarea chiar când lucrezi în alt program.
 """
 
 from __future__ import annotations
@@ -57,9 +57,18 @@ class FereastraMini(QWidget):
         self.nivel_bar.setMinimumHeight(12)
         layout.addWidget(self.nivel_bar)
 
-        layout.addWidget(
-            Buton(self, "■ Oprește dictarea", self._opreste, fel="pericol", inaltime=36)
+        rand_butoane = QHBoxLayout()
+        rand_butoane.setSpacing(8)
+        self.buton_porneste = Buton(
+            self, "● Pornește dictarea", self._porneste, fel="principal", inaltime=36
         )
+        self.buton_opreste = Buton(
+            self, "■ Oprește dictarea", self._opreste, fel="pericol", inaltime=36
+        )
+        self.buton_opreste.set_activ(False)
+        rand_butoane.addWidget(self.buton_porneste)
+        rand_butoane.addWidget(self.buton_opreste)
+        layout.addLayout(rand_butoane)
 
         self._timer = QTimer(self)
         self._timer.setInterval(60)
@@ -68,6 +77,9 @@ class FereastraMini(QWidget):
 
     def _actualizeaza(self) -> None:
         activ = self.sursa is not None and getattr(self.sursa, "_activ", False)
+        # Pornirea e disponibilă doar când microfonul nu dictează; oprirea, invers.
+        self.buton_porneste.set_activ(not activ)
+        self.buton_opreste.set_activ(activ)
         nivel = self.sursa.nivel_microfon if activ else 0.0
         valoare = min(1000, int(nivel * 1000))
         self.nivel_bar.setValue(valoare)
@@ -84,6 +96,11 @@ class FereastraMini(QWidget):
             self.nivel_bar.setProperty("chunk", rol)
             self.nivel_bar.style().unpolish(self.nivel_bar)
             self.nivel_bar.style().polish(self.nivel_bar)
+
+    def _porneste(self) -> None:
+        """Pornește dictarea din fereastra mică (doar când microfonul nu e activ)."""
+        if self.sursa is not None and not getattr(self.sursa, "_activ", False):
+            self.sursa._porneste()
 
     def _opreste(self) -> None:
         if self.sursa is not None and getattr(self.sursa, "_activ", False):

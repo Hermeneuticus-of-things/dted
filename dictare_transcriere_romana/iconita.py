@@ -156,10 +156,13 @@ def scrie_iconita(cale: Path) -> Path | None:
     """Scrie fișierul .ico — preferă fișierul artistic existent, altfel generează."""
     try:
         cale = Path(cale)
-        if cale.exists() and cale.stat().st_size > 0:
-            return cale
-        # Încearcă să copieze pictograma artistică din pachetul sursă.
         sursa_pachet = Path(__file__).with_name("iconita_dictare.ico")
+        # Copia existentă se păstrează doar dacă e identică cu iconița din pachet;
+        # altfel o iconiță veche ar rămâne pentru totdeauna pe scurtături.
+        if cale.exists() and cale.stat().st_size > 0:
+            if not sursa_pachet.exists() or sursa_pachet.read_bytes() == cale.read_bytes():
+                return cale
+        # Încearcă să copieze pictograma artistică din pachetul sursă.
         if sursa_pachet.exists() and sursa_pachet.stat().st_size > 0:
             cale.parent.mkdir(parents=True, exist_ok=True)
             import shutil

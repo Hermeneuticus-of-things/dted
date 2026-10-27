@@ -110,18 +110,54 @@ New-NetFirewallRule -DisplayName 'D&TED - doar acest program offline' -Group '__
 
 
 def _script_deblocare() -> str:
-    """Anulează TOATE blocajele noastre: firewall + USBSTOR + radio On."""
+    """Anulează TOATE blocajele noastre, refăcând exact starea salvată.
+
+    Citește din marcaj starea de dinainte (``radiouri=...`` și ``usbstor=...``,
+    scrise de ``_script_blocare_mod1``) și readuce fiecare radio (Wi-Fi, mobil,
+    Bluetooth) și USBSTOR la acea valoare — nu forțează pornirea. Dacă nu e
+    nimic salvat, USBSTOR revine la 3 (manual, implicit Windows), iar radiourile
+    rămân neschimbate.
+    """
     return r"""
 $ErrorActionPreference = 'SilentlyContinue'
+# Citește starea de dinainte din marcaj, înainte să-l ștergem.
+$saved_radios = @{}
+$saved_usb = $null
+if (Test-Path '__MARCAJ__') {
+  foreach ($linie in (Get-Content -Path '__MARCAJ__')) {
+    $i = $linie.IndexOf('=')
+    if ($i -lt 0) { continue }
+    $cheie = $linie.Substring(0, $i)
+    $valoare = $linie.Substring($i + 1)
+    if ($cheie -eq 'radiouri') {
+      foreach ($parte in ($valoare -split ',')) {
+        if ($parte -match '^([0-9]+):([0-9]+)$') {
+          $saved_radios[$Matches[1]] = [int]$Matches[2]
+        }
+      }
+    }
+    elseif ($cheie -eq 'usbstor') {
+      $saved_usb = $valoare
+    }
+  }
+}
+
 Remove-NetFirewallRule -Group '__GRUP__'
-Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\USBSTOR' -Name 'Start' -Value 3 -ErrorAction SilentlyContinue
+
+# USBSTOR: refă valoarea salvată; fără valoare → 3 (manual, implicit Windows).
+if ([string]::IsNullOrEmpty($saved_usb)) { $saved_usb = '3' }
+Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\USBSTOR' -Name 'Start' -Value ([int]$saved_usb) -ErrorAction SilentlyContinue
+
+# Radiouri: refă starea salvată (pornit/oprit), nu forța pornirea.
 [void][Windows.Devices.Radios.Radio, Windows.System.Devices, ContentType = WindowsRuntime]
 $radios = [Windows.Devices.Radios.Radio]::GetRadiosAsync().GetAwaiter().GetResult()
 foreach ($radio in $radios) {
-  if ([int]$radio.Kind -eq 1 -or [int]$radio.Kind -eq 2) {
-    $null = $radio.SetStateAsync([Windows.Devices.Radios.RadioState]::On).GetAwaiter().GetResult()
+  $kind = ([int]$radio.Kind).ToString()
+  if ($saved_radios.ContainsKey($kind)) {
+    $null = $radio.SetStateAsync([Windows.Devices.Radios.RadioState]$saved_radios[$kind]).GetAwaiter().GetResult()
   }
 }
+
 Remove-Item -Path '__MARCAJ__' -Force -ErrorAction SilentlyContinue
 """
 
@@ -272,8 +308,19 @@ def anuleaza_blocuri_vechi() -> bool:
 
 
 def starea_activa() -> str | None:
-    """Modul blocat acum, citit din marcaj (``None`` = nimic activ)."""
+    """Modul blocat acum, citit din marcaj (``None`` = nimic activ).
+
+    Un marcaj lăsat de un proces mort nu mai înseamnă blocare: o pornire
+    întreruptă sau un test lasă fișierul în urmă, iar bara ar arăta „Program
+    izolat” deși nimic nu e blocat. De aceea verificăm și PID-ul.
+    """
     marcaj = citeste_marcaj()
-    if marcaj:
-        return marcaj.get("mod")
-    return None
+    if not marcaj:
+        return None
+    try:
+        pid = int(marcaj.get("pid", "0"))
+    except ValueError:
+        return None
+    if not proces_viu(pid):
+        return None
+    return marcaj.get("mod")
