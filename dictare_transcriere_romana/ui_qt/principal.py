@@ -203,13 +203,35 @@ class Aplicatie(QMainWindow):
         # Vumetru cu gradații dB (redesign UX) — vizibil DOAR cât se dictează.
         # 0 dB = distorsiune; verde -30…-6 dB e zona bună de dictare.
 
-        # Buton mare „📂 Transcrie un fișier…”
+        # Butoane directe în bara de sus: clare, cu iconiță + text, ca utilizatorul
+        # să ajungă dintr-un clic la acțiunile principale fără să caute prin submeniuri.
         btn_transcrie = QToolButton()
-        btn_transcrie.setText("📂")
+        btn_transcrie.setText("📂 Transcrie fișier")
         btn_transcrie.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_transcrie.clicked.connect(self.transcrie_fisier_ales)
         btn_transcrie.setToolTip("Transcrie un fișier audio (Ctrl+T)")
         self.toolbar.addWidget(btn_transcrie)
+
+        btn_fisiere_bar = QToolButton()
+        btn_fisiere_bar.setText("📁 Fișierele mele")
+        btn_fisiere_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_fisiere_bar.clicked.connect(lambda: self.arata_ecran("fisiere"))
+        btn_fisiere_bar.setToolTip("Sunetele, textele transcrise, documentele și arhiva Terminate")
+        self.toolbar.addWidget(btn_fisiere_bar)
+
+        btn_sunet_bar = QToolButton()
+        btn_sunet_bar.setText("🎤 Sunet")
+        btn_sunet_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_sunet_bar.clicked.connect(lambda: self.arata_ecran("sunet"))
+        btn_sunet_bar.setToolTip("Testează microfonul, difuzoarele și căștile")
+        self.toolbar.addWidget(btn_sunet_bar)
+
+        btn_actualizari_bar = QToolButton()
+        btn_actualizari_bar.setText("📦 Actualizări")
+        btn_actualizari_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_actualizari_bar.clicked.connect(lambda: self.arata_ecran("instalare"))
+        btn_actualizari_bar.setToolTip("Verifică starea instalării și caută actualizări pe GitHub")
+        self.toolbar.addWidget(btn_actualizari_bar)
 
         # Ascultarea înregistrării (32/34/35): apare doar când există o dictare.
         self.btn_asculta = QToolButton()
@@ -232,8 +254,7 @@ class Aplicatie(QMainWindow):
         )
         self.toolbar.addWidget(spacer)
 
-        # Meniu „Instrumente ▾” — ce se folosește rar (redesign UX): un singur loc,
-        # ca în aplicațiile profesionale; pagina principală rămâne doar cu des folositele.
+        # Meniu „Instrumente ▾”
         self.menu_instrumente = QMenu(self)
         self.menu_instrumente.addAction(
             "🎤 Testează microfonul și boxele", lambda: self.arata_ecran("sunet")
@@ -253,16 +274,24 @@ class Aplicatie(QMainWindow):
         )
         self.menu_instrumente.addSeparator()
         self.menu_instrumente.addAction("🏠 Ecranul de start", lambda: self.arata_ecran("principal"))
-        self.menu_instrumente.addAction("📄 Doar textul", self._doar_textul, QKeySequence("Ctrl+E"))
+        self.menu_instrumente.addAction("📄 Doar textul (Editor)", self._doar_textul, QKeySequence("Ctrl+E"))
 
         btn_instrumente = QToolButton()
         btn_instrumente.setText("&Instrumente ▾")
         btn_instrumente.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_instrumente.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         btn_instrumente.setMenu(self.menu_instrumente)
-        btn_instrumente.setToolTip("Uneltele folosite mai rar (sunet, fișiere, confidențialitate…)")
+        btn_instrumente.setToolTip("Toate uneltele programului (sunet, fișiere, confidențialitate, actualizări…)")
         self.toolbar.addWidget(btn_instrumente)
         self.addActions(self.menu_instrumente.actions())
+
+        # Buton „⚙ Setări”
+        btn_setari = QToolButton()
+        btn_setari.setText("⚙ Setări")
+        btn_setari.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        btn_setari.setToolTip("Setări (Ctrl+,)")
+        btn_setari.clicked.connect(self.arata_ecran_setari)
+        self.toolbar.addWidget(btn_setari)
 
         # Meniu „Ajutor ▾”
         self.menu_ajutor = QMenu(self)
@@ -278,31 +307,44 @@ class Aplicatie(QMainWindow):
         self.menu_ajutor.addAction("ℹ &Despre", self._despre)
 
         btn_ajutor = QToolButton()
-        btn_ajutor.setText("❓")
+        btn_ajutor.setText("❓ Ajutor ▾")
         btn_ajutor.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         btn_ajutor.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         btn_ajutor.setMenu(self.menu_ajutor)
         btn_ajutor.setToolTip("Ajutor (F1) — întrebări, tur ghidat, despre")
         self.toolbar.addWidget(btn_ajutor)
 
-        # Buton „⚙ Setări”
-        btn_setari = QToolButton()
-        btn_setari.setText("⚙")
-        btn_setari.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        btn_setari.setToolTip("Setări (Ctrl+,)")
-        btn_setari.clicked.connect(self.arata_ecran_setari)
-        self.toolbar.addWidget(btn_setari)
-
         # Scurtăturile din meniuri merg și când meniul e închis (o singură dată fiecare).
         self.addActions(self.menu_fisier.actions())
         self.addActions(self.menu_ajutor.actions())
 
-        # Zona pagini (centru) - ocupă spațiu minim.
+        # Zona pagini (centru) cu bară de întoarcere la editor, ca ecranele secundare
+        # să nu se suprapună niciodată peste editor și lista dictărilor.
         self._zona_pagini = QWidget()
         self._zona_pagini.setAutoFillBackground(False)
         zona_layout = QVBoxLayout(self._zona_pagini)
         zona_layout.setContentsMargins(0, 0, 0, 0)
         zona_layout.setSpacing(0)
+
+        self._bara_pagina = QFrame(self._zona_pagini)
+        self._bara_pagina.setObjectName("card")
+        bara_pag_layout = QHBoxLayout(self._bara_pagina)
+        bara_pag_layout.setContentsMargins(14, 6, 14, 6)
+        bara_pag_layout.setSpacing(10)
+        self._eticheta_pagina_activa = QLabel("")
+        self._eticheta_pagina_activa.setFont(comun.fonturi("buton"))
+        bara_pag_layout.addWidget(self._eticheta_pagina_activa, stretch=1)
+        self._btn_inapoi_editor = Buton(
+            self._bara_pagina,
+            "← Înapoi la editor (Ctrl+E)",
+            self._doar_textul,
+            fel="principal",
+            latime=220,
+            inaltime=34,
+        )
+        bara_pag_layout.addWidget(self._btn_inapoi_editor)
+        zona_layout.addWidget(self._bara_pagina)
+        self._zona_pagini.hide()
         layout.addWidget(self._zona_pagini, stretch=0)
 
         # Lista dictărilor (stil Express Dictate) — compactă și pliabilă;
@@ -479,10 +521,22 @@ class Aplicatie(QMainWindow):
             pass
 
     def _doar_textul(self) -> None:
-        """Ascunde toate ecranele și lasă numai editorul (spațiu maxim)."""
+        """Ascunde toate ecranele secundare și lasă numai editorul + lista dictărilor (spațiu maxim)."""
         for pagina in self._pagini.values():
             pagina.hide()
+        self._zona_pagini.hide()
         self._pagina_aleasa = ""
+        if hasattr(self, "_eticheta_lista"):
+            self._eticheta_lista.show()
+            self._eticheta_lista.setText("▾ Dictările mele")
+        if hasattr(self, "lista_dictari"):
+            self.lista_dictari.show()
+        if hasattr(self, "editor"):
+            self.editor.show()
+        central = self.centralWidget()
+        if central is not None and central.layout() is not None:
+            central.layout().setStretchFactor(self._zona_pagini, 0)
+            central.layout().setStretchFactor(self.editor, 1)
 
     # ------------------------------------------------------------------ ecrane
 
@@ -519,22 +573,66 @@ class Aplicatie(QMainWindow):
         self._pagini[nume] = pagina
         return pagina
 
+    _TITLURI_PAGINI = {
+        "principal": "🏠 Ecranul de start",
+        "dictare": "🎤 Dictare cu microfonul",
+        "transcriere": "📂 Transcriere fișier audio",
+        "editor": "📄 Editor de text",
+        "verificare": "🔍 Verifică programul și calculatorul",
+        "sunet": "🎤 Testează microfonul, difuzoarele și căștile",
+        "fisiere": "📁 Fișierele mele",
+        "instalare": "📦 Instalare și actualizări",
+    }
+
     def arata_ecran(self, nume: str) -> None:
-        """Trece la ecranul cerut."""
+        """Trece la ecranul cerut, fără a suprapune panourile peste editor."""
         nume = nume or "principal"
+        if nume == "setari":
+            self.arata_ecran_setari()
+            return
+        if nume == "internet":
+            from .ui_internet import deschide_fereastra
+
+            deschide_fereastra(self, self.configurare, pentru_dictare=False)
+            return
+        if nume == "editor":
+            self._doar_textul()
+            self.editor.focus()
+            return
+
         pagina = self._ia_pagina(nume)
 
-        # Ascunde celelalte.
+        # Ascunde celelalte pagini.
         for alta in self._pagini.values():
             if alta is not pagina:
                 alta.hide()
 
+        if self._zona_pagini.layout().indexOf(pagina) < 0:
+            self._zona_pagini.layout().addWidget(pagina, stretch=1)
+        self._eticheta_pagina_activa.setText(self._TITLURI_PAGINI.get(nume, nume.capitalize()))
         pagina.show()
-        self._zona_pagini.layout().addWidget(pagina)
+        self._zona_pagini.show()
         self._pagina_aleasa = nume
 
-        # Editorul este întotdeauna vizibil (e elementul principal, mare).
-        self.editor.show()
+        # Ecranele utilitare ocupă tot spațiul central ca să nu se calce cu editorul;
+        # ecranele de lucru (dictare, transcriere, principal) păstrează editorul vizibil jos,
+        # dar pliază lista dictărilor ca să nu se înghesuie 3 zone pe verticală.
+        central = self.centralWidget()
+        if nume in ("fisiere", "sunet", "instalare", "verificare"):
+            self._eticheta_lista.hide()
+            self.lista_dictari.hide()
+            self.editor.hide()
+            if central is not None and central.layout() is not None:
+                central.layout().setStretchFactor(self._zona_pagini, 1)
+                central.layout().setStretchFactor(self.editor, 0)
+        else:
+            self._eticheta_lista.show()
+            self.lista_dictari.hide()
+            self._eticheta_lista.setText("▸ Dictările mele (clic pentru afișare)")
+            self.editor.show()
+            if central is not None and central.layout() is not None:
+                central.layout().setStretchFactor(self._zona_pagini, 0)
+                central.layout().setStretchFactor(self.editor, 1)
 
         if nume == "principal":
             if hasattr(pagina, "sincronizeaza_din_stare"):

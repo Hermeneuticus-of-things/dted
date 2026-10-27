@@ -5,18 +5,23 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+import threading
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from .comun import fonturi, seteaza_rol
+from . import comun
+from .comun import Buton, fonturi, seteaza_rol
 
 
 class PaginaVerificare(QWidget):
     def __init__(self, parinte: QWidget, aplicatie):
         super().__init__(parinte)
         self.aplicatie = aplicatie
+        self.coada = comun.CoadaUI(self)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 30, 30, 30)
-        lbl = QLabel("Verifică calculatorul")
+        layout.setContentsMargins(20, 14, 20, 14)
+        layout.setSpacing(10)
+
+        lbl = QLabel("Verifică programul și calculatorul")
         lbl.setFont(fonturi("titlu"))
         lbl.setWordWrap(True)
         layout.addWidget(lbl)
@@ -31,20 +36,70 @@ class PaginaVerificare(QWidget):
         txt.setWordWrap(True)
         layout.addWidget(txt)
 
+        card_hw = QFrame()
+        card_hw.setObjectName("card")
+        cl_hw = QVBoxLayout(card_hw)
+        cl_hw.setContentsMargins(16, 12, 16, 12)
+        cl_hw.setSpacing(6)
+        et_hw = QLabel("Resursele calculatorului")
+        et_hw.setFont(fonturi("buton"))
+        cl_hw.addWidget(et_hw)
+        self.eticheta_resurse = QLabel("Se verifică resursele calculatorului…")
+        self.eticheta_resurse.setFont(fonturi("baza"))
+        self.eticheta_resurse.setWordWrap(True)
+        cl_hw.addWidget(self.eticheta_resurse)
+        layout.addWidget(card_hw)
+
         # Starea plăcii video, citită la fiecare afișare (motor.STARE_PLACA_VIDEO).
+        card_gpu = QFrame()
+        card_gpu.setObjectName("card")
+        cl_gpu = QVBoxLayout(card_gpu)
+        cl_gpu.setContentsMargins(16, 12, 16, 12)
+        cl_gpu.setSpacing(6)
+        et_gpu = QLabel("Placa video (accelerare CUDA)")
+        et_gpu.setFont(fonturi("buton"))
+        cl_gpu.addWidget(et_gpu)
         self.eticheta_placa = QLabel("")
         self.eticheta_placa.setFont(fonturi("baza"))
         self.eticheta_placa.setWordWrap(True)
-        layout.addWidget(self.eticheta_placa)
+        cl_gpu.addWidget(self.eticheta_placa)
         self.buton_cuda = QPushButton("Descarcă bibliotecile pentru placa video (aprox. 1,2 GB)")
         self.buton_cuda.setFont(fonturi("baza"))
         self.buton_cuda.clicked.connect(self._descarca_cuda)
         rand = QHBoxLayout()
         rand.addWidget(self.buton_cuda)
         rand.addStretch(1)
-        layout.addLayout(rand)
+        cl_gpu.addLayout(rand)
+        layout.addWidget(card_gpu)
+
+        rand_act = QHBoxLayout()
+        self.btn_reverifica = Buton(self, "Verifică din nou", self._verifica_resurse, fel="principal", latime=200, inaltime=40)
+        rand_act.addWidget(self.btn_reverifica)
+        rand_act.addStretch(1)
+        layout.addLayout(rand_act)
+
         layout.addStretch(1)
         self.actualizeaza_placa_video()
+        self._verifica_resurse()
+
+    def _verifica_resurse(self) -> None:
+        self.eticheta_resurse.setText("Se verifică resursele calculatorului…")
+
+        def lucru() -> None:
+            from .. import resurse
+
+            try:
+                rap = resurse.verifica()
+                linii = [
+                    f"{c.simbol}  {c.nume}: {c.gasit} (cerință: {c.cerinta})"
+                    for c in rap.cerinte
+                ]
+                text = "\n".join(linii) if linii else "Calculatorul îndeplinește cerințele."
+            except Exception as exc:
+                text = f"Nu am putut citi resursele: {exc}"
+            self.coada.trimite(self.eticheta_resurse.setText, text)
+
+        threading.Thread(target=lucru, name="verifica-hw", daemon=True).start()
 
     def _descarca_cuda(self) -> None:
         functie = getattr(self.aplicatie, "descarca_cuda_la_cerere", None)

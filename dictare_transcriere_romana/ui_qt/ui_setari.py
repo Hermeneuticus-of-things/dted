@@ -91,6 +91,7 @@ SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Parolă și criptare", ("_rand_parola",)),
     ("Confidențialitate", ("_rand_blocare",)),
     ("Aspect", ("_rand_afisare", "_rand_aspect")),
+    ("Actualizări", ("_rand_actualizari",)),
 )
 
 
@@ -197,7 +198,9 @@ class FereastraSetari(QDialog):
 
         self.lista_sectiuni = QListWidget()
         self.lista_sectiuni.setObjectName("lista_sectiuni")
-        self.lista_sectiuni.setMaximumWidth(200)
+        self.lista_sectiuni.setMinimumWidth(220)
+        self.lista_sectiuni.setMaximumWidth(250)
+        self.lista_sectiuni.setSpacing(3)
         self.lista_sectiuni.setFont(fonturi("buton"))
         self.lista_sectiuni.currentRowChanged.connect(self._arata_sectiune)
         rand_central.addWidget(self.lista_sectiuni)
@@ -211,7 +214,7 @@ class FereastraSetari(QDialog):
             page_layout = QVBoxLayout(pagina)
             page_layout.setContentsMargins(0, 0, 0, 0)
             page_layout.setSpacing(0)
-            zona = ZonaDerulare(pagina, latime_minima=680)
+            zona = ZonaDerulare(pagina, latime_minima=520)
             page_layout.addWidget(zona)
             self.stack.addWidget(pagina)
             self.lista_sectiuni.addItem(titlu)
@@ -670,22 +673,22 @@ class FereastraSetari(QDialog):
         )
         valoare = self.config.dispozitiv if self.config.dispozitiv in ("auto", "cpu", "cuda") else "auto"
         self.var_dispozitiv = valoare
-        rand = QHBoxLayout()
+        self._casute_dispozitiv: list[tuple[str, QCheckBox]] = []
         for cod, text, explicatie in OPTIUNI_TRANSCRIERE:
+            rand_opt = QHBoxLayout()
+            rand_opt.setSpacing(10)
             rb = QCheckBox(text)
             rb.setFont(fonturi("baza"))
             rb.setChecked(cod == valoare)
             rb.toggled.connect(lambda checked, c=cod: self._seteaza_dispozitiv(c, checked))
-            rand.addWidget(rb)
-            et = QLabel(explicatie)
+            self._casute_dispozitiv.append((cod, rb))
+            rand_opt.addWidget(rb)
+            et = QLabel(f"— {explicatie}")
             et.setFont(fonturi("mica"))
             seteaza_rol(et, "secundar")
             et.setWordWrap(True)
-            et.setMinimumWidth(400)
-            et.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-            rand.addWidget(et)
-            rand.addStretch(1)
-        card.layout().addLayout(rand)
+            rand_opt.addWidget(et, 1)
+            card.layout().addLayout(rand_opt)
         # Starea plăcii video, citită acum (motor.STARE_PLACA_VIDEO).
         from .. import motor
 
@@ -771,8 +774,14 @@ class FereastraSetari(QDialog):
             self.buton_cuda.setVisible(False)
 
     def _seteaza_dispozitiv(self, cod: str, checked: bool) -> None:
-        if checked:
-            self.var_dispozitiv = cod
+        if not checked:
+            return
+        self.var_dispozitiv = cod
+        for c, rb in getattr(self, "_casute_dispozitiv", ()):
+            if c != cod:
+                rb.blockSignals(True)
+                rb.setChecked(False)
+                rb.blockSignals(False)
 
     def _rand_salvare(self) -> None:
         card = self._card(
@@ -914,12 +923,39 @@ class FereastraSetari(QDialog):
         self.eticheta_preview.setFont(fonturi("baza"))
         seteaza_rol(self.eticheta_preview, "secundar")
         self.eticheta_preview.setWordWrap(True)
-        self.eticheta_preview.setMinimumWidth(600)
-        self.eticheta_preview.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
         card.layout().addWidget(self.eticheta_preview)
 
         btn_reset = Buton(card, "Revino la setările inițiale", self._reset_afisare, latime=260, inaltime=36)
         card.layout().addWidget(btn_reset)
+
+    def _rand_actualizari(self) -> None:
+        """Secțiunea „Actualizări” direct în Setări (N-2 / UX-17)."""
+        card = self._card(
+            "Actualizări și componente",
+            f"Versiunea curentă a programului este {constante.VERSIUNE_COMPLETA}. "
+            "Poți verifica dacă a apărut o versiune nouă pe GitHub sau poți reveni "
+            "la o versiune anterioară păstrată în copia de siguranță.",
+        )
+        rand = QHBoxLayout()
+        rand.setSpacing(10)
+        rand.addWidget(
+            Buton(
+                card,
+                "Deschide Instalare și actualizări",
+                self._deschide_actualizari_din_setari,
+                fel="principal",
+                latime=280,
+                inaltime=40,
+            )
+        )
+        rand.addStretch(1)
+        card.layout().addLayout(rand)
+
+    def _deschide_actualizari_din_setari(self) -> None:
+        aplicatie = self._aplicatia_principala()
+        self.accept()
+        if aplicatie is not None and hasattr(aplicatie, "arata_ecran"):
+            aplicatie.arata_ecran("instalare")
 
     def _schimba_marime(self, delta: int) -> None:
         val = self.slider_marime.value() + delta

@@ -232,16 +232,8 @@ class FereastraInstalare(QWidget):
         def lucru() -> None:
             from .. import actualizare as act
 
-            # Prima oară: notează ce versiuni sunt acum instalate.
-            if not act.versiuni_instalate():
-                instalate: dict[str, dict] = {"program": {"versiune": constante.VERSIUNE}}
-                try:
-                    folder_model = cai.fisier_model().parent
-                    if folder_model.exists():
-                        instalate["model"] = {"versiune": folder_model.name}
-                except Exception:
-                    pass
-                act.scrie_versiuni(instalate)
+            # Sincronizează versiunea rulată acum înainte de comparare.
+            act.sincronizeaza_versiuni_curente()
             temporar = act.fisier_versiuni().parent / "manifest-descarcat.json"
             if not act.descarca(constante.URL_MANIFEST_ACTUALIZARI, temporar):
                 self.coada.trimite(self._eroare_cautare)
@@ -282,10 +274,15 @@ class FereastraInstalare(QWidget):
         texte = [f"• {s.eticheta}" for s in schimbari]
         confirmate = []
         for schimbare in descarcabile:
+            marime_txt = (
+                f" ({schimbare.dimensiune / (1024 * 1024):.1f} MB)"
+                if getattr(schimbare, "dimensiune", 0) > 0
+                else ""
+            )
             raspuns = QMessageBox.question(
                 self,
                 f"Actualizez «{schimbare.nume}»?",
-                f"{schimbare.eticheta}\n\n"
+                f"{schimbare.eticheta}{marime_txt}\n\n"
                 "Descarc și înlocuiesc doar această componentă?\n"
                 "Cea veche se păstrează și poți reveni oricând la ea.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -343,8 +340,31 @@ class FereastraInstalare(QWidget):
         self.btn_actualizari.setEnabled(True)
         self.btn_revino.setEnabled(True)
         self.et_detalii.setText("\n".join(rapoarte))
-        seteaza_rol(self.et_detalii, "verde")
+        reusit = any("✔" in r for r in rapoarte)
+        seteaza_rol(self.et_detalii, "verde" if reusit else "pericol")
         self._verifica()
+        if reusit:
+            raspuns = QMessageBox.question(
+                self,
+                "Actualizare instalată",
+                "Actualizarea a fost instalată cu succes.\n\n"
+                "Vrei să repornești programul acum pentru a încărca noua versiune?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if raspuns == QMessageBox.StandardButton.Yes:
+                self._reporneste_programul()
+
+    def _reporneste_programul(self) -> None:
+        import sys
+        from PySide6.QtCore import QProcess
+
+        try:
+            QProcess.startDetached(sys.executable, sys.argv)
+            if self.aplicatie is not None and hasattr(self.aplicatie, "close"):
+                self.aplicatie.close()
+        except Exception:
+            pass
 
     def _revino_actualizare(self) -> None:
         """„Revino la versiunea anterioară”: restaurează o componentă din backup."""

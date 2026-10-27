@@ -85,24 +85,66 @@ def scrie_versiuni(versiuni: dict[str, dict]) -> None:
     fisier.write_text(json.dumps(versiuni, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def tuplu_versiune(versiune: str) -> tuple[int, ...]:
+    """Transformă „0.6.1-beta” în ``(0, 6, 1)`` pentru comparare corectă."""
+    import re
+
+    numere = [int(x) for x in re.findall(r"\d+", str(versiune or ""))]
+    return tuple(numere)
+
+
+def sincronizeaza_versiuni_curente() -> dict[str, dict]:
+    """Se asigură că ``versiuni.json`` reflectă cel puțin versiunea rulată acum."""
+    from . import constante
+
+    instalate = versiuni_instalate()
+    modificat = False
+    v_prog = str(instalate.get("program", {}).get("versiune", "")).strip()
+    if not v_prog or tuplu_versiune(constante.VERSIUNE) > tuplu_versiune(v_prog):
+        instalate["program"] = {"versiune": constante.VERSIUNE}
+        modificat = True
+    try:
+        folder_model = cai.fisier_model().parent
+        if folder_model.exists() and "model" not in instalate:
+            instalate["model"] = {"versiune": folder_model.name}
+            modificat = True
+    except Exception:
+        pass
+    if modificat:
+        try:
+            scrie_versiuni(instalate)
+        except OSError:
+            pass
+    return instalate
+
+
 def ce_s_a_schimbat(manifest: dict[str, dict]) -> list[Schimbare]:
-    """Compară versiunile instalate cu manifestul; întoarce DOAR schimbările."""
+    """Compară versiunile instalate cu manifestul; întoarce DOAR schimbările mai noi."""
     instalate = versiuni_instalate()
     schimbari: list[Schimbare] = []
     for nume, meta in (manifest or {}).items():
+        if not isinstance(meta, dict):
+            continue
         noua = str(meta.get("versiune", "")).strip()
         if not noua:
             continue
         veche = str(instalate.get(nume, {}).get("versiune", "")).strip()
-        if noua != veche:
-            schimbari.append(
-                Schimbare(
-                    nume=nume,
-                    veche=veche or "—",
-                    noua=noua,
-                    dimensiune=int(meta.get("dimensiune", 0)),
-                )
+        if noua == veche:
+            continue
+        # Pentru versiuni numerice (ex. 0.6.1 vs 0.6.0), propunem doar dacă e mai nouă.
+        t_noua = tuplu_versiune(noua)
+        t_veche = tuplu_versiune(veche)
+        if veche and t_noua and t_veche and not (noua.isalpha() or veche.isalpha()):
+            if t_noua <= t_veche and nume == "program":
+                continue
+        schimbari.append(
+            Schimbare(
+                nume=nume,
+                veche=veche or "—",
+                noua=noua,
+                dimensiune=int(meta.get("dimensiune", 0)),
             )
+        )
     return schimbari
 
 
@@ -165,13 +207,26 @@ def descarca(
 def backup_componenta(nume: str, versiune: str) -> Path | None:
     """Copiază componenta veche în ``_backup/<nume>-<versiune>`` (idempotent)."""
     sursa = _componenta_folder(nume)
-    if not sursa.exists():
-        return None
     destinatie = cai.director_instalare() / FOLDER_BACKUP / f"{nume}-{versiune}"
-    if destinatie.exists():
-        shutil.rmtree(destinatie, ignore_errors=True)
-    shutil.copytree(sursa, destinatie)
-    return destinatie
+    if sursa.exists():
+        if destinatie.exists():
+            shutil.rmtree(destinatie, ignore_errors=True)
+        shutil.copytree(sursa, destinatie)
+        return destinatie
+    # Dacă e prima actualizare a componentei „program” și dosarul „program” nu exista încă,
+    # salvăm pachetul curent dictare_transcriere_romana ca backup pentru revenire.
+    if nume == "program":
+        pachet_curent = Path(__file__).resolve().parent
+        if pachet_curent.is_dir():
+            if destinatie.exists():
+                shutil.rmtree(destinatie, ignore_errors=True)
+            shutil.copytree(
+                pachet_curent,
+                destinatie / "dictare_transcriere_romana",
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.bak*"),
+            )
+            return destinatie
+    return None
 
 
 def restaureaza(nume: str, versiune: str) -> bool:
