@@ -1,6 +1,8 @@
 """Teste pentru blocare.py — doar logica pură (fără firewall/UAC real)."""
 
 import os
+
+import pytest
 import sys
 import tempfile
 from pathlib import Path
@@ -62,6 +64,9 @@ def test_proces_viu():
 
 
 def test_marcaj():
+    if os.name != "nt":
+        # marcajul depinde de proces_viu (ctypes.windll), specific Windows
+        pytest.skip("marcajul și gardianul sunt specifice Windows")
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         original = blocare.cale_marcaj
@@ -88,6 +93,9 @@ def test_marcaj():
 
 
 def test_mod_program_fara_uac(monkeypatch):
+    if os.name != "nt":
+        # starea_activa() citește marcajul prin proces_viu (ctypes.windll, doar Windows)
+        pytest.skip("marcajul și gardianul sunt specifice Windows")
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         monkeypatch.setattr(blocare, "cale_marcaj", lambda: tmp / "conf.txt")
