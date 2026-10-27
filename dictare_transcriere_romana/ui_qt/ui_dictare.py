@@ -62,10 +62,6 @@ SECUNDE_PROVIZORIU = 1.0
 INTERVAL_PROVIZORIU = 0.9
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
-#: Pauzele de voce lungi structurează singure textul: peste atâtea secunde de
-#: liniște continuă, bucata următoare primește „linie nouă”, respectiv „paragraf nou”.
-PAUZA_LINIE_SEC = 4.0
-PAUZA_PARAGRAF_SEC = 8.0
 
 
 def _gata_de_transcris(secunde: float, oprita: bool) -> bool:
@@ -695,6 +691,9 @@ class PaginaDictare(QWidget):
         if microfon is None:
             return
         microfon.pauza = False
+        # Pragurile de structură sunt alese de utilizator (Setări → Comenzi vocale).
+        prag_rand = max(1.0, float(getattr(self.config, "pauza_rand_sec", 4) or 4))
+        prag_paragraf = max(prag_rand + 1.0, float(getattr(self.config, "pauza_paragraf_sec", 8) or 8))
 
         while True:
             # Așteaptă până când utilizatorul face o pauză scurtă (>= 200 ms) după cel puțin 0.8s
@@ -716,7 +715,7 @@ class PaginaDictare(QWidget):
                         if float(_np.sqrt(_np.mean(coada_sil ** 2))) < PRAG_RMS_LINISTE:
                             liniste_secunde += 0.04
                         else:
-                            if liniste_secunde >= PAUZA_LINIE_SEC:
+                            if liniste_secunde >= prag_rand:
                                 pauza_recenta = liniste_secunde  # pauza s-a încheiat: o ținem minte
                             liniste_secunde = 0.0
                 except Exception:
@@ -771,9 +770,9 @@ class PaginaDictare(QWidget):
                 continue  # doar liniște: nimic de transcris; pauza se numără singură
             self._secunde_audio += len(sunet) / 16_000.0
             prefix = ""
-            if pauza_recenta >= PAUZA_PARAGRAF_SEC:
+            if pauza_recenta >= prag_paragraf:
                 prefix = "\n\n"  # pauză lungă: idee nouă
-            elif pauza_recenta >= PAUZA_LINIE_SEC:
+            elif pauza_recenta >= prag_rand:
                 prefix = "\n"     # pauză medie: rând nou
             pauza_recenta = 0.0
 

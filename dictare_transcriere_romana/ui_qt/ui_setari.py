@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSlider,
+    QSpinBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -89,6 +90,7 @@ SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Documente", ("_rand_folder",)),
     ("Limbă și termeni", ("_rand_limba", "_rand_termeni", "_rand_dictionar")),
     ("Sunet", ("_rand_microfon", "_rand_difuzor", "_rand_dictare")),
+    ("Comenzi vocale", ("_rand_comenzi_vocale",)),
     ("Transcriere și salvare", ("_rand_transcriere", "_rand_salvare", "_rand_program")),
     ("Taste rapide", ("_rand_taste_rapide",)),
     ("Parolă și criptare", ("_rand_parola",)),
@@ -530,6 +532,42 @@ class FereastraSetari(QDialog):
         )
 
     # ------------------------------------------------------- parolă și criptare
+
+    def _rand_comenzi_vocale(self) -> None:
+        """Setări → „Comenzi vocale”: lista scurtă + pauzele care structurează textul."""
+        card = self._card(
+            "Comenzi rostite în timpul dictării",
+            "Rostește comanda clar, cu o pauză scurtă înainte și după, ca programul să o "
+            "deosebească de text: „punct”, „virgulă”, „punct și virgulă”, „două puncte”, "
+            "„semn de întrebare”, „semnul exclamării”, „deschide/închide ghilimele”, "
+            "„deschide/închide paranteză”, „cratimă”, „linie de dialog”, „linie de pauză”, "
+            "„procent”, „slash”, „ampersand”, „paragraf nou”, „rând nou”. Lista completă: F1 → Comenzi vocale.",
+        )
+        card.layout().addWidget(QLabel(
+            "Pauzele lungi de voce structurează singure textul: alegi aici după câte secunde "
+            "de liniște continuă programul pune singur rândul nou, respectiv paragraful nou."
+        ))
+        rand_praguri = QHBoxLayout()
+        et_rand = QLabel("Rând nou după (secunde de liniște):")
+        et_rand.setFont(fonturi("baza"))
+        rand_praguri.addWidget(et_rand)
+        self.spin_pauza_rand = QSpinBox()
+        self.spin_pauza_rand.setRange(1, 30)
+        self.spin_pauza_rand.setValue(int(getattr(self.config, "pauza_rand_sec", 4) or 4))
+        self.spin_pauza_rand.setSuffix(" s")
+        self.spin_pauza_rand.setToolTip("Peste atâta liniște continuă, textul trece pe un rând nou")
+        rand_praguri.addWidget(self.spin_pauza_rand)
+        et_paragraf = QLabel("Paragraf nou după (secunde):")
+        et_paragraf.setFont(fonturi("baza"))
+        rand_praguri.addWidget(et_paragraf)
+        self.spin_pauza_paragraf = QSpinBox()
+        self.spin_pauza_paragraf.setRange(2, 60)
+        self.spin_pauza_paragraf.setValue(int(getattr(self.config, "pauza_paragraf_sec", 8) or 8))
+        self.spin_pauza_paragraf.setSuffix(" s")
+        self.spin_pauza_paragraf.setToolTip("Peste atâta liniște continuă, începe un paragraf nou")
+        rand_praguri.addWidget(self.spin_pauza_paragraf)
+        rand_praguri.addStretch(1)
+        card.layout().addLayout(rand_praguri)
 
     def _rand_taste_rapide(self) -> None:
         """Secțiunea „Taste rapide”: fiecare comandă principală are tasta ei."""
@@ -1518,6 +1556,9 @@ class FereastraSetari(QDialog):
         try:
             self.config.wrap_text = self.var_wrap.isChecked()
             self.config.arata_sfaturi = self.var_sfaturi.isChecked()
+            self.config.pauza_rand_sec = max(1, int(self.spin_pauza_rand.value()))
+            paragraf = max(2, int(self.spin_pauza_paragraf.value()))
+            self.config.pauza_paragraf_sec = max(paragraf, self.config.pauza_rand_sec + 1)
         except (AttributeError,):
             pass
         try:

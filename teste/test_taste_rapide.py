@@ -81,3 +81,32 @@ def test_prinde_tasta_afiseaza_valoarea():
     assert buton.text() == "F9"
     buton.pune_implicit("F10")
     assert buton.text() == "F10" and buton.secventa == "F10"
+
+
+def test_praguri_pauza_configurabile():
+    """Pragurile de pauză (rând/paragraf) vin din config și se validează."""
+    from dictare_transcriere_romana import config as modul_config
+
+    implicite = modul_config.Config()
+    assert implicite.pauza_rand_sec == 4
+    assert implicite.pauza_paragraf_sec == 8
+
+    personalizate = modul_config.Config(pauza_rand_sec=6, pauza_paragraf_sec=15)
+    assert personalizate.pauza_rand_sec == 6
+    assert personalizate.pauza_paragraf_sec == 15
+
+
+def test_setari_salveaza_praguri_pauza():
+    from PySide6.QtWidgets import QApplication
+    from dictare_transcriere_romana import config as modul_config
+    from dictare_transcriere_romana.ui_qt.ui_setari import FereastraSetari
+
+    _app = QApplication.instance() or QApplication([])
+    config = modul_config.Config()
+    dlg = FereastraSetari(None, config)
+    dlg.spin_pauza_rand.setValue(6)
+    dlg.spin_pauza_paragraf.setValue(4)  # mai mic decât rândul: se corectează singur
+    dlg._aduna()
+    assert config.pauza_rand_sec == 6
+    assert config.pauza_paragraf_sec >= 7  # paragraful rămâne peste rând
+    dlg.deleteLater()

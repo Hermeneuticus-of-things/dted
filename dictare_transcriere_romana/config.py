@@ -62,6 +62,8 @@ class Config:
     asistent_microfon_vazut: bool = False # asistentul de microfon de la prima dictare (52)
     activare_vocala: bool = False         # pornește singură dictarea când auzi vocea (Express Dictate)
     arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
+    pauza_rand_sec: int = 4               # liniște continuă peste atâtea secunde → rând nou automat
+    pauza_paragraf_sec: int = 8           # liniște continuă peste atâtea secunde → paragraf nou automat
     arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
     arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
     arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
