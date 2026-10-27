@@ -92,56 +92,70 @@ Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid d
 
 ---
 
-## 📥 Instalare (versiunea v0.6.3)
+## 📥 Instalare (versiunea v0.6.3) — alege varianta care ți se potrivește
 
-> **Unde sunt fișierele:** pagina de descărcare a versiunii actuale este
-> **[github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3)** — acolo găsești, la „Assets”:
-> `Setup.DTED-0.6.3.exe` + `Setup.DTED-0.6.3-1.bin` (instalatorul Windows, în 2 bucăți),
-> `program-0.6.3.zip` (actualizarea portabilă) și `dted-0.6.3-linux.tar.gz` (Linux).
-> Toate au sumele SHA-256 scrise în `SHA256SUMS.txt` (același release).
+| Varianta | Pentru cine | Ce descarci | Internet la instalare? |
+|---|---|---|---|
+| **A. Kit pe stick (offline)** | vrei să instalezi și pe alt calculator, fără internet; text sensibil | `Setup.DTED-0.6.3.exe` + `Setup.DTED-0.6.3-1.bin` (~1,85 GB) | **NU** — totul e inclus (model + CUDA) |
+| **B. Bootstrap (o comandă)** | ai internet, vrei totul automat | nimic — o comandă PowerShell | DA (descarcă kitul și îl verifică) |
+| **C. Portabil (fără instalare)** | vrei să-l pornești direct de pe stick, fără instalare | `portabil-DTED-0.6.3.zip` (~1,3 GB) | NU (doar CUDA, dacă ai placă video, din program) |
+| **D. Actualizare din program** | ai deja D&TED instalat | nimic — un buton din program | doar arhiva mică de ~1,2 MB |
+| **Linux** | calculator cu Linux (x86_64) | `dted-0.6.3-linux.tar.gz` | DA (descarcă modelul la instalare) |
 
-### Varianta 1 — Bootstrap pentru Windows (o singură comandă, recomandat)
+> **Toate fișierele sunt aici:** [github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3) (secțiunea „Assets”), cu sumele SHA-256 în `SHA256SUMS.txt`.
 
-Deschide **PowerShell** (Start → scrii „powershell” → Enter), lipești rândul de mai jos și Enter:
+### A. Kit pe stick — instalare offline, pe orice Windows
+
+1. Descarcă **`Setup.DTED-0.6.3.exe`** și **`Setup.DTED-0.6.3-1.bin`** din release (linkul de mai sus).
+2. Copiază **amândouă pe un stick** (trebuie să stea în același folder — exe-ul citește singur bucata .bin).
+3. Pe calculatorul unde vrei programul: dublu clic pe `Setup.DTED-0.6.3.exe` → Next → Instalează.
+   - Nu cere administrator; modelul de transcriere (~800 MB) și bibliotecile plăcii video CUDA sunt **în kit** — nu se descarcă nimic.
+   - Wizard-ul îți arată pagina **„Ce știe să facă D&TED”** (o poți citi cât se instalează) și **verificarea calculatorului** (CPU, RAM, disc, placă video + VRAM).
+
+### B. Bootstrap — totul automat, cu o singură comandă
+
+1. Deschide **PowerShell** (Start → scrii „powershell” → Enter).
+2. Lipește rândul de mai jos și apasă Enter:
 
 ```powershell
 irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
 ```
 
-Ce face, pe rând: descarcă **doar din versiunea fixă v0.6.3** instalatorul și cele 2 bucăți ale lui,
-**verifică SHA-256** pe fiecare bucată (amprentele sunt în script; dacă una nu se potrivește, REFUZĂ
-instalarea), apoi pornește instalatorul grafic. Fără drepturi de administrator. Scriptul, vizibil
-înainte de rulare: [dted-bootstrap.ps1](https://github.com/Hermeneuticus-of-things/dted/blob/main/dted-bootstrap.ps1).
+3. Scriptul descarcă kitul de la **versiunea fixă v0.6.3**, verifică **SHA-256** pe fiecare bucată
+   (amprenta greșită = oprire și refuz, nu instalează nimic) și pornește instalatorul grafic.
+   Scriptul poate fi citit înainte: [dted-bootstrap.ps1](https://github.com/Hermeneuticus-of-things/dted/blob/main/dted-bootstrap.ps1).
 
-### Varianta 2 — Windows, manual (dublu clic pe instalator)
+### C. Portabil — pornești direct, fără instalare
 
-1. Intră pe **[releases/tag/v0.6.3](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.3)**.
-2. Descarcă **`Setup.DTED-0.6.3.exe`** și **`Setup.DTED-0.6.3-1.bin`** (și opțional `SHA256SUMS.txt`).
-3. Pune-le **în același folder** (amândouă, altfel instalatorul nu găsește continuarea).
-4. Dublu clic pe `Setup.DTED-0.6.3.exe`. Modelul de transcriere și bibliotecile CUDA sunt **incluse** —
-   instalarea merge 100% offline, fără drepturi de administrator, iar wizard-ul îți arată o pagină
-   „Ce știe să facă D&TED” și verificarea calculatorului (CPU, RAM, disc, placă video + VRAM).
+1. Descarcă **`portabil-DTED-0.6.3.zip`** din release.
+2. Click dreapta pe el → **„Extract All…” / „Dezarhivează”** → intri în folderul `DTED`.
+3. Dublu clic pe **`DTED.exe`**. Gata — programul pornește. Nu se scrie nimic în Windows, nu cere
+   administrator; ștergi folderul și programul dispare complet. Merge perfect de pe stick.
+   - Pe calculator **cu placă video NVIDIA**, deschide programul → ⚙ Setări → „Instalare și actualizări” →
+     butonul „Descarcă bibliotecile pentru placa video” — și transcrierea devine de ~20× mai rapidă.
+   - Fără placă video merge pe procesor, cu aceeași calitate, doar mai încet.
 
-### Varianta 3 — Windows, actualizare din program (cel mai ușor, dacă ai deja o versiune)
+### D. Ai deja D&TED? Actualizezi din program, cu un buton
 
-Deschide D&TED → butonul **📦 Actualizări** din bara de sus (sau ⚙ Setări → „Instalare și actualizări”)
-→ **Caută actualizări (internet)**: programul îți arată „program: 0.6.2 → 0.6.3”, descarcă doar arhiva
-mică [`program-0.6.3.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/program-0.6.3.zip)
-(~1,2 MB), verifică amprenta SHA-256, păstrează copia versiunii vechi și, după repornire, **versiunea
-nouă chiar rulează**. Poți oricând apăsa „Revino la versiunea anterioară”.
+Deschide programul → **📦 Actualizări** (bara de sus) → **Caută actualizări (internet)** → îți arată
+„program: 0.6.2 → 0.6.3” → confirmi → programul descarcă arhiva mică
+[`program-0.6.3.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/program-0.6.3.zip),
+verifică amprenta, păstrează copia versiunii vechi și, după repornire, **rulează chiar versiunea nouă**.
+Butonul „Revino la versiunea anterioară” te aduce înapoi oricând.
 
-### Linux (x86_64) — script de instalare `install.sh`
+### Linux (x86_64) — cu scriptul `install.sh`
 
-Pe Linux nu există bootstrap cu o singură comandă `irm | iex` (acela e pentru Windows); instalarea se
-face cu scriptul inclus în arhivă:
+Pe Linux nu există bootstrap `irm | iex` (acela e pentru Windows). Instalarea:
 
-1. Descarcă **[`dted-0.6.3-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/dted-0.6.3-linux.tar.gz)** de la release.
-2. Dezarhivează: `tar -xzf dted-0.6.3-linux.tar.gz`
-3. Rulează: `./install.sh` — își face mediu Python propriu (fără administrator), pune lansatorul
-   `dted` în `~/.local/bin`, scurtătură în meniu, apoi descarcă modelul cu verificare SHA-256;
-   dacă există placă NVIDIA, adaugă și CUDA. Nucleul merge și pe CPU, tot cu calitate maximă.
-   Detalii și limite: [LINUX.md](LINUX.md).
-
+1. Descarcă **[`dted-0.6.3-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/dted-0.6.3-linux.tar.gz)** din release.
+2. În terminal, în folderul unde l-ai descărcat:
+   ```bash
+   tar -xzf dted-0.6.3-linux.tar.gz
+   ./install.sh
+   ```
+3. Scriptul își face mediu Python propriu (fără administrator), pune comanda `dted` în `~/.local/bin`,
+   adaugă scurtătură în meniu și descarcă modelul cu verificare SHA-256; cu placă NVIDIA adaugă și CUDA.
+   Detalii și limite (criptarea fișierelor e doar Windows): [LINUX.md](LINUX.md).
 
 **Cerințe:** Windows 10/11 pe 64 de biți · 8 GB RAM recomandat · ~4 GB pe disc.
 

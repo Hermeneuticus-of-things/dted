@@ -115,6 +115,7 @@ class Aplicatie(QMainWindow):
         self._pagina_aleasa = ""
         self._ultimele_randuri: list = []
         self._primul_click_editor = False
+        self._are_sunet = False  # există o înregistrare de ascultat în bara de jos
         self._mod_anterior = comun.mod_aplicat()
         self._cale_document_urmarit: Path | None = None
         self._amprenta_document: tuple[float, int] = (0.0, 0)
@@ -488,6 +489,26 @@ class Aplicatie(QMainWindow):
             lambda valoare: nivele.seteaza_volum_iesire(valoare / 100.0)
         )
         dock_rand.addWidget(self._slider_volum)
+
+        # Bară de transport CONTEXTUALĂ (cerință utilizator): la dictare se văd
+        # DOAR butoanele de dictare; când există un sunet de ascultat (după o
+        # dictare sau la transcrierea unui fișier) se văd DOAR butoanele audio.
+        # Butonul roșu „Dictează” rămâne mereu vizibil — e comanda principală.
+        self._grupa_butoane_dictare = [
+            self.btn_pauza_microfon,
+            self.btn_de_la_capat,
+            self.btn_idee_noua,
+        ]
+        self._grupa_butoane_audio = [
+            self.btn_transport,
+            self.btn_transport_stop,
+            btn_inapoi,
+            btn_inainte,
+            self._slider_redare,
+            self._eticheta_redare,
+            self._slider_volum,
+        ]
+        self._seteaza_mod_transport("nimic")
 
         layout.addWidget(self._dock_redare)  # mereu vizibil, ca la Express Dictate
 
@@ -922,6 +943,20 @@ class Aplicatie(QMainWindow):
             pagina._comuta_pauza()
             self._actualizeaza_buton_dictare()
 
+    def _seteaza_mod_transport(self, mod: str) -> None:
+        """Alege ce butoane se văd în bara de jos: „dictare”, „audio” sau „nimic”.
+
+        „dictare”: doar dictează/oprește + pauză + de la capăt + idee nouă.
+        „audio”:   doar ascultare (play/stop/derulare/poziție/volum).
+        „nimic”:   doar butonul roșu de dictare (programul tocmai a pornit).
+        """
+        dictare = mod == "dictare"
+        audio = mod == "audio"
+        for buton in self._grupa_butoane_dictare:
+            buton.setVisible(dictare)
+        for buton in self._grupa_butoane_audio:
+            buton.setVisible(audio)
+
     def _ia_de_la_capat(self) -> None:
         """F6: șterge fraza dictată neterminată, ca să o iei de la capăt."""
         pagina = self._pagini.get("dictare")
@@ -942,6 +977,12 @@ class Aplicatie(QMainWindow):
         if hasattr(self, "btn_pauza_microfon"):
             self.btn_pauza_microfon.setEnabled(activ)
             self.btn_pauza_microfon.set_text("⏵ Reprenește microfonul" if pauza else "⏸ Pauză microfon")
+        # Bara de transport arată doar butoanele modului curent (fără confuzii).
+        if hasattr(self, "_grupa_butoane_dictare"):
+            if activ:
+                self._seteaza_mod_transport("dictare")
+            else:
+                self._seteaza_mod_transport("audio" if getattr(self, "_are_sunet", False) else "nimic")
         if activ:
             self.btn_dictare.setText("⏹ Oprește dictarea")
             if hasattr(self, "btn_inregistreaza"):
@@ -1120,6 +1161,9 @@ class Aplicatie(QMainWindow):
                 self.btn_asculta.setText("▶ Ascultă (Ctrl+R)")
                 self.btn_transport.setEnabled(True)
                 self.btn_transport_stop.setEnabled(True)
+                self._are_sunet = True
+                if hasattr(self, "_grupa_butoane_audio"):
+                    self._seteaza_mod_transport("audio")
                 self._arata_stare_redare()
         except Exception as exc:
             jurnal.atentionare(f"Nu am putut păstra înregistrarea pentru ascultare: {exc}")
