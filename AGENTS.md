@@ -1,6 +1,6 @@
 # Instrucțiuni pentru agent – proiectul D&TED
 
-## Cum raportezi utilizatorului (utilizator)
+## Cum raportezi utilizatorului
 
 Lucrează în liniște. Scrie utilizatorului DOAR când:
 1. o sarcină sau o subsarcină (etapă, cerință) s-a terminat;
