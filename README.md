@@ -92,9 +92,9 @@ Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid d
 
 ---
 
-## 📥 Instalare
+## 📥 Instalare (versiunea v0.6.1)
 
-### Varianta 1 — o singură comandă (recomandat)
+### Varianta 1 — Bootstrap (o singură comandă PowerShell, recomandat)
 
 Deschide **PowerShell** (Start → „powershell” → Enter) și lipește:
 
@@ -102,16 +102,21 @@ Deschide **PowerShell** (Start → „powershell” → Enter) și lipește:
 irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
 ```
 
-### Varianta 2 — kit descărcat manual
+### Varianta 2 — Kit instalator descărcat manual (`Setup.DTED-0.6.1.exe`)
 
-Ia [ultima versiune](https://github.com/Hermeneuticus-of-things/dted/releases): `Setup.DTED-*.exe` + bucățile `.bin` + `SHA256SUMS.txt`, toate **în același folder**, apoi dublu clic pe `.exe`. Modelul de transcriere e **inclus** — instalarea merge și fără internet.
+Ia [ultima versiune (**v0.6.1**)](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.1): `Setup.DTED-0.6.1.exe` + `Setup.DTED-0.6.1-1.bin` + `SHA256SUMS.txt`, pune-le **în același folder**, apoi dublu clic pe `Setup.DTED-0.6.1.exe`. Modelul de transcriere și bibliotecile CUDA sunt **incluse** — instalarea merge 100% offline și fără drepturi de administrator.
+
+### Varianta 3 — Actualizare rapidă din program / Portabil (`program-0.6.1.zip`)
+
+Dacă ai deja D&TED instalat, apasă butonul **📦 Actualizări** din bara de sus (sau **⚙ Setări → Actualizări**) → **Caută actualizări (internet)**: programul descarcă doar arhiva ușoară [`program-0.6.1.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.1/program-0.6.1.zip) (~1,1 MB), îi verifică amprenta SHA-256, păstrează copia de siguranță a versiunii vechi și repornește la zi.
 
 <details>
 <summary><b>Verificarea sumelor SHA-256 (opțional, recomandat)</b></summary>
 
 ```powershell
-$fisiere = @("Setup.DTED-0.4.0.exe", "Setup.DTED-0.4.0-1.bin", "Setup.DTED-0.4.0-2.bin")
+$fisiere = @("Setup.DTED-0.6.1.exe", "Setup.DTED-0.6.1-1.bin", "program-0.6.1.zip")
 foreach ($nume in $fisiere) {
+    if (-not (Test-Path ".\$nume")) { continue }
     $rand = Get-Content .\SHA256SUMS.txt | Where-Object { $_ -match "\s+$([regex]::Escape($nume))$" }
     $asteptat = ($rand -split '\s+')[0].ToUpper()
     $real = (Get-FileHash ".\$nume" -Algorithm SHA256).Hash.ToUpper()
@@ -142,11 +147,11 @@ foreach ($nume in $fisiere) {
 git clone https://github.com/Hermeneuticus-of-things/dted.git
 cd dted
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
-.venv\Scripts\python -m pytest -q .\teste      # 99 teste
+.venv\Scripts\python -m pytest -q .\teste      # 115 teste
 .venv\Scripts\python pornire.py                # pornește aplicația
 ```
 
-**99 teste automate** · CI pe **Windows și Linux** la fiecare commit · probe de transcriere reale pe placă video. Nucleul merge și pe Linux — vezi [LINUX.md](LINUX.md). Aplicația poate fi folosită și **din alte programe**, în mod serviciu (`DTED.exe --serviciu`).
+**115 teste automate** · CI pe **Windows și Linux** la fiecare commit · probe de transcriere reale pe placă video. Nucleul merge și pe Linux — vezi [LINUX.md](LINUX.md). Aplicația poate fi folosită și **din alte programe**, în mod serviciu (`DTED.exe --serviciu`).
 
 <div align="center">
 <img src="docs/img/setari-sunet.png" alt="Setări — bife simple, reglaj automat al microfonului, alegerea modelului" width="600">
@@ -156,13 +161,14 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
 
 ## 🗺️ Ce urmează (roadmap)
 
-*Rămas după v0.6.0 — dictarea pentru cărți e completă:*
+*Rămas după v0.6.1 — dictarea pentru cărți e completă:*
 
 - [x] ~~**Instalatorul online (V2), fără administrator**~~ — **gata**: comanda `irm … | iex` de sus face exact asta (descarcă versiunea fixă, verifică SHA-256, instalează per-utilizator)
+- [x] ~~**Afișare live cuvânt cu cuvânt la dictare + rulare fără cereri UAC**~~ — **gata (v0.6.1)**: cuvintele apar pe ecran pe măsură ce sunt rostite, iar izolarea de rețea în Mod 2 lucrează direct în proces fără UAC
+- [x] ~~**Recuperarea sunetului și a textului la cădere (cerința 61)**~~ — **gata (v0.6.1)**: atât textul, cât și fișierul `.wav` se salvează pe bucăți și se recuperează la repornire
+- [x] ~~**Reorganizare UI/UX fără suprapuneri + Actualizări din GitHub**~~ — **gata (v0.6.1)**: ecrane secundare cu bară de întoarcere la editor, Setări fără rânduri înghesuite și update rapid prin `program-0.6.1.zip`
 - [ ] **Modelul „pentru toți utilizatorii"** — instalare partajată (cere drepturi de administrator o singură dată)
-- [ ] **Tur de finisaj UX** — scalare perfectă pe ecrane mici (125–150%), ordinea Tab și Naratorul pentru nevăzători, mesaje de eroare unificate
 - [ ] **Editare audio** — marcarea și ștergerea unor porțiuni din înregistrare (Ctrl+Shift+S/E/D, ca la Express Dictate)
-- [ ] **Recuperarea sunetului** la cădere (acum se recuperează textul)
 - [ ] **Limbi suplimentare** — dictarea și în alte limbi (engleză prima, apoi cele cu model bun local); româna rămâne implicită și forțată ca astăzi
 - [ ] **Coloana Prioritate reală** — marchează o dictare „Urgentă” din listă (acasă momentan toate sunt „Normal”)
 - [ ] **Alte modele noi pentru română** — pe măsură ce apar, se adaugă ca opțiune în Setări
@@ -175,6 +181,6 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
 
 Cu 🎙 și 🤍 pentru limba română · [modele și măsurători](docs/MODELE_ROMANA.md)
 
-<sub>D&amp;ED v0.4.0-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;ED v0.6.1-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>
