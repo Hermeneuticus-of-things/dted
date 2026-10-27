@@ -134,6 +134,10 @@ def test_procesare_audio_doar_la_ascultare():
     assert abs(float(np.mean(filtrat))) < 0.01
 
 
-def test_fisier_proba_audio_exista():
-    proba = cai.fisier_proba_audio()
-    assert proba is not None and proba.exists() and proba.name == "_test_audio_ro.mp3"
+def test_fisier_proba_audio_exista(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmp:
+        proba_falsa = Path(tmp) / "_test_audio_ro.mp3"
+        proba_falsa.write_bytes(b"ID3")
+        monkeypatch.setattr(cai, "director_program", lambda: Path(tmp))
+        proba = cai.fisier_proba_audio()
+        assert proba is not None and proba.exists() and proba.name == "_test_audio_ro.mp3"
