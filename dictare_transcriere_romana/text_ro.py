@@ -238,19 +238,31 @@ COMENZI_Vocale = {
 
 def proceseaza_comenzi_vocale(text: str) -> str:
     """Recunoaste comenzi vocale (rând nou, paragraf nou, punct, virgula etc.)
-    si le converteste in formatare (cerinta 57)."""
+    si le converteste in formatare (cerinta 57).
+
+    Comenzile rostite cu literă mică se convertesc oriunde; cele cu inițială
+    mare („Punct de plecare” — conținut, nu comandă) se convertesc doar dacă
+    sunt la începutul bucății sau după sfârșit de propoziție, ca dictarea de
+    texte despre punctuație să nu se strice.
+    """
     import re
     if not text:
         return text
     rezultat = text
     for comanda in sorted(COMENZI_Vocale, key=len, reverse=True):
-        pattern = r"(?i)\b" + re.escape(comanda) + r"\b"
-        rezultat = re.sub(pattern, COMENZI_Vocale[comanda], rezultat)
+        semn = COMENZI_Vocale[comanda]
+        # rostită cu literă mică: comandă oriunde în text
+        pattern_mica = r"(?<![\wăâîșț])" + re.escape(comanda) + r"(?![\wăâîșț])"
+        rezultat = re.sub(pattern_mica, semn, rezultat)
+        # rostită cu inițială mare: comandă doar la început de propoziție
+        inceput = r"(^|[.!?…]\s+)" + re.escape(comanda.capitalize()) + r"(?![\wăâîșț])"
+        rezultat = re.sub(inceput, lambda m: m.group(1) + semn, rezultat)
     # fără spațiu înaintea punctuației și imediat după paranteză/ghilimea deschisă
     rezultat = re.sub(r"\s+([.,;:!?%)”])", r"\1", rezultat)
     rezultat = re.sub(r"([„(])\s+", r"\1", rezultat)
-    rezultat = re.sub(r"\(\s+", "(", rezultat)
-    return rezultat
+    # spațiile rămase în jurul rândurilor noi inserate se aranjează
+    rezultat = re.sub(r"[ \t]*\n[ \t]*", "\n", rezultat)
+    return rezultat.strip()
 
 _REPETITIE = re.compile(
     r"\b([\wăâîșțĂÂÎȘȚ]+(?:-[\wăâîșțĂÂÎȘȚ]+)?)(?:[ ,;]+\1\b){2,}",

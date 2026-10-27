@@ -119,7 +119,7 @@ Setări → Aspect).
   ascultarea și corecturile care se învață; la pornire, primii pași. Cu „↻” alt sfat, „×” liniște,
   și comutator permanent în Setări → Aspect.
 
-### 🆕 Ce e nou în v0.6.8
+### 🆕 Ce e nou în v0.6.9
 
 - **Vânătoare de bug-uri pe toate dimensiunile** (cod, motor, grafică, workflow, română):
   - **comenzile vocale funcționează acum cu adevărat la dictare** — „punct”, „virgulă”, „deschide ghilimele”, „linie de dialog” etc. erau implementate, dar nu erau chemate niciodată din fluxul de dictare;
