@@ -187,14 +187,28 @@ def restaureaza(nume: str, versiune: str) -> bool:
 
 
 def aplica(nume: str, versiune_noua: str, pachet_descarcat: Path) -> bool:
-    """Backup la vechea versiune, apoi înlocuiește componenta cu cea descărcată."""
+    """Backup la vechea versiune, apoi înlocuiește componenta cu cea descărcată.
+
+    Acceptă atât un dosar deja despachetat, cât și o arhivă ``.zip`` descărcată
+    de pe GitHub Releases.
+    """
+    import zipfile
+
+    pachet_descarcat = Path(pachet_descarcat)
     instalate = versiuni_instalate()
     veche = instalate.get(nume, {}).get("versiune", "")
     backup_componenta(nume, veche) if veche else None
     tinta = _componenta_folder(nume)
     if tinta.exists():
         shutil.rmtree(tinta, ignore_errors=True)
-    shutil.copytree(pachet_descarcat, tinta)
+    if pachet_descarcat.is_dir():
+        shutil.copytree(pachet_descarcat, tinta)
+    elif pachet_descarcat.is_file() and zipfile.is_zipfile(pachet_descarcat):
+        tinta.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(pachet_descarcat, "r") as arhiva:
+            arhiva.extractall(tinta)
+    else:
+        return False
     instalate[nume] = {"versiune": versiune_noua}
     scrie_versiuni(instalate)
     return True

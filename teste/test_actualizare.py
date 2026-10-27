@@ -60,6 +60,15 @@ def test_backup_aplicare_revenire():
         assert act.revine("program", "1.0")
         assert (comp / "motor.py").read_text(encoding="utf-8") == "vechi"
         assert act.versiuni_instalate()["program"]["versiune"] == "1.0"
+
+        # aplica din arhiva .zip (cum se descarcă de pe GitHub Releases)
+        import zipfile
+        arhiva_zip = tmp / "program-1.2.zip"
+        with zipfile.ZipFile(arhiva_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("motor.py", "din_zip")
+        assert act.aplica("program", "1.2", arhiva_zip)
+        assert (comp / "motor.py").read_text(encoding="utf-8") == "din_zip"
+        assert act.versiuni_instalate()["program"]["versiune"] == "1.2"
     _cu_director_temp(corp)
     print("backup + aplica + revine OK")
 

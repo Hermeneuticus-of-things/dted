@@ -371,7 +371,7 @@ class FereastraInstalare(QWidget):
         if not ok or "-" not in alegere:
             return
         nume, versiune = alegere.rsplit("-", 1)
-        if actualizare.revin(nume, versiune):
+        if actualizare.revine(nume, versiune):
             self.et_detalii.setText(f"✔ {nume} a revenit la versiunea {versiune}.")
             seteaza_rol(self.et_detalii, "verde")
             self._verifica()
