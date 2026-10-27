@@ -510,6 +510,38 @@ class Aplicatie(QMainWindow):
             self._slider_volum,
         ]
         self._seteaza_mod_transport("nimic")
+        QTimer.singleShot(1200, self._da_sfat)  # primul sfat, după ce s-a așezat interfața
+
+        # Bara de sfaturi inteligente: învață utilizatorul programul, în funcție
+        # de context (ecran, dictare activă, pauză, sunet de ascultat).
+        self._bara_sfaturi = QFrame()
+        self._bara_sfaturi.setObjectName("card")
+        sf_layout = QHBoxLayout(self._bara_sfaturi)
+        sf_layout.setContentsMargins(14, 4, 8, 4)
+        sf_layout.setSpacing(8)
+        self._eticheta_sfat = QLabel("")
+        self._eticheta_sfat.setFont(comun.fonturi("baza"))
+        self._eticheta_sfat.setWordWrap(True)
+        self._eticheta_sfat.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        sf_layout.addWidget(self._eticheta_sfat, stretch=1)
+        btn_alt_sfat = QToolButton()
+        btn_alt_sfat.setText("💡 ↻")
+        btn_alt_sfat.setToolTip("Alt sfat")
+        btn_alt_sfat.setFixedSize(44, 28)
+        btn_alt_sfat.clicked.connect(self._alt_sfat)
+        sf_layout.addWidget(btn_alt_sfat)
+        btn_ascunde_sfat = QToolButton()
+        btn_ascunde_sfat.setText("×")
+        btn_ascunde_sfat.setToolTip("Ascunde sfaturile (le reiei din Setări → Aspect)")
+        btn_ascunde_sfat.setFixedSize(28, 28)
+        btn_ascunde_sfat.clicked.connect(self._ascunde_sfaturi)
+        sf_layout.addWidget(btn_ascunde_sfat)
+        layout.addWidget(self._bara_sfaturi)
+        self._sfat_index = 0
+        self._sfat_context = ""
+        self._timer_sfaturi = QTimer(self)
+        self._timer_sfaturi.timeout.connect(self._alt_sfat)
+        self._timer_sfaturi.start(45000)
 
         layout.addWidget(self._dock_redare)  # mereu vizibil, ca la Express Dictate
 
@@ -921,6 +953,91 @@ class Aplicatie(QMainWindow):
         comun.mareste_scris(1.0)
         self.editor.actualizeaza_font()
 
+    # ------------------------------------------------------------- sfaturi
+
+    _SFATURI_DICTARE = (
+        "Vorbește non-stop: programul nu te așteaptă. Pauzele lungi structurează singure textul — peste 4 s rând nou, peste 8 s paragraf nou.",
+        "O frază ieșită prost? ⏎ P alineat (F6) o șterge și începe un paragraf nou, de la margine.",
+        "Idei diferite? ⇥ I alineat (Shift+F6) începe un paragraf nou cu alineat de tab, ca în cărțile tipărite.",
+        "Vorbește cineva lângă tine? ⏸ Pauză microfon — programul nu aude nimic până la reluare.",
+        "Marchează locurile importante cu Ctrl+B: apare [mm:ss] în text, iar ▶ Ascultă redă exact locul respectiv.",
+        "Comenzi vocale: „punct”, „virgulă”, „paragraf nou”, „deschide ghilimele”, „linie de dialog”… lista completă: F1 → Comenzi vocale.",
+        "Punctuația curată vine singură: rostește „punct”, „virgulă” și spațiile de lângă semne se aranjează automat.",
+    )
+    _SFATURI_DUPA = (
+        "▶ Ascultă (F9) redă de la semnul [mm:ss] de lângă cursor — asculți și corectezi doar ce trebuie.",
+        "Corectează un cuvânt greșit în editor: programul învață perechea și nu-l mai greșește niciodată.",
+        "Salvezi cu Ctrl+S — DOCX, ODT, PDF, TXT și alte formate; cu parolă, dacă vrei.",
+        "F7/F8 derulează înregistrare cu ±5 secunde; F10/F11/F12 schimbă viteza redării.",
+    )
+    _SFATURI_START = (
+        "Apasă ⏺ Dictează (F5) și vorbește — textul apare cuvânt cu cuvânt pe măsură ce vorbești.",
+        "Prima dată aici? F1 deschide ajutorul pas cu pas, pe orice ecran.",
+        "F6 = paragraf nou de la margine; Shift+F6 = paragraf nou cu alineat de tab (ca în cărți).",
+        "Nu ai nevoie de internet: totul se întâmplă pe calculatorul tău.",
+        "Dacă modelul se mai încarcă, așteaptă mesajul „modelul e încărcat” din bara de jos — după el, dictarea pornește instant.",
+    )
+    _SFATURI_GENERALE = (
+        "Totul e local: textul și sunetul nu pleacă de pe calculator. Indicatorul din bara de jos arată mereu starea.",
+        "Actualizări: butonul 📦 din bara de sus — doar când apeși tu, cu sumă SHA-256 verificată și revenire la versiunea veche.",
+        "Fereastra mică (⧉) ține dictarea sub control din orice alt program.",
+        "Fiecare idee nouă începe cu un alineat: „P alineat” de la margine (stil web) sau „I alineat” cu tab (stil de carte). Nu le amesteca.",
+    )
+
+    def _sfat_pentru_context(self) -> tuple[str, str]:
+        """Întoarce (context, sfat) potrivit stării actuale a programului."""
+        pagina = self._pagina_aleasa
+        pagina_dictare = self._pagini.get("dictare")
+        activ = bool(pagina_dictare is not None and getattr(pagina_dictare, "_activ", False))
+        pauza = bool(getattr(getattr(pagina_dictare, "_microfon", None), "pauza", False))
+        if activ and pauza:
+            return (
+                "pauză",
+                "Microfonul e pe pauză — vorbești tu liniștit. Apasă ⏸ din nou ca să continui dictarea.",
+            )
+        if activ:
+            return ("dictare", self._SFATURI_DICTARE[self._sfat_index % len(self._SFATURI_DICTARE)])
+        if self._are_sunet:
+            return ("după dictare", self._SFATURI_DUPA[self._sfat_index % len(self._SFATURI_DUPA)])
+        if pagina == "transcriere":
+            return (
+                "transcriere",
+                "Tragi mai multe fișiere audio deodată — se transcriu unul după altul; cele transcrise se sar singure.",
+            )
+        if pagina == "setari":
+            return (
+                "setări",
+                "Aici îți schimbi tastele rapide (merg imediat), alegi modelul de transcriere sau descarci CUDA pentru placă video.",
+            )
+        if pagina in ("principal", "") and not self.editor.text().strip():
+            return ("start", self._SFATURI_START[self._sfat_index % len(self._SFATURI_START)])
+        return ("general", self._SFATURI_GENERALE[self._sfat_index % len(self._SFATURI_GENERALE)])
+
+    def _da_sfat(self, forteaza: bool = False) -> None:
+        """Alege sfatul potrivit contextului; îl schimbă doar dacă contextul s-a schimbat."""
+        if not getattr(self.configurare, "arata_sfaturi", True):
+            self._bara_sfaturi.hide()
+            return
+        context, sfat = self._sfat_pentru_context()
+        if context != self._sfat_context:
+            self._sfat_context = context
+            self._sfat_index = 0
+            self._eticheta_sfat.setText(f"💡 {sfat}")
+            self._bara_sfaturi.show()
+        elif forteaza:
+            self._sfat_index += 1
+            context, sfat = self._sfat_pentru_context()
+            self._eticheta_sfat.setText(f"💡 {sfat}")
+
+    def _alt_sfat(self) -> None:
+        """Butonul „↻”: următorul sfat din contextul curent."""
+        self._sfat_index += 1
+        self._da_sfat(forteaza=True)
+
+    def _ascunde_sfaturi(self) -> None:
+        """×: ascunde bara pentru sesiunea curentă (revin din Setări → Aspect)."""
+        self._bara_sfaturi.hide()
+
     def _inregistreaza_scurtaturi(self) -> None:
         """(Re)pune scurtăturile configurabile, după ce-a ales utilizatorul.
 
@@ -1037,6 +1154,9 @@ class Aplicatie(QMainWindow):
                 self._seteaza_mod_transport("dictare")
             else:
                 self._seteaza_mod_transport("audio" if getattr(self, "_are_sunet", False) else "nimic")
+        if hasattr(self, "_bara_sfaturi"):
+            self._sfat_index = 0
+            self._da_sfat()  # contextul s-a schimbat: sfat potrivit imediat
         if activ:
             self.btn_dictare.setText("⏹ Oprește dictarea")
             if hasattr(self, "btn_inregistreaza"):

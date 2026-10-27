@@ -61,6 +61,10 @@ class Config:
     scurtaturi_globale: bool = False      # scurtăturile globale (Ctrl+Alt+D) — OPRITE implicit (53)
     asistent_microfon_vazut: bool = False # asistentul de microfon de la prima dictare (52)
     activare_vocala: bool = False         # pornește singură dictarea când auzi vocea (Express Dictate)
+    arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
+    arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
+    arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
+    arata_sfaturi: bool = True            # bara de sfaturi inteligente (contextuale) în interfață
     prag_activare_db: int = -35           # pragul activării vocale, în dB
     scurtaturi: dict[str, str] = field(default_factory=lambda: dict(SCURTATURI_IMPLICIT))
 

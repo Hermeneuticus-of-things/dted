@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="100%" role="img" aria-label="D&amp;TED: dictezi în română, textul apare cuvânt cu cuvânt; sub ele, o undă sonoră aurie și marcaje de timp">
+  <defs>
+    <linearGradient id="fundal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#12203a"/>
+    </linearGradient>
+    <linearGradient id="unda" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a6a2f"/>
+      <stop offset="0.5" stop-color="#e0b35c"/>
+      <stop offset="1" stop-color="#8a6a2f"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="400" rx="18" fill="url(#fundal)"/>
+  <rect x="1.5" y="1.5" width="1197" height="397" rx="17" fill="none" stroke="#26364f" stroke-width="1.5"/>
+
+  <!-- microfonul, stilizat ca pictograma aplicatiei -->
+  <g transform="translate(96,120)">
+    <rect x="26" y="0" width="28" height="64" rx="14" fill="#e0b35c"/>
+    <path d="M18 44 a22 22 0 0 0 44 0" fill="none" stroke="#e0b35c" stroke-width="7" stroke-linecap="round"/>
+    <line x1="40" y1="70" x2="40" y2="88" stroke="#e0b35c" stroke-width="7" stroke-linecap="round"/>
+    <line x1="24" y1="90" x2="56" y2="90" stroke="#e0b35c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <!-- titlu -->
+  <text x="210" y="128" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#f1f5f9">Vorbești românește. Programul scrie.</text>
+  <text x="212" y="172" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="23" fill="#9fb2cc">Dictare live, cuvânt cu cuvânt, pentru text lung de carte · 100% local, fără internet</text>
+
+  <!-- unda sonoră -->
+  <g fill="url(#unda)">
+    <rect x="212" y="216" width="9" height="18" rx="4"/>
+    <rect x="230" y="206" width="9" height="38" rx="4"/>
+    <rect x="248" y="192" width="9" height="66" rx="4"/>
+    <rect x="266" y="202" width="9" height="46" rx="4"/>
+    <rect x="284" y="182" width="9" height="86" rx="4"/>
+    <rect x="302" y="196" width="9" height="58" rx="4"/>
+    <rect x="320" y="176" width="9" height="98" rx="4"/>
+    <rect x="338" y="192" width="9" height="66" rx="4"/>
+    <rect x="356" y="204" width="9" height="42" rx="4"/>
+    <rect x="374" y="184" width="9" height="82" rx="4"/>
+    <rect x="392" y="198" width="9" height="54" rx="4"/>
+    <rect x="410" y="178" width="9" height="94" rx="4"/>
+    <rect x="428" y="200" width="9" height="50" rx="4"/>
+    <rect x="446" y="188" width="9" height="74" rx="4"/>
+    <rect x="464" y="206" width="9" height="38" rx="4"/>
+    <rect x="482" y="194" width="9" height="62" rx="4"/>
+    <rect x="500" y="182" width="9" height="86" rx="4"/>
+    <rect x="518" y="200" width="9" height="50" rx="4"/>
+  </g>
+
+  <!-- linia de text dictat, cu marcaj de timp -->
+  <rect x="212" y="286" width="66" height="30" rx="8" fill="#1d3050"/>
+  <text x="245" y="307" font-family="Consolas, monospace" font-size="18" fill="#e0b35c" text-anchor="middle">00:12</text>
+  <text x="292" y="308" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="22" fill="#dbe4f0">Capitolul întâi. Textul curge cuvânt cu cuvânt</text>
+  <rect x="838" y="288" width="3" height="26" fill="#e0b35c"/>
+
+  <!-- panoul cu taste -->
+  <g font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="19" fill="#cdd9ea">
+    <rect x="212" y="336" width="150" height="34" rx="9" fill="#1d3050"/>
+    <text x="287" y="359" text-anchor="middle" fill="#f1f5f9">F5 Dictează</text>
+    <rect x="374" y="336" width="150" height="34" rx="9" fill="#1d3050"/>
+    <text x="449" y="359" text-anchor="middle" fill="#f1f5f9">F6 P alineat</text>
+    <rect x="536" y="336" width="170" height="34" rx="9" fill="#1d3050"/>
+    <text x="621" y="359" text-anchor="middle" fill="#f1f5f9">Shift+F6 I alineat</text>
+    <rect x="718" y="336" width="140" height="34" rx="9" fill="#1d3050"/>
+    <text x="788" y="359" text-anchor="middle" fill="#f1f5f9">F9 Ascultă</text>
+  </g>
+
+  <!-- cifre reale, în partea dreaptă -->
+  <g font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" text-anchor="end">
+    <text x="1140" y="150" font-size="30" font-weight="700" fill="#e0b35c">5,8% WER</text>
+    <text x="1140" y="180" font-size="17" fill="#9fb2cc">pe română vorbită (text de carte)</text>
+    <text x="1140" y="238" font-size="30" font-weight="700" fill="#e0b35c">~0,25 s</text>
+    <text x="1140" y="268" font-size="17" fill="#9fb2cc">transcrierea unei bucăți de 2 s (GPU)</text>
+    <text x="1140" y="326" font-size="30" font-weight="700" fill="#e0b35c">100% local</text>
+    <text x="1140" y="356" font-size="17" fill="#9fb2cc">fără internet, fără cont, fără cloud</text>
+  </g>
+</svg>

@@ -1037,6 +1037,11 @@ class FereastraSetari(QDialog):
         self.var_wrap.setFont(fonturi("baza"))
         card.layout().addWidget(self.var_wrap)
 
+        self.var_sfaturi = QCheckBox("Arată sfaturile inteligente în interfață")
+        self.var_sfaturi.setChecked(bool(getattr(self.config, "arata_sfaturi", True)))
+        self.var_sfaturi.setFont(fonturi("baza"))
+        card.layout().addWidget(self.var_sfaturi)
+
         rand2 = QHBoxLayout()
         et_font = QLabel("Tipul de scris:")
         et_font.setFont(fonturi("baza"))
@@ -1512,6 +1517,7 @@ class FereastraSetari(QDialog):
             pass
         try:
             self.config.wrap_text = self.var_wrap.isChecked()
+            self.config.arata_sfaturi = self.var_sfaturi.isChecked()
         except (AttributeError,):
             pass
         try:
