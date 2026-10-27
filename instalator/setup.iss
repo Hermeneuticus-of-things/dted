@@ -147,15 +147,19 @@ begin
   Result := 0;
   if CheieAdaptorNvidia = '' then
     Exit;
-  if RegQueryBinaryValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.qwMemorySize', Bin, Marime) and (Marime >= 8) then
+  if RegQueryBinaryValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.qwMemorySize', Bin, Marime) then
   begin
-    V := 0;
-    for I := 8 downto 1 do
-      V := (V shl 8) or Ord(Bin[I]);
-    Result := V div (1024 * 1024);
-  end
-  else if RegQueryDWordValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.MemorySize', Cardinal(Result)) then
-    Result := Result div (1024 * 1024)
+    if Marime >= 8 then
+    begin
+      V := 0;
+      for I := 8 downto 1 do
+        V := (V shl 8) or Ord(Bin[I]);
+      Result := V div (1024 * 1024);
+      Exit;
+    end;
+  end;
+  if RegQueryDWordValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.MemorySize', Marime) then
+    Result := Marime div (1024 * 1024)
   else
     Result := 0;
 end;

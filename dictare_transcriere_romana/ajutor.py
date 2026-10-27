@@ -36,6 +36,31 @@ class Ghid:
 
 
 ECRANE: dict[str, Ghid] = {
+    "noutati": Ghid(
+        titlu="Ce e nou în v0.6.3",
+        ce_vezi=[
+            "Textul dictat apare pe ecran cuvânt cu cuvânt, pe măsură ce vorbești; partea gri se confirmă în câteva secunde.",
+            "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”, „↺ De la capăt” și „⇥ Idee nouă”.",
+            "Modelul de transcriere se încarcă singur în fundal, imediat după pornirea programului.",
+        ],
+        ce_faci=[
+            "Dictezi non-stop: apasă butonul roșu (F5) și vorbește — programul scrie în timp ce vorbești, nu te mai așteaptă.",
+            "Vorbești cu cineva lângă tine? Apasă „⏸ Pauză microfon”: programul nu mai aude nimic; la reluare, dictarea continuă de unde a rămas.",
+            "Ai rostit o frază greșit? Apasă „↺ De la capăt” (F6): fraza neterminată se șterge, inclusiv cuvintele de pe ecran, și o redictezi.",
+            "Începi o idee nouă? Apasă „⇥ Idee nouă” (Shift+F6): șterge fraza curentă și deschide un paragraf nou, cu tab înainte.",
+            "Tastele ți se par incomode? Setări → „Taste rapide”: îți alegi singur tastele; butonul „Pune tot la fel ca la început” le aduce pe cele din fabrică.",
+        ],
+        urmeaza=[
+            "Actualizările din program („📦 Actualizări”) acum chiar intră în vigoare în aplicația instalată, după repornire.",
+            "Instalatorul are o pagină nouă, „Ce știe să facă D&TED”, pe care o poți citi cât se instalează.",
+        ],
+        probleme=[
+            (
+                "Prima dictare tot târzie puțin.",
+                "Așteaptă mesajul „modelul de transcriere e încărcat” din bara de jos: apare la câteva secunde după pornire. După el, dictarea pornește instant.",
+            ),
+        ],
+    ),
     "principal": Ghid(
         titlu="Ecranul de început",
         ce_vezi=[
@@ -69,19 +94,21 @@ ECRANE: dict[str, Ghid] = {
     "dictare": Ghid(
         titlu="Dictare vocală",
         ce_vezi=[
-            "Sus: microfonul ales, ora (00:42) și bara de nivel, care se mișcă atunci când vorbești.",
-            "Un buton mare rotund: „● Pornește dictarea”, care se schimbă în „■ Oprește dictarea”.",
-            "Textul apare în editorul de dedesubt: gri cât încă se verifică, negru după ce este sigur.",
-            "Jos: „Te aud” (verde) sau „Nu te aud” (roșu), plus „Pauză” dacă dictarea merge.",
+            "Jos, în bara de transport: butonul roșu „⏺ Dictează (F5)”, „▶ Ascultă”, „⏹ Stop”, „⏸ Pauză microfon”, „↺ De la capăt” și „⇥ Idee nouă”.",
+            "Vumetrul se mișcă când vorbești; textul apare în editor cuvânt cu cuvânt, pe măsură ce rostești.",
+            "Partea gri a textului e provizorie (se confirmă în câteva secunde); partea neagră e sigură.",
         ],
         ce_faci=[
-            "Apasă butonul mare (sau Ctrl+D) și vorbește normal, ca la telefon.",
-            "Dacă vrei să te oprești o clipă, apasă „Pauză”; reiei cu „Continuă”.",
-            "Apasă „■ Oprește dictarea” când ai terminat; textul rămâne pe ecran.",
+            "Apasă butonul roșu (sau F5) și vorbește non-stop — nu te opri să aștepți: programul scrie în timp ce vorbești.",
+            "Vorbești cu altcineva? Apasă „⏸ Pauză microfon”; apasă-l din nou ca să continui dictarea.",
+            "Fraza nu a ieșit? „↺ De la capăt” (F6) o șterge pe cea neterminată și o redictezi liniștit.",
+            "Idee nouă? „⇥ Idee nouă” (Shift+F6) șterge fraza curentă și deschide un paragraf nou, cu tab înainte.",
+            "„⏱ Semn” (Ctrl+B) pune [mm:ss] la cursor; „▶ Ascultă” (F9) redă bucata de la semn ca să o corectezi.",
+            "Apasă din nou butonul roșu când ai terminat; textul și înregistrarea se salvează singure.",
         ],
         urmeaza=[
-            "Apare bannera verde „Gata! Textul e mai jos…”, apoi salvezi ca DOCX sau ODT ori deschizi în LibreOffice.",
-            "Poți continua aceeași dictare: apasă din nou butonul mare și textul se adaugă la sfârșit.",
+            "Corectezi în editor (cuvintele corectate se învață), apoi salvezi ca DOCX/ODT sau deschizi în LibreOffice.",
+            "Tastele se pot schimba din Setări → „Taste rapide”.",
         ],
         probleme=[
             (
@@ -89,12 +116,12 @@ ECRANE: dict[str, Ghid] = {
                 "Vorbește mai aproape de microfon sau verifică „Verifică sunetul” din ecranul de început.",
             ),
             (
-                "Am ales alt microfon.",
-                "Apasă „Schimbă microfonul” sus; lista arată fiecare microfon o singură dată.",
+                "Scrie cu întârziere.",
+                "Așteaptă mesajul „modelul e încărcat” din bara de jos (apare la pornire); pe calculatoare fără placă video e puțin mai încet, dar merge.",
             ),
             (
                 "Textul este gri.",
-                "Gri înseamnă „încă se verifică”: devine negru singur, în câteva secunde.",
+                "Gri înseamnă „încă se confirmă”: devine negru singur, în câteva secunde.",
             ),
         ],
     ),
@@ -653,6 +680,7 @@ def text_ghid_ajutor() -> str:
         "",
     ]
     for cheie in (
+        "noutati",
         "principal",
         "dictare",
         "transcriere",
