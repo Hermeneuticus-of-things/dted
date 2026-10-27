@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="docs/img/interfata-v060.png" alt="D&TED v0.6.0: lista dictărilor cu notițe, editor cu paragrafe, transport complet jos" width="880">
+<img src="docs/img/interfata-v063.png" alt="D&TED v0.6.3: editorul cu text dictat, iar jos bara de dictare: Dictează (F5), Pauză microfon, De la capăt, Idee nouă, vumetru dB" width="880">
 
 # 🎙️ D&amp;ED · Dictare &amp; Transcriere Express Digital
 
@@ -40,11 +40,21 @@ Apasă butonul **roșu** (sau F5) și vorbește — textul apare **în timp ce v
 Pune cursorul lângă un semn și apasă **F9** (sau Ctrl+R): transportul de jos redă **exact bucata respectivă** — Play verde, Stop albastru, derulare, poziție `01:23 / 05:40` și volum.
 
 <div align="center">
-<img src="docs/img/vumetru-interfat.png" alt="Ecranul de dictare: vumetru în dB integrat, semne [mm:ss], buton de ascultare" width="840">
+<img src="docs/img/transport-redare-v063.png" alt="Modul de redare: bara de jos arată doar butoanele audio — Ascultă, Stop, derulare, poziție 00:42 / 03:10, volum" width="840">
 </div>
 
 ### 🎚 Microfonul se reglează singur
 Vumetru profesional **cu gradații în dB** — 0 dB înseamnă distorsiune. Programul **aduce automat volumul microfonului** în zona bună: nu prea tare (să nu taie), nu prea încet (să se audă).
+
+### ⌨ Tastele tale, cum vrei tu
+
+Din **Setări → „Taste rapide”** îți alegi singur tastele pentru: dictează, ascultă, derulare,
+viteze, semnul [mm:ss], „De la capăt” și „Idee nouă”. Clic pe buton, apeși combinația, salvezi —
+iar „Pune tot la fel ca la început” le readuce pe cele din fabrică.
+
+<div align="center">
+<img src="docs/img/taste-rapide-v063.png" alt="Setări → Taste rapide: fiecare comandă are un buton în care apeși combinația dorită" width="640">
+</div>
 
 ### 🧠 Se învață din corecturile tale
 Corectezi un cuvânt scris greșit → perechea se salvează singură și **se repară automat la următoarele transcrieri**. Dicționarul se poate exporta și importa (TXT/CSV/JSON).

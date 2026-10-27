@@ -23,19 +23,21 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference    = "SilentlyContinue"   # descărcare mai iute în PowerShell 5.1
 
 # Etichetă de versiune FIXĂ (nu „ultima versiune" — fiecare publicare are eticheta ei).
-$Tag  = "v0.6.2"
+$Tag  = "v0.6.3"
 $Repo = "Hermeneuticus-of-things/dted"
 $Base = "https://github.com/$Repo/releases/download/$Tag"
 $Dest = Join-Path $env:TEMP "dted-install"
 
 # ----------------------------------------------------------------------------
-# Amprentele SHA-256 sunt închise AICI, în script (eticheta fixă v0.1.0).
+# Amprentele SHA-256 sunt închise AICI, în script (eticheta fixă v0.6.3).
 # Rândul: "nume fișier" = "amprenta". Ordinea: întâi instalatorul .exe, apoi
 # bucățile .bin în ordine (Setup DTED-1.bin, -2.bin, ...).
+# AMPRENTELE SE CALCULEAZĂ pe fișierele construite și se schimbă la FIECARE
+# versiune — niciodată nu se lasă amprentele versiunii precedente.
 # ----------------------------------------------------------------------------
 $Pachete = [ordered]@{
-    "Setup.DTED-0.6.1-1.bin" = "1D25D9BC6A4D7C261304A0C81A3888E27008ACECB73CC2175D382954E1677B8F"
-    "Setup.DTED-0.6.1.exe" = "6A896C83899702970FF0BA1C4348BFDC2E78A4BF8FBE34C131D93DE92F1316AF"
+    "Setup.DTED-0.6.3.exe" = "64D396DE96B2D65EDEF5F365FCD4BABD9DA87E681DEA11C05C3C343E4C2861D2"
+    "Setup.DTED-0.6.3-1.bin" = "F8CA543DCAB2081B6C14B6FA3F28AF0B571345CB7252FE0FE5232F68982F4BE7"
 }
 
 function Format-Amprenta { param([string]$s) ($s -replace '[^0-9a-fA-F]', '').ToUpper() }
