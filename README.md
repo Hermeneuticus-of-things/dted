@@ -112,6 +112,15 @@ Setări → Aspect).
 <img src="docs/img/taste-rapide-v064.png" alt="Setări → Taste rapide: fiecare comandă are un buton în care apeși combinația dorită, cu revenire la valorile din fabrică" width="640">
 </div>
 
+### 🆕 Ce e nou în v0.6.6
+
+- **Sfaturi inteligente în interfață** — o bară contextuală te învață programul în timp real:
+  în timpul dictării îți amintește P/I alineat, pauza de microfon și comenzile vocale; după dictare,
+  ascultarea și corecturile care se învață; la pornire, primii pași. Cu „↻” alt sfat, „×” liniște,
+  și comutator permanent în Setări → Aspect.
+- **README redesenat de la zero** în stilul beautify-github-readme: hero SVG proiect-nativ,
+  dovada pe prima vedere, secțiuni scurte și căutabile.
+
 ## 🗺 Ce urmează
 
 - [ ] Modelul „pentru toți utilizatorii” — instalare partajată (admin o singură dată)
@@ -129,19 +138,19 @@ detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
 
 | Vrei… | Apasă aici | Apoi… |
 |---|---|---|
-| **Cel mai simplu** | **[⬇️ SETUP.DTED-0.6.5.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/Setup.DTED-0.6.5.exe)** | ~1,84 GB, totul inclus (model + CUDA); dublu clic → Next |
-| **Fără instalare** | **[⬇️ PORTABIL-DTED-0.6.5.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/portabil-DTED-0.6.5.zip)** | dezarhivezi → `DTED.exe` (merge de pe stick) |
+| **Cel mai simplu** | **[⬇️ SETUP.DTED-0.6.6.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/Setup.DTED-0.6.6.exe)** | ~1,84 GB, totul inclus (model + CUDA); dublu clic → Next |
+| **Fără instalare** | **[⬇️ PORTABIL-DTED-0.6.6.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/portabil-DTED-0.6.6.zip)** | dezarhivezi → `DTED.exe` (merge de pe stick) |
 | **Totul automat** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | descarcă + verifică SHA-256 + instalează |
 
 **Ai deja D&TED?** → **📦 Actualizări** în program → descarcă doar
-[`program-0.6.5.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/program-0.6.5.zip)
+[`program-0.6.6.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/program-0.6.6.zip)
 (~1,25 MB), cu SHA-256, backup și revenire.
 
-**Linux (x86_64)?** → [`dted-0.6.5-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/dted-0.6.5-linux.tar.gz)
+**Linux (x86_64)?** → [`dted-0.6.6-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/dted-0.6.6-linux.tar.gz)
 → `tar -xzf …` → `./install.sh`.
 
-Toate fișierele, cu sumele în [`SHA256SUMS.txt`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/SHA256SUMS.txt),
-sunt pe [pagina release](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.5).
+Toate fișierele, cu sumele în [`SHA256SUMS.txt`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/SHA256SUMS.txt),
+sunt pe [pagina release](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.6).
 Cerințe: Windows 10/11 pe 64 de biți · 8 GB RAM recomandate · ~4 GB disc.
 
 ### ❓ Întrebări frecvente
@@ -179,6 +188,6 @@ python -m venv .venv
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;ED v0.6.5-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;ED v0.6.6-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>
