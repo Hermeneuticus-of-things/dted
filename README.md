@@ -102,7 +102,10 @@ F5 dictează · F9 ascultă · F7/F8 derulare · F10–F12 viteze · F6 P alinea
 - **Activare vocală (opțional)** — programul pornește singur dictarea când începi să vorbești.
 - **Fereastră mică, mereu deasupra** — pornești/oprești dictarea din orice alt program.
 - **Curățenie automată** — bâlbâielile („nu, nu, nu”) se strâng singure; dublările firești rămân.
-- **Comenzi vocale** — „punct”, „virgulă”, „paragraf nou”, „rând nou”.
+- **Comenzi vocale** — „punct”, „virgulă”, „punct și virgulă”, „două puncte”, „semn de întrebare”,
+  „semnul exclamării”, „deschide/închide ghilimele”, „deschide/închide paranteză”, „cratimă”,
+  „linie de dialog”, „linie de pauză”, „procent”, „slash”, „ampersand”, „paragraf nou”, „rând nou”.
+- **Pauzele structurează singure textul** — peste 4 secunde de liniște → rând nou; peste 8 secunde → paragraf nou.
 - **Căutare în editor** (Ctrl+F), zoom text (Ctrl + / − / 0), teme: Luminos / Întunecat / Ca Windows.
 - **Verificare calculator** — CPU, RAM, disc, placă video + VRAM, driver, microfoane și boxe.
 - **Mod serviciu** — `DTED.exe --serviciu`, pentru folosirea din alte programe.
@@ -121,7 +124,19 @@ F5 dictează · F9 ascultă · F7/F8 derulare · F10–F12 viteze · F6 P alinea
 
 ## 8. Ce urmează
 
-Rămas după v0.6.4 (dictarea pentru cărți e completă):
+### 🆕 Ce e nou în v0.6.5
+
+- **Comenzi vocale extinse** — pe lângă „punct”, „virgulă”, „paragraf nou”, „rând nou”:
+  „punct și virgulă”, „două puncte”, „semn de întrebare”, „semnul exclamării”,
+  „deschide/închide ghilimele”, „deschide/închide paranteză”, „cratimă”, „linie de dialog”,
+  „linie de pauză”, „procent”, „slash”, „ampersand”. Spațiile din jurul semnelor se curăță singure.
+- **Pauzele lungi structurează singure textul** — peste 4 secunde de liniște → rând nou;
+  peste 8 secunde → paragraf nou.
+- **Lista completă de comenzi** e în Ajutor (F1 → „Comenzi vocale”), în „Citește-mă” și în ghidul scris.
+
+Rămas după v0.6.5 (dictarea pentru cărți e completă):
+
+Rămas după v0.6.5 (dictarea pentru cărți e completă):
 
 - [ ] Modelul „pentru toți utilizatorii” — instalare partajată (admin o singură dată)
 - [ ] Editare audio — marcarea și ștergerea unor porțiuni din înregistrare
@@ -135,21 +150,21 @@ Rămas după v0.6.4 (dictarea pentru cărți e completă):
 
 | Vrei… | Apasă aici | Apoi… |
 |---|---|---|
-| **Cel mai simplu: instalează** | **[⬇️ DESCARCĂ SETUP.DTED-0.6.4.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/Setup.DTED-0.6.4.exe)** | ~1,84 GB; dublu clic → Next → Instalează |
-| **Fără instalare, de pe stick** | **[⬇️ DESCARCĂ PORTABIL-DTED-0.6.4.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/portabil-DTED-0.6.4.zip)** | click dreapta → Dezarhivează → `DTED.exe` |
+| **Cel mai simplu: instalează** | **[⬇️ DESCARCĂ SETUP.DTED-0.6.5.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/Setup.DTED-0.6.5.exe)** | ~1,84 GB; dublu clic → Next → Instalează |
+| **Fără instalare, de pe stick** | **[⬇️ DESCARCĂ PORTABIL-DTED-0.6.5.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/portabil-DTED-0.6.5.zip)** | click dreapta → Dezarhivează → `DTED.exe` |
 | **Totul automat, o comandă** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | descarcă + verifică SHA-256 + instalează |
 
 **Ai deja D&TED?** → butonul **📦 Actualizări** din program → „Caută actualizări (internet)”:
-descarcă doar arhiva mică [`program-0.6.4.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/program-0.6.4.zip)
+descarcă doar arhiva mică [`program-0.6.5.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/program-0.6.5.zip)
 (~1,25 MB), verifică amprenta, păstrează versiunea veche; după repornire rulează chiar versiunea nouă.
 
-**Linux (x86_64)?** → **[⬇️ DESCARCĂ DTED PENTRU LINUX](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/dted-0.6.4-linux.tar.gz)**,
-apoi `tar -xzf dted-0.6.4-linux.tar.gz` și `./install.sh`.
+**Linux (x86_64)?** → **[⬇️ DESCARCĂ DTED PENTRU LINUX](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/dted-0.6.5-linux.tar.gz)**,
+apoi `tar -xzf dted-0.6.5-linux.tar.gz` și `./install.sh`.
 
 **Kitul offline (exe) include tot** — modelul + CUDA; instalare 100% fără internet, fără administrator.
 Wizard-ul îți arată pagina „Ce știe să facă D&TED” și verificarea calculatorului (CPU, RAM, disc, placă video + VRAM).
-Aceleași fișiere, cu sume în [SHA256SUMS.txt](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/SHA256SUMS.txt),
-sunt pe [pagina release v0.6.4](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.4).
+Aceleași fișiere, cu sume în [SHA256SUMS.txt](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.5/SHA256SUMS.txt),
+sunt pe [pagina release v0.6.5](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.5).
 
 **Cerințe:** Windows 10/11 pe 64 de biți · 8 GB RAM recomandate · ~4 GB pe disc. Nucleul merge și pe Linux.
 
@@ -199,6 +214,6 @@ fără căi personale** (toate căile de disc sunt anonimizate automat).
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;ED v0.6.4-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;ED v0.6.5-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>

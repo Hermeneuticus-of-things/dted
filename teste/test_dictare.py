@@ -304,3 +304,22 @@ def test_p_alineat_si_i_alineat_in_editor():
 
     ed.paragraf_nou(cu_alineat=True)
     assert ed.text().endswith("\n\n\t")
+
+
+def test_comenzi_vocale_extinse():
+    """Comenzile vocale noi: ghilimele, paranteze, simboluri, variante cu diacritice."""
+    from dictare_transcriere_romana import text_ro
+
+    assert text_ro.proceseaza_comenzi_vocale(
+        "deschide paranteză exemplu închide paranteză punct"
+    ) == "(exemplu)."
+    assert text_ro.proceseaza_comenzi_vocale(
+        "deschide ghilimele citat închide ghilimele"
+    ) == "\u201ecitat\u201d"
+    assert text_ro.proceseaza_comenzi_vocale(
+        "două puncte punct și virgulă semnul întrebării"
+    ) == ":;?"
+    assert text_ro.proceseaza_comenzi_vocale("replică linie de dialog text") == "replică \u2014 text"
+    assert text_ro.proceseaza_comenzi_vocale("zece procent slash tot") == "zece% / tot"
+    # fără spațiu înaintea punctuației
+    assert text_ro.proceseaza_comenzi_vocale("cuvânt punct altcuvânt") == "cuvânt. altcuvânt"

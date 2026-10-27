@@ -197,16 +197,42 @@ def timp_subtitrare(secunde: float, separator: str = ",") -> str:
 # Comenzi vocale (cerinta 57)
 
 COMENZI_Vocale = {
+    # structură
     "rand nou": "\n",
     "rând nou": "\n",
+    "linie nouă": "\n",
     "paragraf nou": "\n\n",
+    # punctuație de bază (cu și fără diacritice)
     "punct": ".",
     "virgula": ",",
     "virgulă": ",",
     "semn de intrebare": "?",
+    "semn de întrebare": "?",
+    "semnul intrebării": "?",
+    "semnul întrebării": "?",
     "semn de exclamare": "!",
+    "semnul exclamării": "!",
     "doua puncte": ":",
+    "două puncte": ":",
     "punct si virgula": ";",
+    "punct și virgulă": ";",
+    # ghilimele și paranteze
+    "deschide ghilimele": "\u201e",
+    "ghilimele deschise": "\u201e",
+    "închide ghilimele": "\u201d",
+    "ghilimele închise": "\u201d",
+    "deschide paranteză": "(",
+    "paranteză deschisă": "(",
+    "închide paranteză": ")",
+    "paranteză închisă": ")",
+    # linii și simboluri
+    "cratimă": "-",
+    "linie de dialog": "\u2014",
+    "linie de pauză": "\u2013",
+    "procent": "%",
+    "slash": "/",
+    "ampersand": "&",
+    "și comercial": "&",
 }
 
 
@@ -220,6 +246,10 @@ def proceseaza_comenzi_vocale(text: str) -> str:
     for comanda in sorted(COMENZI_Vocale, key=len, reverse=True):
         pattern = r"(?i)\b" + re.escape(comanda) + r"\b"
         rezultat = re.sub(pattern, COMENZI_Vocale[comanda], rezultat)
+    # fără spațiu înaintea punctuației și imediat după paranteză/ghilimea deschisă
+    rezultat = re.sub(r"\s+([.,;:!?%)”])", r"\1", rezultat)
+    rezultat = re.sub(r"([„(])\s+", r"\1", rezultat)
+    rezultat = re.sub(r"\(\s+", "(", rezultat)
     return rezultat
 
 _REPETITIE = re.compile(

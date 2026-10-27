@@ -62,6 +62,10 @@ SECUNDE_PROVIZORIU = 1.0
 INTERVAL_PROVIZORIU = 0.9
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
+#: Pauzele de voce lungi structurează singure textul: peste atâtea secunde de
+#: liniște continuă, bucata următoare primește „linie nouă”, respectiv „paragraf nou”.
+PAUZA_LINIE_SEC = 4.0
+PAUZA_PARAGRAF_SEC = 8.0
 
 
 def _gata_de_transcris(secunde: float, oprita: bool) -> bool:
@@ -93,6 +97,8 @@ class PaginaDictare(QWidget):
         self._text_dictare = ""  # textul final, pentru recuperarea la cădere (cerința 61)
         self._ultima_provizor = 0.0
         self._anulat_pana = 0.0  # „de la capăt”/„alineat”: bucățile începute înainte de acest moment se aruncă
+        self._liniste_secunde = 0.0  # cât timp continuu e liniște (pentru structura automată)
+        self._pauza_recenta = 0.0  # pauza de voce dinaintea bucății curente
 
         self._coada_cuvinte: list[str] = []
         self._timer_cuvinte = QTimer(self)
@@ -345,6 +351,8 @@ class PaginaDictare(QWidget):
         self._dictare_sunet = None
         self._text_dictare = ""
         self._ultima_provizor = 0.0
+        self._liniste_secunde = 0.0
+        self._pauza_recenta = 0.0  # fiecare dictare începe curat, fără structură moștenită
         self._marca_dictare = biblioteca.marca_acum()
         self.stare.marca = self._marca_dictare
         self.buton_semn.set_activ(True)
@@ -692,9 +700,27 @@ class PaginaDictare(QWidget):
             # Așteaptă până când utilizatorul face o pauză scurtă (>= 200 ms) după cel puțin 0.8s
             # sau când s-a atins durata maximă a bucății (2.0s la vorbire continuă fără oprire).
             pauza_detectata = False
+            liniste_secunde = getattr(self, "_liniste_secunde", 0.0)
+            pauza_recenta = getattr(self, "_pauza_recenta", 0.0)
             while not self._anulat.is_set():
                 time.sleep(0.04)
                 sec_curent = microfon.scurgere()
+                # Pauzele lungi structurează singure textul: liniște > 4 s →
+                # linie nouă; > 8 s → paragraf nou (bucata următoare le primește).
+                try:
+                    import numpy as _np
+
+                    fen = microfon.fereastra_curenta()
+                    if len(fen) >= int(0.2 * 16_000):
+                        coada_sil = fen[-int(0.2 * 16_000):]
+                        if float(_np.sqrt(_np.mean(coada_sil ** 2))) < PRAG_RMS_LINISTE:
+                            liniste_secunde += 0.04
+                        else:
+                            if liniste_secunde >= PAUZA_LINIE_SEC:
+                                pauza_recenta = liniste_secunde  # pauza s-a încheiat: o ținem minte
+                            liniste_secunde = 0.0
+                except Exception:
+                    pass
                 if sec_curent >= SECUNDE_MINIME_PAUZA and hasattr(microfon, "fereastra_curenta"):
                     try:
                         import numpy as np
@@ -735,7 +761,21 @@ class PaginaDictare(QWidget):
                 if self._anulat.is_set():
                     break
                 continue
+            try:
+                import numpy as _np
+
+                rms_tot = float(_np.sqrt(_np.mean(sunet ** 2))) if len(sunet) else 0.0
+            except Exception:
+                rms_tot = 1.0
+            if rms_tot < PRAG_RMS_LINISTE and not self._anulat.is_set():
+                continue  # doar liniște: nimic de transcris; pauza se numără singură
             self._secunde_audio += len(sunet) / 16_000.0
+            prefix = ""
+            if pauza_recenta >= PAUZA_PARAGRAF_SEC:
+                prefix = "\n\n"  # pauză lungă: idee nouă
+            elif pauza_recenta >= PAUZA_LINIE_SEC:
+                prefix = "\n"     # pauză medie: rând nou
+            pauza_recenta = 0.0
 
             # Cerința 61: salvează pe bucăți sunetul înregistrat până acum, pentru recuperare la cădere.
             if hasattr(microfon, "tot"):
@@ -764,15 +804,17 @@ class PaginaDictare(QWidget):
                 pass
             # Predă bucata firului de transcriere — captura reia imediat.
             try:
-                self._preda_transcriere(("final", sunet, time.monotonic()))
+                self._preda_transcriere(("final", sunet, time.monotonic(), prefix))
             except Exception as exc:
                 jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
                 continue
 
+        self._liniste_secunde = liniste_secunde
+        self._pauza_recenta = pauza_recenta
         # La ieșire: firul de transcriere termină tot ce a primit, apoi salvarea.
         if self._fir_transcriere is not None:
             try:
-                self._coada_transcriere.put(("gata", None, 0.0))
+                self._coada_transcriere.put(("gata", None, 0.0, ""))
             except Exception:
                 pass
             self._fir_transcriere.join(timeout=180)
@@ -787,7 +829,7 @@ class PaginaDictare(QWidget):
         """
         while True:
             try:
-                fel, sunet, predat_la = self._coada_transcriere.get()
+                fel, sunet, predat_la, prefix = self._coada_transcriere.get()
             except Exception:
                 return
             if fel == "gata" or sunet is None:
@@ -817,6 +859,8 @@ class PaginaDictare(QWidget):
             fragment = (rezultat.text or "").strip()
             if not fragment:
                 continue
+            if prefix:
+                fragment = prefix + fragment  # pauza lungă a decis structura
             if fel == "provizoriu":
                 self.aplicatie.coada.trimite(self._adauga_text_live, fragment)
             else:
@@ -856,7 +900,7 @@ class PaginaDictare(QWidget):
             return
         self._ultima_provizor = acum
         try:
-            self._coada_transcriere.put_nowait(("provizoriu", fereastra, time.monotonic()))
+            self._coada_transcriere.put_nowait(("provizoriu", fereastra, time.monotonic(), ""))
         except queue.Full:
             pass
 

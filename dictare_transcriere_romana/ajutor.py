@@ -61,7 +61,40 @@ ECRANE: dict[str, Ghid] = {
             ),
         ],
     ),
-    "principal": Ghid(
+    "comenzi": Ghid(
+        titlu="Comenzi vocale",
+        ce_vezi=[
+            "Programul recunoaște singur comenzile rostite clar, cu o pauză scurtă înainte și după:",
+            "• Structură: „paragraf nou”, „rând nou” (sau „linie nouă”), „P alineat”/„I alineat” pe butoane.",
+            "• Punctuație: „punct”, „virgulă”, „punct și virgulă”, „două puncte”, „semn de întrebare”, „semnul exclamării”.",
+            "• Ghilimele și paranteze: „deschide ghilimele” / „închide ghilimele”, „deschide paranteză” / „închide paranteză”.",
+            "• Linii și simboluri: „cratimă”, „linie de dialog”, „linie de pauză”, „procent”, „slash”, „ampersand” (sau „și comercial”).",
+            "• Pauzele lungi structurează singure textul: peste 4 secunde de liniște → rând nou; peste 8 secunde → paragraf nou.",
+        ],
+        ce_faci=[
+            "Rostește comanda clar, cu o pauză scurtă înainte și după, ca programul să o deosebească de text.",
+            "Vorbește natural între comenzi: „Am ajuns acasă punct mâine merg la târg paragraf nou”.",
+            "Variantele cu și fără diacritice merg la fel: „semn de întrebare” sau „semn de intrebare”.",
+            "Pentru text structurat corect, folosește regulile de alineat: fiecare idee nouă începe cu un alineat",
+            "(„P alineat” de la margine, pentru stilul de pe web; „I alineat” cu tab, pentru cărți) — nu le amesteca.",
+        ],
+        urmeaza=[
+            "Comenzile de selecție, formatare (bold/italic), navigare și controlul dictării pe voce",
+            "(„oprește dictarea”, „pauză”) sunt în plan pentru o versiune următoare.",
+            "În alte programe (Word, Google Docs, Windows, telefon) lista de comenzi diferă;",
+            "punctuația de bază de mai sus e cea mai portabilă.",
+        ],
+        probleme=[
+            (
+                "Comanda nu a fost recunoscută.",
+                "Rostește-o cu pauză scurtă înainte și după; încearcă varianta fără diacritice („doua puncte”).",
+            ),
+            (
+                "Apar spații greșite lângă semne.",
+                "Programul curăță singur spațiul dinaintea punctuației și după paranteza deschisă; dacă mai vezi ceva, apasă înapoi o dată.",
+            ),
+        ],
+    ),    "principal": Ghid(
         titlu="Ecranul de început",
         ce_vezi=[
             "Sus scrie „Dictate & Transcription Express Digital (D&TED)” și, mai mic, "
@@ -640,6 +673,21 @@ def text_citeste_ma() -> str:
         "• placă video dedicată cu minim 6 GB memorie și driver 525 sau mai nou (opțional);",
         "• microfon, pentru dictare (opțional: transcrierea fișierelor merge și fără microfon).",
         "\n",
+        _linie_titlu("Comenzi vocale", "-"),
+        "Rostește comanda clar, cu o pauză scurtă înainte și după, ca programul",
+        "să o deosebească de textul dictat:",
+        "• structură: „paragraf nou”, „rând nou” (sau „linie nouă”);",
+        "• punctuație: „punct”, „virgulă”, „punct și virgulă”, „două puncte”,",
+        "  „semn de întrebare”, „semnul exclamării” (merg și fără diacritice);",
+        "• ghilimele: „deschide ghilimele”, „închide ghilimele”;",
+        "• paranteze: „deschide paranteză”, „închide paranteză”;",
+        "• linii și simboluri: „cratimă”, „linie de dialog”, „linie de pauză”,",
+        "  „procent”, „slash”, „ampersand” (sau „și comercial”);",
+        "• pauzele lungi structurează singure textul: peste 4 secunde de liniște",
+        "  → rând nou; peste 8 secunde → paragraf nou;",
+        "• pentru paragrafe, butoanele „P alineat” (de la margine, stil web) și",
+        "  „I alineat” (cu tab, stil de carte) — fiecare idee nouă începe cu alineat.",
+        "\n",
         _linie_titlu("Probleme frecvente", "-"),
     ]
     for intrebare, raspuns in INTREBARI:
@@ -681,6 +729,7 @@ def text_ghid_ajutor() -> str:
     ]
     for cheie in (
         "noutati",
+        "comenzi",
         "principal",
         "dictare",
         "transcriere",
