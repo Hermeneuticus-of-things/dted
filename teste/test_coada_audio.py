@@ -132,3 +132,8 @@ def test_procesare_audio_doar_la_ascultare():
     assert np.array_equal(original, copie_inainte)
     assert filtrat.shape == original.shape
     assert abs(float(np.mean(filtrat))) < 0.01
+
+
+def test_fisier_proba_audio_exista():
+    proba = cai.fisier_proba_audio()
+    assert proba is not None and proba.exists() and proba.name == "_test_audio_ro.mp3"

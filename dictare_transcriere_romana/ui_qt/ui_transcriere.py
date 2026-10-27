@@ -196,6 +196,10 @@ class PaginaTranscriere(QWidget):
         )
         self.buton_scoate.set_activ(False)
         rand_alege.addWidget(self.buton_scoate)
+        self.buton_proba = Buton(
+            corp_1, "Fișier de probă (RO)", self._incarca_proba, latime=210, inaltime=40
+        )
+        rand_alege.addWidget(self.buton_proba)
         rand_alege.addStretch(1)
         corp_1.layout().addLayout(rand_alege)
 
@@ -386,6 +390,17 @@ class PaginaTranscriere(QWidget):
         if not caile:
             return
         self._primeste_fisiere(caile)
+
+    def _incarca_proba(self) -> None:
+        """Cerința 46: încarcă fișierul audio de probă în limba română."""
+        from .. import biblioteca, cai
+
+        proba = cai.fisier_proba_audio()
+        if proba is None:
+            anunta(self, "Fișierul de probă lipsește", "Nu am găsit fișierul de probă (_test_audio_ro.mp3).")
+            return
+        biblioteca.uita_transcris(proba)
+        self._primeste_fisiere([proba])
 
     def _primeste_fisiere(self, fisiere) -> None:
         """Coadă (cerința 35): mai multe fișiere la rând; cele deja transcrise

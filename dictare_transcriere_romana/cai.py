@@ -314,6 +314,21 @@ def fisier_citeste_ma() -> Path:
     return director_program() / NUME_CITESTE_MA
 
 
+def fisier_proba_audio() -> Path | None:
+    """Fișierul audio de probă în limba română (cerința 46), din kit sau din rădăcina proiectului."""
+    ambalat = getattr(sys, "_MEIPASS", None)
+    candidati = [
+        director_program() / "_test_audio_ro.mp3",
+        Path(__file__).resolve().parents[1] / "_test_audio_ro.mp3",
+    ]
+    if ambalat:
+        candidati.insert(0, Path(ambalat) / "_test_audio_ro.mp3")
+    for c in candidati:
+        if c.is_file():
+            return c
+    return None
+
+
 def director_iesiri() -> Path:
     """Unde se salvează documentele (implicit: Documente/Dictare&Transcriere Română)."""
     valoare = os.environ.get(VAR_MEDIU_IESIRI)

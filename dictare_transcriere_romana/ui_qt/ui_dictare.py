@@ -147,9 +147,6 @@ class PaginaDictare(QWidget):
         rand_buton.addStretch(1)
         cl.addLayout(rand_buton)
 
-        # Ctrl+B = adaugă un semn de dictare (D-7 / cerința 37).
-        QShortcut(QKeySequence("Ctrl+B"), self, self._insereaza_semn)
-
         # Text transcris (editor este adăugat de Aplicatie în zona de jos).
         et = eticheta(corp, "Textul apare aici pe măsură ce vorbești.", "mica")
         et.setWordWrap(True)

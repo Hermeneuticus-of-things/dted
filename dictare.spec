@@ -24,12 +24,13 @@ _LOCALAPPDATA = os.environ.get("LOCALAPPDATA", "")
 # măsurat WER 15% vs 37% pentru fine-tunatul RO); dacă lipsește pe disc,
 # se împachetează fine-tunatul românesc.
 _MODELE_KIT = [
-    ("whisper-turbo-ro-en-ct2", "whisper-turbo-ro-en-ct2"),
     ("large-v3-turbo-ct2", "large-v3-turbo-ct2"),
     ("large-v3-turbo-ro-ct2", "large-v3-turbo-ro-ct2"),
 ]
 
 datas = [('dictare_transcriere_romana/iconita_dictare.ico', 'dictare_transcriere_romana')]
+if os.path.isfile('_test_audio_ro.mp3'):
+    datas += [('_test_audio_ro.mp3', '.')]
 datas += collect_data_files('faster_whisper')      # filtrul VAD (silero, .onnx)
 datas += collect_data_files('imageio_ffmpeg')      # ffmpeg.exe inclus
 datas += collect_data_files('customtkinter')       # temele (JSON)

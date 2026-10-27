@@ -40,9 +40,27 @@ class TurPrimulRulez(QDialog):
         layout.addWidget(txt)
         layout.addStretch(1)
         rand = QHBoxLayout()
+        rand.addWidget(
+            Buton(self, "Încearcă cu fișierul de probă", self._proba_audio, latime=230, inaltime=40)
+        )
         rand.addStretch(1)
         rand.addWidget(Buton(self, "Am înțeles, încep", self.accept, fel="principal"))
         layout.addLayout(rand)
+
+    def _proba_audio(self):
+        from .. import cai
+
+        proba = cai.fisier_proba_audio()
+        parinte = self.parent()
+        if proba is not None and parinte is not None and hasattr(parinte, "arata_ecran"):
+            parinte.arata_ecran("transcriere")
+            pagina = parinte._ia_pagina("transcriere")
+            if hasattr(pagina, "_primeste_fisiere"):
+                from .. import biblioteca
+
+                biblioteca.uita_transcris(proba)
+                pagina._primeste_fisiere([proba])
+        self.accept()
 
     def accept(self):
         if self.la_final:

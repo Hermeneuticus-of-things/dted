@@ -152,6 +152,7 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("F10"), self, lambda: self._viteza_redare("normal"))
         QShortcut(QKeySequence("F11"), self, lambda: self._viteza_redare("lent"))
         QShortcut(QKeySequence("F12"), self, lambda: self._viteza_redare("rapid"))
+        QShortcut(QKeySequence("Ctrl+B"), self, self._insereaza_semn_global)  # 37 / D-7: semn la dictare sau redare
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -1117,6 +1118,23 @@ class Aplicatie(QMainWindow):
         if hasattr(self, "_ascultator") and self._ascultator.are():
             self._sare_redare(self._ascultator.durata())
 
+    def _insereaza_semn_global(self) -> None:
+        """Ctrl+B (cerința 37 / D-7): pune un semn [mm:ss] în timpul dictării SAU al redării."""
+        pagina = self._pagini.get("dictare")
+        if pagina is not None and getattr(pagina, "_activ", False):
+            pagina._insereaza_semn()
+            return
+        if hasattr(self, "_ascultator") and self._ascultator.are():
+            from .. import redare as modul_redare
+
+            marca = modul_redare.marca_din_secunde(self._ascultator.pozitie())
+            self.editor.insereaza(f"[{marca}]")
+            self.stare.text = self.editor.text()
+            if pagina is not None and hasattr(pagina, "_semnuri"):
+                if marca not in pagina._semnuri:
+                    pagina._semnuri.append(marca)
+            self.bara_stare.arata("Semn", f"semn adăugat la {marca} (în redare).", "lucru")
+
     def _deschide_raport(self, descriere: str = "") -> None:
         """Ajutor → Raportează o problemă (detaliile tehnice vin din jurnal)."""
         from .ui_raport import FereastraRaport
@@ -1200,6 +1218,16 @@ class Aplicatie(QMainWindow):
             self._timer_retea.start(60000)
         self._actualizeaza_indicator_retea()
         self._porneste_scurtaturile_globale()
+        if not hasattr(self, "_urmaritor_dispozitive"):
+            try:
+                self._urmaritor_dispozitive = dispozitive.UrmaritorDispozitive(
+                    lambda mesaj: self.coada.trimite(
+                        self.bara_stare.arata, "Dispozitiv audio", mesaj, "atentie"
+                    )
+                )
+                self._urmaritor_dispozitive.porneste()
+            except Exception:
+                pass
         jurnal.adauga_observator_eroare(self._la_eroare_jurnal)
         QTimer.singleShot(800, self._anuleaza_blocari_vechi_lapornire)
 
@@ -1667,6 +1695,11 @@ class Aplicatie(QMainWindow):
                     event.ignore()
                     return
         self._se_inchide = True
+        if hasattr(self, "_urmaritor_dispozitive"):
+            try:
+                self._urmaritor_dispozitive.opreste()
+            except Exception:
+                pass
         self.coada.opreste()
         try:
             geometrie = self.saveGeometry()

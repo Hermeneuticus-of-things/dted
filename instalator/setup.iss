@@ -78,8 +78,34 @@ Name: "{autoprograms}\D&TED – Dezinstalare"; Filename: "{uninstallexe}"; Comme
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+type
+  TMemoryStatusEx = record
+    dwLength: DWORD;
+    dwMemoryLoad: DWORD;
+    ullTotalPhys: Int64;
+    ullAvailPhys: Int64;
+    ullTotalPageFile: Int64;
+    ullAvailPageFile: Int64;
+    ullTotalVirtual: Int64;
+    ullAvailVirtual: Int64;
+    ullAvailExtendedVirtual: Int64;
+  end;
+
+function GlobalMemoryStatusEx(var lpBuffer: TMemoryStatusEx): BOOL;
+  external 'GlobalMemoryStatusEx@kernel32.dll stdcall';
+
 var
   HardwarePage: TOutputMsgMemoWizardPage;
+
+function MemorieTotalaGB: Integer;
+var
+  Mem: TMemoryStatusEx;
+begin
+  Result := 0;
+  Mem.dwLength := SizeOf(Mem);
+  if GlobalMemoryStatusEx(Mem) then
+    Result := Round(Mem.ullTotalPhys / (1024.0 * 1024.0 * 1024.0));
+end;
 
 function ArePlacaNvidia(var NumeAdaptor: String): Boolean;
 var
@@ -124,10 +150,35 @@ begin
   end;
 end;
 
+procedure CurataConflicteVechi;
+var
+  VersVeche, CmdVeche: String;
+  CodRezultat: Integer;
+begin
+  // Șterge scurtături vechi cu denumirea anterioară, ca să nu rămână dubluri.
+  DeleteFile(ExpandConstant('{autodesktop}\Dictare și transcriere în limba română.lnk'));
+  DeleteFile(ExpandConstant('{autoprograms}\Dictare și transcriere în limba română.lnk'));
+  if VersiuneVecheInstalata(VersVeche, CmdVeche) then
+  begin
+    if (VersVeche <> '{#MyAppVersion}') and (CmdVeche <> '') then
+    begin
+      CmdVeche := RemoveQuotes(CmdVeche);
+      if FileExists(CmdVeche) then
+        Exec(CmdVeche, '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, CodRezultat);
+    end;
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  CurataConflicteVechi;
+end;
+
 procedure InitializeWizard;
 var
   LiberMB, TotalMB: Cardinal;
-  LiberGB: Integer;
+  LiberGB, RamGB: Integer;
   NumeGPU, VersVeche, CmdVeche, Raport: String;
   AreGPU, AreVeche: Boolean;
 begin
@@ -142,12 +193,14 @@ begin
   LiberGB := 0;
   if GetSpaceOnDisk(ExpandConstant('{autopf}'), True, LiberMB, TotalMB) then
     LiberGB := LiberMB div 1024;
+  RamGB := MemorieTotalaGB;
 
   AreGPU := ArePlacaNvidia(NumeGPU);
   AreVeche := VersiuneVecheInstalata(VersVeche, CmdVeche);
 
   Raport := '• Sistem de operare: Windows ' + GetWindowsVersionString + #13#10;
   Raport := Raport + '• Procesor (CPU): ' + GetEnv('NUMBER_OF_PROCESSORS') + ' fire de execuție' + #13#10;
+  Raport := Raport + '• Memorie RAM: ' + IntToStr(RamGB) + ' GB (minim 8 GB, recomandat 16 GB)' + #13#10;
   Raport := Raport + '• Spațiu liber pe disc: ' + IntToStr(LiberGB) + ' GB (minim 6 GB necesari)' + #13#10;
   if AreGPU then
     Raport := Raport + '• Placă video (GPU): ' + NumeGPU + ' (transcriere rapidă pe GPU cu CUDA inclus)' + #13#10
@@ -155,7 +208,7 @@ begin
     Raport := Raport + '• Placă video (GPU): fără GPU NVIDIA dedicat — programul va folosi procesorul (CPU float32)' + #13#10;
 
   if AreVeche then
-    Raport := Raport + #13#10 + '• Versiune anterioară găsită (' + VersVeche + '): va fi actualizată automat la {#MyAppVersion}, păstrând toate documentele și setările.'
+    Raport := Raport + #13#10 + '• Versiune anterioară găsită (' + VersVeche + '): conflictele vechi vor fi eliminate automat înainte de instalarea versiunii {#MyAppVersion}, păstrând toate documentele și setările.'
   else
     Raport := Raport + #13#10 + '• Instalare curată: nu există conflicte cu versiuni anterioare.';
 
