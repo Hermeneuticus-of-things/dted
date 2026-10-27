@@ -824,6 +824,16 @@ class FereastraSetari(QDialog):
         self._umple_modele()
         rand_model.addWidget(self.combo_model, 1)
         card.layout().addLayout(rand_model)
+        # Descărcarea modelului ales (doar la buton, cu progres în etichetă).
+        self.et_model_stare = QLabel("")
+        self.et_model_stare.setFont(fonturi("baza"))
+        self.et_model_stare.setWordWrap(True)
+        seteaza_rol(self.et_model_stare, "secundar")
+        card.layout().addWidget(self.et_model_stare)
+        self.buton_model = QPushButton("Descarcă modelul ales (internet)")
+        self.buton_model.setFont(fonturi("baza"))
+        self.buton_model.clicked.connect(self._descarca_model_ales)
+        card.layout().addWidget(self.buton_model)
         self.actualizeaza_placa_video()
 
     def _umple_modele(self) -> None:
@@ -855,6 +865,60 @@ class FereastraSetari(QDialog):
             if self.combo_model.itemData(index) == preferat:
                 self.combo_model.setCurrentIndex(index)
                 break
+
+    def _descarca_model_ales(self) -> None:
+        """Descarcă modelul ales din listă (doar la buton; progres în etichetă).
+
+        „Automat” aduce modelul standard (sursa sigură, publică). Eek și
+        standardul au surse oficiale; fine-tunatul RO primește o explicație.
+        """
+        import threading
+
+        from .. import pregatire
+        from ..constante import WHISPER_NUME
+
+        nume = self.combo_model.currentData() or "auto"
+        if nume in ("", "auto"):
+            nume = WHISPER_NUME
+        self.buton_model.setEnabled(False)
+        self.combo_model.setEnabled(False)
+        self._model_progres_text = "Se pregătește descărcarea…"
+
+        def lucrare() -> None:
+            try:
+                pregatire.descarca_model(
+                    nume, progres=lambda mesaj, _fractie: setattr(
+                        self, "_model_progres_text", mesaj
+                    )
+                )
+                self._model_rezultat = ("ok", "Modelul a fost descărcat și verificat. Alege-l din listă.")
+            except Exception as exc:
+                self._model_rezultat = ("eroare", str(exc))
+
+        if not hasattr(self, "_model_rezultat"):
+            self._model_rezultat = ("", "")
+        self._model_rezultat = ("", "")
+        threading.Thread(target=lucrare, name="descarca-model", daemon=True).start()
+
+        # Eticheta de progres se actualizează din firul interfeței (sigur în Qt).
+        from PySide6.QtCore import QTimer
+
+        def citește() -> None:
+            stare, mesaj = self._model_rezultat
+            if stare:
+                self._timer_model.stop()
+                self.buton_model.setEnabled(True)
+                self.combo_model.setEnabled(True)
+                self._umple_modele()
+                seteaza_rol(self.et_model_stare, "succes" if stare == "ok" else "pericol")
+                self.et_model_stare.setText(mesaj)
+                return
+            self.et_model_stare.setText(self._model_progres_text)
+
+        if getattr(self, "_timer_model", None) is None:
+            self._timer_model = QTimer(self)
+        self._timer_model.timeout.connect(citește)
+        self._timer_model.start(300)
 
     def _aplicatia_principala(self):
         widget = self.parent()

@@ -13,10 +13,10 @@
 #define MyAppDescription "Dictare și transcriere în limba română"
 ; AppId-ul rămâne cel vechi (implicit era AppName), ca actualizarea să recunoască instalarea.
 #define MyAppIdVechi "Dictare&Transcriere Română"
-#define MyAppVersion "0.6.3"
+#define MyAppVersion "0.6.4"
 #define MyAppPublisher "D&TED"
 #define MyAppExeName "DTED.exe"
-#define MyDistDir "..\dist-v0.6.3\DTED"
+#define MyDistDir "..\dist-v0.6.4\DTED"
 ; Iconița programului (microfon auriu, unde care vin spre microfon, litere argintii).
 ; Se copiază separat lângă program, ca scurtăturile să o arate chiar dacă DTED.exe
 ; a fost construit cu o iconiță mai veche.
@@ -38,8 +38,8 @@ DefaultDirName={autopf}\D&TED – Dictare și transcriere în limba română
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppIconName}
 UninstallDisplayName={#MyAppName}
-OutputDir=..\output-v0.6.3
-OutputBaseFilename=Setup.DTED-0.6.3
+OutputDir=..\output-v0.6.4
+OutputBaseFilename=Setup.DTED-0.6.4
 ; Pictograma fără cadrul de 512 px (ISCC refuză resursa prea mare: „File is too large”).
 ; Iconița nouă a instalatorului (aceeași imagine ca a programului, fără cadrul de 512 px).
 SetupIconFile=iconita_setup_text.ico
@@ -48,7 +48,7 @@ SolidCompression=yes
 ; GitHub limitează fișierele la 2 GB ⇒ dacă într-o versiune viitoare kitul
 ; crește peste ~2,1 GB, re-activează împărțirea (DiskSpanning=yes) — rezultă
 ; "Setup DTED.exe" + "Setup DTED-1.bin", ... — toate trebuie să stea în același
-; folder la instalare (exe-ul le citește singur). La v0.6.3 kitul comprimat e
+; folder la instalare (exe-ul le citește singur). La v0.6.4 kitul comprimat e
 ; ~1,84 GB, deci instalatorul poate fi UN SINGUR fișier (mai ușor de descărcat).
 DiskSpanning=no
 DiskSliceSize=2100000000

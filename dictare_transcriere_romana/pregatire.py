@@ -125,7 +125,7 @@ _MARCAJ_VERIFICARE = f".verificat-{MODEL_REVIZIE[:7]}.json"
 _SHA_MEREU_SUB = 16 * 1024 * 1024  # fișierele mici se verifică la fiecare pornire
 
 
-def fisiere_model_gresite(complet: bool = False) -> dict[str, str]:
+def fisiere_model_gresite(complet: bool = False, folder: Path | None = None) -> dict[str, str]:
     """{fișier: motiv} pentru ce lipsește sau nu e la revizia fixată (MODEL_REVIZIE).
 
     Mărimea se verifică mereu, SHA-256 se verifică mereu la fișierele mici. model.bin
@@ -133,7 +133,8 @@ def fisiere_model_gresite(complet: bool = False) -> dict[str, str]:
     rezultatul se ține minte (mărime + dată) în ``.verificat-4df90f7.json``, ca pornirea
     să rămână rapidă și fără rețea.
     """
-    folder = cai.fisier_model()
+    if folder is None:
+        folder = cai.fisier_model()
     marcaj = folder / _MARCAJ_VERIFICARE
     verificate: dict = {}
     if marcaj.exists() and not complet:
@@ -314,10 +315,41 @@ def trebuie_pregatire() -> bool:
 def asigura_model(progres: Progres | None = None, baza: float = 0.0, spatiu: float = 0.6) -> Path:
     folder = cai.fisier_model()
     folder.mkdir(parents=True, exist_ok=True)
-    gresite = fisiere_model_gresite(complet=True)
-    lipsa = list(gresite)
+    return _completeaza_model(folder, progres, baza=baza, spatiu=spatiu)
+
+
+def descarca_model(nume: str, progres: Progres | None = None) -> Path:
+    """Descarcă modelul cerut în ``director_model()/nume`` (Setări → „Cum transcrie”).
+
+    Modelul standard și cel eek au manifeste cu sume SHA-256 și surse fixe, deci
+    pot fi descărcate oricând de la buton. Fine-tunatul RO nu are încă sursă
+    publică convertită (CT2) — pentru el ridicăm o eroare cu explicație clară.
+    """
+    from .constante import MODELE_TRANSCRIBERE, WHISPER_NUME_RO
+
+    if nume not in MODELE_TRANSCRIBERE:
+        raise EroareDescarcare(f"Model necunoscut: {nume}")
+    folder = cai.director_model() / nume
+    if _manifest(folder) is None:
+        raise EroareDescarcare(
+            f"Modelul „{WHISPER_NUME_RO}” nu are încă o sursă publică de descărcat "
+            "(versiunea CT2); vine în kitul de instalare sau se adaugă manual în folderul model."
+        )
+    folder.mkdir(parents=True, exist_ok=True)
+    return _completeaza_model(folder, progres)
+
+
+def _completeaza_model(
+    folder: Path,
+    progres: Progres | None = None,
+    baza: float = 0.0,
+    spatiu: float = 0.6,
+) -> Path:
+    """Asigură TOATE fișierele modelului din ``folder`` (descarcă ce lipsește/stricat)."""
     from datetime import datetime
 
+    gresite = fisiere_model_gresite(complet=True, folder=folder)
+    lipsa = list(gresite)
     marca = datetime.now().strftime("%Y%m%d-%H%M")
     for nume, motiv in gresite.items():
         vechi = folder / nume
@@ -354,7 +386,7 @@ def asigura_model(progres: Progres | None = None, baza: float = 0.0, spatiu: flo
             temporar = dest.with_suffix(dest.suffix + ".partial")
             shutil.copyfile(Path(sursa_locala) / nume, temporar)
             gasit = sha256_fisier(temporar)
-            if gasit.lower() != suma:
+            if suma and gasit.lower() != suma:
                 temporar.unlink(missing_ok=True)
                 raise SumaGresita(nume, suma, gasit)
             temporar.replace(dest)
@@ -367,7 +399,7 @@ def asigura_model(progres: Progres | None = None, baza: float = 0.0, spatiu: flo
             descarca(url, dest, arata, suma_asteptata=suma)
         facut += marime
         jurnal.info(f"Model: {nume} descărcat și verificat (SHA-256).")
-    rest = fisiere_model_gresite(complet=True)
+    rest = fisiere_model_gresite(complet=True, folder=folder)
     if rest:
         raise EroareDescarcare(f"Modelul nu s-a verificat: {rest}")
     _anunta(progres, "Modelul de transcriere a fost descărcat și verificat.", baza + spatiu)
