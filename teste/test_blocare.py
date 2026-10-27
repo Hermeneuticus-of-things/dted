@@ -77,11 +77,33 @@ def test_marcaj():
             # Proces mort -> starea_activa() ignoră marcajul orfan
             assert blocare.scrie_marcaj(blocare.MOD_TOT, 999999999, r"C:\app\DTED.exe")
             assert blocare.starea_activa() is None
+            # anuleaza_blocuri_vechi șterge marcajul orfan fără UAC (_ruleaza_ridicat)
+            assert blocare.anuleaza_blocuri_vechi() is True
+            assert blocare.citeste_marcaj() is None
         finally:
             blocare.cale_marcaj = original
     # fără marcaj -> None
     assert blocare.citeste_marcaj() is None or True  # depinde dacă există marcaj real
     print("marcaj scrie/citește OK")
+
+
+def test_mod_program_fara_uac(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        monkeypatch.setattr(blocare, "cale_marcaj", lambda: tmp / "conf.txt")
+        apelat_uac = []
+        monkeypatch.setattr(blocare, "_ruleaza_ridicat", lambda salt: apelat_uac.append(salt) or False)
+
+        # MOD_PROGRAM nu cere niciodată UAC (lucrează în procesul Python)
+        assert blocare.blocheaza(blocare.MOD_PROGRAM) is True
+        assert apelat_uac == []
+        assert blocare.starea_activa() == blocare.MOD_PROGRAM
+        assert blocare._SOCKET_BLOCAT is True
+
+        assert blocare.deblocheaza_acum() is True
+        assert apelat_uac == []
+        assert blocare.starea_activa() is None
+        assert blocare._SOCKET_BLOCAT is False
 
 
 if __name__ == "__main__":

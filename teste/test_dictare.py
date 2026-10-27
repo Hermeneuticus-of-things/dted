@@ -71,3 +71,23 @@ def test_fragmentul_sub_patru_secunde_se_proceseaza_dupa_oprire():
     assert dictare.motor.lungimi == [16_000]
     assert dictare.fragmente == ["Bună ziua, România."]
     assert dictare.finalizata
+
+
+def test_afisare_live_cuvant_cu_cuvant_in_editor():
+    from PySide6.QtWidgets import QApplication
+    from dictare_transcriere_romana.ui_qt.ui_editor import Editor
+    from dictare_transcriere_romana import stare as stare_modul
+
+    _app = QApplication.instance() or QApplication([])
+    ed = Editor(None, stare_modul.Stare())
+    ed.set_text("Început.")
+    # Cuvintele apar live pe măsură ce sunt rostite
+    ed.arata_provizoriu("mama")
+    assert ed.text() == "Început. mama"
+    ed.arata_provizoriu("mama are")
+    assert ed.text() == "Început. mama are"
+    ed.arata_provizoriu("mama are mere")
+    assert ed.text() == "Început. mama are mere"
+    # La finalizarea bucății, textul provizoriu este înlocuit curat cu forma finală
+    ed.insereaza("Mama are mere.")
+    assert ed.text() == "Început. Mama are mere."

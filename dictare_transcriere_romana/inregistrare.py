@@ -263,6 +263,19 @@ class Microfon:
             esantioane = sum(len(bloc) for bloc in self._bucati)
         return esantioane / float(self.rata_reala or RATA_WHISPER)
 
+    def fereastra_curenta(self) -> np.ndarray:
+        """Sunetul din bucata curentă (16 kHz mono), FĂRĂ a goli coada.
+
+        Folosit pentru afișarea live cuvânt cu cuvânt în timpul vorbirii,
+        înainte ca bucata să fie închisă prin ``preia()``.
+        """
+        with self._blocare:
+            bucati = list(self._bucati)
+        if not bucati:
+            return np.zeros(0, dtype=np.float32)
+        sunet = np.concatenate(bucati).astype(np.float32)
+        return reesantioneaza(sunet, self.rata_reala, RATA_WHISPER)
+
     def tot(self) -> Inregistrare:
         """Întregul sunet de la pornire, la 16 kHz mono (pentru redare/săritură).
 

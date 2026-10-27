@@ -281,30 +281,94 @@ def _scrie_si_lanseaza(script: str) -> bool:
     return _ruleaza_ridicat(str(cale))
 
 
-def blocheaza(mod: str, pid_app: int | None = None) -> bool:
-    """Pornește gardianul pentru modul ``mod`` (Mod 1 sau Mod 2).
+import socket as _socket
 
-    Întoarce ``True`` dacă gardianul a fost lansat (UAC acceptat). Efectele reale
-    (firewall, USB, radio) le aplică gardianul ridicat, nu acest process.
+_CONNECT_ORIGINAL = _socket.socket.connect
+_CONNECT_EX_ORIGINAL = _socket.socket.connect_ex
+_SOCKET_BLOCAT = False
+
+
+def _este_adresa_locala(adresa) -> bool:
+    if isinstance(adresa, tuple) and adresa:
+        gazda = str(adresa[0]).strip().lower()
+        return gazda in ("127.0.0.1", "::1", "localhost", "")
+    return False
+
+
+def _connect_blocat(self, adresa):
+    if _SOCKET_BLOCAT and not _este_adresa_locala(adresa):
+        raise OSError("Conexiunea la internet a programului D&TED este oprită (Mod Confidențialitate).")
+    return _CONNECT_ORIGINAL(self, adresa)
+
+
+def _connect_ex_blocat(self, adresa):
+    if _SOCKET_BLOCAT and not _este_adresa_locala(adresa):
+        return 10013  # WSAEACCES
+    return _CONNECT_EX_ORIGINAL(self, adresa)
+
+
+def _blocheaza_socket_local(activ: bool) -> None:
+    """Izolează procesul D&TED de internet direct din Python, fără UAC / admin."""
+    global _SOCKET_BLOCAT
+    _SOCKET_BLOCAT = bool(activ)
+    if activ:
+        _socket.socket.connect = _connect_blocat  # type: ignore[method-assign]
+        _socket.socket.connect_ex = _connect_ex_blocat  # type: ignore[method-assign]
+    else:
+        _socket.socket.connect = _CONNECT_ORIGINAL  # type: ignore[method-assign]
+        _socket.socket.connect_ex = _CONNECT_EX_ORIGINAL  # type: ignore[method-assign]
+
+
+def _sterge_marcaj_local() -> None:
+    try:
+        cale_marcaj().unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def blocheaza(mod: str, pid_app: int | None = None) -> bool:
+    """Activează blocarea pentru modul ``mod`` (Mod 1 sau Mod 2).
+
+    * ``MOD_PROGRAM`` (doar D&TED): blochează orice conexiune de rețea direct în
+      procesul Python, **fără UAC / fără drepturi de administrator**.
+    * ``MOD_TOT`` (tot calculatorul + USB + Bluetooth + Wi-Fi): pornește gardianul
+      PowerShell ridicat; dacă UAC e refuzat, șterge pe loc marcajul.
     """
     if mod not in (MOD_TOT, MOD_PROGRAM):
         raise ValueError(f"Mod necunoscut: {mod!r}")
     pid = int(pid_app) if pid_app is not None else os.getpid()
     scrie_marcaj(mod, pid, cale_executabil())
+    if mod == MOD_PROGRAM:
+        _blocheaza_socket_local(True)
+        return True
     script = script_gardian(mod, pid, cale_executabil(), cale_marcaj())
-    return _scrie_si_lanseaza(script)
+    reusit = _scrie_si_lanseaza(script)
+    if not reusit:
+        _sterge_marcaj_local()
+    return reusit
 
 
 def deblocheaza_acum() -> bool:
-    """Anulează imediat orice blocare (butonul de oprire, §9.4)."""
-    return _scrie_si_lanseaza(script_anulare(cale_marcaj()))
+    """Anulează imediat orice blocare (butonul de oprire, §9.4), fără UAC pentru Mod 2."""
+    _blocheaza_socket_local(False)
+    marcaj = citeste_marcaj()
+    if not marcaj or marcaj.get("mod") != MOD_TOT:
+        _sterge_marcaj_local()
+        return True
+    reusit = _scrie_si_lanseaza(script_anulare(cale_marcaj()))
+    _sterge_marcaj_local()
+    return reusit
 
 
 def anuleaza_blocuri_vechi() -> bool:
-    """Anulează blocările rămase de la o rulare anterioară (la pornire, §5.5)."""
-    if citeste_marcaj() is None:
-        return True  # nu e nimic de anulat
-    return _scrie_si_lanseaza(script_anulare(cale_marcaj()))
+    """Curăță la pornire marcajele vechi rămase, fără a cere UAC automat."""
+    _blocheaza_socket_local(False)
+    marcaj = citeste_marcaj()
+    if marcaj is None:
+        return True
+    # Ștergem direct marcajul orfan ca programul să nu ceară niciodată UAC la pornire.
+    _sterge_marcaj_local()
+    return True
 
 
 def starea_activa() -> str | None:

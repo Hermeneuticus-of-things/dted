@@ -80,6 +80,8 @@ class Editor(QWidget):
         QShortcut(QKeySequence(Qt.Key.Key_Escape), self._bara_cautare, self._inchide_cautare)
 
         self._diacritice_activ = False
+        self._provizoriu_start: int | None = None
+        self._provizoriu_lungime: int = 0
 
         # Corecturile învățate: la 0,8 s după ce tastarea se oprește, comparăm
         # textul cu cel dinainte și reținem cuvintele rescrise de mână.
@@ -193,23 +195,35 @@ class Editor(QWidget):
         self._control.setFont(fonturi("baza"))
 
     def set_text(self, text: str) -> None:
+        self._provizoriu_start = None
+        self._provizoriu_lungime = 0
         self._control.setPlainText(text)
+        self._control.moveCursor(QTextCursor.MoveOperation.End)
         # Schimbarea integrală (text nou transcris) nu se învață ca „corecturi”.
         self._text_ultim = self._control.toPlainText()
 
-    def insereaza(self, text: str, spatiu_auto: bool = True) -> None:
-        """Inserează text la poziția cursorului, cu un singur pas de anulare (Ctrl+Z).
+    def _sterge_provizoriu_intern(self, cursor: QTextCursor) -> None:
+        """Șterge fragmentul provizoriu live dacă există, poziționând cursorul la începutul lui."""
+        if self._provizoriu_start is not None and self._provizoriu_lungime > 0:
+            total = len(self._control.toPlainText())
+            start = max(0, min(self._provizoriu_start, total))
+            sfarsit = max(start, min(start + self._provizoriu_lungime, total))
+            cursor.setPosition(start)
+            cursor.setPosition(sfarsit, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
+        self._provizoriu_start = None
+        self._provizoriu_lungime = 0
 
-        Spre deosebire de ``set_text`` (care înlocuiește tot și resetează istoricul de
-        anulare), aici textul se adaugă la cursor; un singur Ctrl+Z anulează toată
-        inserția (un edit block). Când ``spatiu_auto`` e activ și cursorul nu e la
-        început de rând și nu urmează deja un spațiu, se pune un spațiu înainte —
-        folosit pentru fragmentele de dictare și semnele [mm:ss] (cerințele 37/48).
-        """
+    def arata_provizoriu(self, text: str, spatiu_auto: bool = True) -> None:
+        """Afișează live cuvintele rostite în timp real („mama… are… mere…”), înainte de finalizarea bucății."""
         text = (text or "").strip()
         if not text:
             return
         cursor = self._control.textCursor()
+        cursor.beginEditBlock()
+        if self._provizoriu_start is not None:
+            self._sterge_provizoriu_intern(cursor)
+        start = cursor.position()
         prefix = ""
         if spatiu_auto and not cursor.hasSelection() and not cursor.atBlockStart():
             temporar = QTextCursor(cursor)
@@ -220,11 +234,44 @@ class Editor(QWidget):
             precedent = temporar.selectedText()
             if precedent and not precedent[-1].isspace():
                 prefix = " "
+        de_scris = prefix + text
+        cursor.insertText(de_scris)
+        cursor.endEditBlock()
+        self._provizoriu_start = start
+        self._provizoriu_lungime = len(de_scris)
+        self._control.setTextCursor(cursor)
+        self._text_ultim = self._control.toPlainText()
+
+    def insereaza(self, text: str, spatiu_auto: bool = True) -> None:
+        """Inserează text la poziția cursorului, cu un singur pas de anulare (Ctrl+Z).
+
+        Spre deosebire de ``set_text`` (care înlocuiește tot și resetează istoricul de
+        anulare), aici textul se adaugă la cursor; un singur Ctrl+Z anulează toată
+        inserția (un edit block). Dacă exista un text provizoriu live pe ecran, îl
+        înlocuiește curat în același pas de anulare.
+        """
+        text = (text or "").strip()
+        if not text:
+            return
+        cursor = self._control.textCursor()
         cursor.beginEditBlock()
+        if self._provizoriu_start is not None:
+            self._sterge_provizoriu_intern(cursor)
+        prefix = ""
+        if spatiu_auto and not cursor.hasSelection() and not cursor.atBlockStart():
+            temporar = QTextCursor(cursor)
+            temporar.movePosition(
+                QTextCursor.MoveOperation.PreviousCharacter,
+                QTextCursor.MoveMode.KeepAnchor,
+            )
+            precedent = temporar.selectedText()
+            if precedent and not precedent[-1].isspace():
+                prefix = " "
         cursor.insertText(prefix + text)
         cursor.endEditBlock()
         self._control.setTextCursor(cursor)
         self._control.setFocus()
+        self._text_ultim = self._control.toPlainText()
 
     def sari_la(self, text: str) -> None:
         """Du cursorul la prima apariție a textului (folosit la „Mergi la semn”)."""
