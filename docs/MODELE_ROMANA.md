@@ -12,7 +12,7 @@ Accesul la eek (gated) a fost aprobat la 24.10 seara; modelul e instalat în
 `%LOCALAPPDATA%\Dictare&Transcriere Română\model\whisper-turbo-ro-en-ct2`
 și e **implicit** (config `model_preferat=auto` îl alege primul).
 
-## Măsurătorile inițiale (24.10.2026, placă video NVIDIA dedicată (NVIDIA, CUDA))
+## Măsurătorile inițiale (24.10.2026, pe o placă video NVIDIA cu CUDA, float16)
 
 Mostre: voce românească sintetizată cu [XTTS-v2-romanian-v2](https://huggingface.co/eduardem/xtts-v2-romanian-v2)
 (vocile Georgel/Costel, cele mai bune), un pasaj de carte de 30 s + 3 propoziții scurte.
@@ -58,6 +58,6 @@ Rețetă (detalii: [ghidul HuggingFace](https://huggingface.co/blog/fine-tune-wh
 
 ## Probele de acuratețe (reproductibile)
 
-Mostrele sunt în `<folder local>\probe_ro\` (generate local), iar scriptul de WER
+Mostrele au fost generate local (nu se publică), iar scriptul de WER
 compară oricare două foldere de modele. TTS-ul de generat mostre românești:
-`<folder local>\xtts-v2-romanian-v2` (mediu `<folder local>\tts-venv`).
+rulează cu XTTS-v2-romanian-v2 într-un mediu Python local separat.
