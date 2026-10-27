@@ -585,6 +585,12 @@ class PaginaTranscriere(QWidget):
                 ),
             )
             return
+        # Cerințele 32/34/39: păstrează sunetul pentru „Ascultă și corectează” (filtrele se aplică doar la redare).
+        try:
+            inreg_fisier = type("InregistrareFisier", (), {"pcm": sunet, "rata": 16000})()
+            self.aplicatie.coada.trimite(self.aplicatie.primeste_inregistrarea, inreg_fisier)
+        except Exception:
+            pass
         total_secunde = total / 16000.0
         pas = int((SECUNDE_BUCATA - SECUNDE_SUPRAPUNERE) * 16_000)
         lungime_bucata = int(SECUNDE_BUCATA * 16_000)

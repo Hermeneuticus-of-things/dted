@@ -1502,32 +1502,58 @@ class Aplicatie(QMainWindow):
         self.bara_stare.arata("Pregătesc", "Programul pregătește fișierele audio.", "lucru")
 
     def _intreaba_de_text_recuperat(self) -> None:
-        """Întreabă utilizatorul dacă vrea să recupereze textul nesalvat."""
+        """Întreabă utilizatorul dacă vrea să recupereze textul și sunetul nesalvate (cerința 61)."""
         from .. import biblioteca
         try:
             rezultat = biblioteca.citeste_recuperare()
+            cale_audio = biblioteca.citeste_recuperare_audio()
         except Exception:
             rezultat = None
-        if rezultat:
-            text, marca, moment = rezultat
+            cale_audio = None
+        if rezultat or cale_audio is not None:
+            text, marca, moment = rezultat if rezultat else ("", biblioteca.marca_acum(), "")
+            ce_avem = (
+                "text și sunet nesalvate"
+                if (rezultat and cale_audio is not None)
+                else ("sunet nesalvat" if cale_audio is not None else "text nesalvat")
+            )
             raspuns = comun.dialog(
                 self,
-                "Recuperează textul nesalvat?",
-                f"Ai un text nesalvat de la {moment or 'ultima sesiune'}. Vrei să-l recuperezi?",
+                "Recuperează dictarea nesalvată?",
+                f"Ai {ce_avem} de la {moment or 'ultima sesiune'}. Vrei să le recuperezi?",
                 [("Recuperează", "principal"), ("Șterge", "secundar"), ("Înapoi", "secundar")],
                 implicit=0,
                 anulare=2,
             )
             if raspuns == 0:
-                self.editor.set_text(text)
-                self.stare.text = text
+                if text:
+                    self.editor.set_text(text)
+                    self.stare.text = text
+                if marca:
+                    self.stare.marca = marca
+                if cale_audio is not None:
+                    try:
+                        import wave
+                        import numpy as np
+
+                        with wave.open(str(cale_audio), "rb") as w:
+                            rata = w.getframerate() or 16000
+                            cadre = w.readframes(w.getnframes())
+                        pcm = np.frombuffer(cadre, dtype="<i2").astype(np.float32) / 32767.0
+                        biblioteca.scrie_audio(pcm, marca or biblioteca.marca_acum())
+                        self.primeste_inregistrarea(type("I", (), {"pcm": pcm, "rata": int(rata)})())
+                    except Exception:
+                        pass
+                try:
+                    biblioteca.sterge_recuperare()
+                except Exception:
+                    pass
                 self.bara_stare.arata(
-                    "Recuperat", "Textul nesalvat a fost recunoscut.", "succes"
+                    "Recuperat", "Lucrul nesalvat a fost recuperat.", "succes"
                 )
             elif raspuns == 1:
                 try:
-                    from .. import biblioteca as bib
-                    bib.sterge_recuperare()
+                    biblioteca.sterge_recuperare()
                 except Exception:
                     pass
 

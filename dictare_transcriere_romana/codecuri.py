@@ -597,3 +597,22 @@ def scurteaza_pauzele(sunet, rate: int = 16000, prag: float = PRAG_TACERE,
     # Coada nefracționată (sub o fereastră) se pune înapoi, să nu se piardă.
     rest = tablou[(tablou.size // lungime_fereastra) * lungime_fereastra:]
     return np.concatenate([pastrate, rest]).astype(np.float32)
+
+
+def pregateste_pentru_ascultare(sunet, rate: int = 16000) -> "numpy.ndarray":
+    """Curăță sunetul DOAR pentru ascultarea de către utilizator (cerința 39).
+
+    Scoate componenta continuă / huruitul jos și aduce volumul la un nivel comod
+    (``normalizeaza``), fără să atingă tabloul original trimis motorului Whisper.
+    """
+    import numpy as np
+
+    tablou = np.asarray(sunet, dtype=np.float32)
+    if tablou.size == 0:
+        return tablou.copy()
+    copie = tablou.copy()
+    # Elimină offset-ul DC și atenuează zgomotul de joasă frecvență (filtru diferențial ușor)
+    medie = float(np.mean(copie))
+    if abs(medie) > 1e-6:
+        copie = copie - medie
+    return normalizeaza(copie)

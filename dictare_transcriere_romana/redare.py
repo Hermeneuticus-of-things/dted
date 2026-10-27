@@ -87,9 +87,10 @@ class Redare:
     din ``inregistrare``.
     """
 
-    def __init__(self, porneste_sunet=None, opreste_sunet=None):
+    def __init__(self, porneste_sunet=None, opreste_sunet=None, filtru_ascultare: bool = True):
         self._porneste_sunet = porneste_sunet
         self._opreste_sunet = opreste_sunet
+        self._filtru_ascultare = bool(filtru_ascultare)
         self._pcm = None
         self._rata = 16000
         self._offset = 0.0
@@ -126,6 +127,10 @@ class Redare:
         if self._porneste_sunet is not None:
             try:
                 bucata = resampleaza(self._pcm[int(start * self._rata):], self._viteza)
+                if self._filtru_ascultare:
+                    from . import codecuri
+
+                    bucata = codecuri.pregateste_pentru_ascultare(bucata, self._rata)
                 self._porneste_sunet(bucata, self._rata)
             except Exception:
                 return False

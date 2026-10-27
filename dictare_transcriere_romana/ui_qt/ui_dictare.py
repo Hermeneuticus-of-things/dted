@@ -322,6 +322,8 @@ class PaginaDictare(QWidget):
         self._secunde_audio = 0.0
         self._semnuri = []
         self._dictare_sunet = None
+        self._marca_dictare = biblioteca.marca_acum()
+        self.stare.marca = self._marca_dictare
         self.buton_semn.set_activ(True)
 
         # N-3/cerința 5: blocarea căilor de ieșire cât timp se dictează.
@@ -444,6 +446,19 @@ class PaginaDictare(QWidget):
             # 32/34/35: sunetul rămâne disponibil pentru „▶ Ascultă” din editor
             try:
                 self.aplicatie.primeste_inregistrarea(self._dictare_sunet)
+            except Exception:
+                pass
+            # Cerința 61: salvează sunetul și textul dictării și curăță fișierele de recuperare.
+            try:
+                marca = getattr(self, "_marca_dictare", "") or getattr(self.stare, "marca", "") or biblioteca.marca_acum()
+                if self._dictare_sunet is not None and len(getattr(self._dictare_sunet, "pcm", ())):
+                    biblioteca.scrie_audio(self._dictare_sunet.pcm, marca)
+                text_final = self.editor.text() if hasattr(self, "editor") else ""
+                if text_final.strip():
+                    biblioteca.scrie_text_legat(text_final, marca)
+                biblioteca.sterge_recuperare()
+                if hasattr(self.aplicatie, "_reimprospateaza_ultimele"):
+                    self.aplicatie._reimprospateaza_ultimele()
             except Exception:
                 pass
 
@@ -611,6 +626,15 @@ class PaginaDictare(QWidget):
                 continue
             self._secunde_audio += len(sunet) / 16_000.0
 
+            # Cerința 61: salvează pe bucăți sunetul înregistrat până acum, pentru recuperare la cădere.
+            if hasattr(microfon, "tot"):
+                try:
+                    tot_acum = microfon.tot()
+                    if tot_acum is not None and len(getattr(tot_acum, "pcm", ())):
+                        biblioteca.scrie_recuperare_audio(tot_acum.pcm, getattr(tot_acum, "rata", 16000) or 16000)
+                except Exception:
+                    pass
+
             # Pregătirea sunetului, opțională (51/52): întâi volumul, apoi pauzele.
             if getattr(self.config, "pregateste_audio", False) or getattr(
                 self.config, "scurteaza_pauze", False
@@ -645,6 +669,12 @@ class PaginaDictare(QWidget):
             fragment = (rezultat.text or "").strip()
             if fragment:
                 text_acum += (" " if text_acum else "") + fragment
+                try:
+                    biblioteca.scrie_recuperare(
+                        text_acum, getattr(self, "_marca_dictare", "") or "dictare"
+                    )
+                except Exception:
+                    pass
                 self.aplicatie.coada.trimite(self._adauga_text, fragment)
 
         self.aplicatie.coada.trimite(self._opreste)

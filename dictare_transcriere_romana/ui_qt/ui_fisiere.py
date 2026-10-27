@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
@@ -25,7 +26,12 @@ from . import comun
 from .comun import Buton, fonturi, seteaza_rol
 
 #: Titlurile filelor, pe felul de fișier.
-FILE: dict[str, str] = {"audio": "Sunete", "text": "Texte", "document": "Documente"}
+FILE: dict[str, str] = {
+    "audio": "Sunete",
+    "text": "Texte",
+    "document": "Documente",
+    "terminate": "Terminate",
+}
 
 
 class FereastraFisiere(QWidget):
@@ -57,17 +63,25 @@ class FereastraFisiere(QWidget):
 
         rand_file = QHBoxLayout()
         rand_file.setSpacing(8)
-        for fel in ("audio", "text", "document"):
+        for fel in ("audio", "text", "document", "terminate"):
             btn = Buton(
                 self,
                 FILE[fel],
                 lambda f=fel: self._alege_fila(f),
                 fel="secundar",
-                latime=160,
+                latime=150,
                 inaltime=40,
             )
             self._butoane_file[fel] = btn
             rand_file.addWidget(btn)
+        self.btn_importa = Buton(
+            self,
+            "Importă fișiere noi…",
+            self._importa_fisiere_noi,
+            latime=200,
+            inaltime=40,
+        )
+        rand_file.addWidget(self.btn_importa)
         rand_file.addStretch(1)
         layout.addLayout(rand_file)
 
@@ -80,14 +94,26 @@ class FereastraFisiere(QWidget):
 
         rand_actiuni = QHBoxLayout()
         rand_actiuni.setSpacing(8)
-        self.btn_deschide = Buton(self, "Deschide", self._deschide_selectat, fel="principal", latime=170, inaltime=40)
-        self.btn_folder = Buton(self, "Arată în folder", self._arata_in_folder, latime=200, inaltime=40)
-        self.btn_redenum = Buton(self, "Redenumește", self._redenumeste, latime=170, inaltime=40)
-        self.btn_gunoi = Buton(self, "Mută la Coș", self._la_gunoi, latime=180, inaltime=40)
-        for buton in (self.btn_deschide, self.btn_folder, self.btn_redenum, self.btn_gunoi):
+        self.btn_deschide = Buton(self, "Deschide", self._deschide_selectat, fel="principal", latime=150, inaltime=40)
+        self.btn_coada = Buton(self, "Transcrie / În coadă", self._trimite_in_coada, latime=190, inaltime=40)
+        self.btn_folder = Buton(self, "Arată în folder", self._arata_in_folder, latime=180, inaltime=40)
+        self.btn_redenum = Buton(self, "Redenumește (F2)", self._redenumeste, latime=180, inaltime=40)
+        self.btn_gunoi = Buton(self, "Mută la Coș", self._la_gunoi, latime=160, inaltime=40)
+        self.btn_arhiveaza = Buton(self, "Arhivează", self._arhiveaza, latime=160, inaltime=40)
+        for buton in (
+            self.btn_deschide,
+            self.btn_coada,
+            self.btn_folder,
+            self.btn_redenum,
+            self.btn_gunoi,
+            self.btn_arhiveaza,
+        ):
             rand_actiuni.addWidget(buton)
         rand_actiuni.addStretch(1)
         layout.addLayout(rand_actiuni)
+
+        # Scurtătura F2 pentru redenumire (cerința 56).
+        QShortcut(QKeySequence("F2"), self, self._redenumeste)
 
         self._alege_fila("audio")
 
@@ -128,9 +154,12 @@ class FereastraFisiere(QWidget):
         return None
 
     def _actualizeaza_butoane(self) -> None:
-        are = self._selectat() is not None
+        el = self._selectat()
+        are = el is not None
         for buton in (self.btn_deschide, self.btn_folder, self.btn_redenum, self.btn_gunoi):
             buton.setEnabled(are)
+        self.btn_arhiveaza.setEnabled(are and self.fila != "terminate")
+        self.btn_coada.setEnabled(are and (self.fila == "audio" or (el is not None and el.fel == "audio")))
 
     # ------------------------------------------------------------------ acțiuni
 
@@ -218,3 +247,74 @@ class FereastraFisiere(QWidget):
             return
         self.aplicatie.bara_stare.arata("Șters", "am mutat fișierul la Coșul de reciclare.", "atentie")
         self._reincarca()
+
+    def _arhiveaza(self) -> None:
+        """Cerință 41: Mută fișierul în arhiva „Terminate" (nu se șterge)."""
+        el = self._selectat()
+        if el is None:
+            return
+        intrebare = (
+            f"Fișierul „{el.nume}” va fi mutat în arhiva „Terminate”.\n\n"
+            "Arhiva stă separat de fișierele în lucru, ca să nu îngreuneze lista.\n\n"
+            "Fișierul nu se șterge — îl găsești oricând în folderul „Terminate” "
+            "din Documente\\Dictare&Transcriere Română.\n\nVrei să-l arhivezi acum?"
+        )
+        if not comun.intreaba(self, "Arhivează fișierul în „Terminate”?", intrebare):
+            self.aplicatie.bara_stare.arata("Neschimbat", "fișierul a rămas unde era.", "normal")
+            return
+        reusit, mesaj = biblioteca.muta_la_terminate(el.cale)
+        if not reusit:
+            comun.anunta(
+                self,
+                "Fișierul nu a putut fi arhivat",
+                mesaj or "Nu am putut muta fișierul în arhiva „Terminate”. Încearcă din nou.",
+            )
+            return
+        self.aplicatie.bara_stare.arata("Arhivat", f"am mutat „{el.nume}” în arhiva „Terminate”.", "succes")
+        self._reincarca()
+
+    def _trimite_in_coada(self) -> None:
+        """Cerința 35: Trimite fișierul audio ales în coada ecranului de transcriere."""
+        el = self._selectat()
+        if el is None:
+            return
+        biblioteca.uita_transcris(el.cale)
+        self.aplicatie.arata_ecran("transcriere")
+        pagina = self.aplicatie._ia_pagina("transcriere")
+        if hasattr(pagina, "_primeste_fisiere"):
+            pagina._primeste_fisiere([el.cale])
+
+    def _importa_fisiere_noi(self) -> None:
+        """Cerințele 35 și 47: Importă doar fișierele audio noi dintr-un folder local."""
+        folder_ales = comun.alege_folder(
+            self,
+            "Alege folderul din care importăm fișierele audio noi",
+            biblioteca.folder("audio"),
+        )
+        if not folder_ales:
+            return
+        importate, sarite = biblioteca.importa_audio_noi(folder_ales)
+        if not importate:
+            comun.anunta(
+                self,
+                "Niciun fișier nou",
+                f"Nu am găsit fișiere audio noi în acel folder ({sarite} deja importate sau transcrise).",
+            )
+            return
+        self._alege_fila("audio")
+        self.aplicatie.bara_stare.arata(
+            "Importat",
+            f"am adus {len(importate)} fișier(e) noi ({sarite} sărite).",
+            "succes",
+        )
+        if comun.intreaba(
+            self,
+            "Transcriem fișierele noi?",
+            f"Am importat {len(importate)} fișier(e) audio noi"
+            + (f" ({sarite} deja cunoscute au fost sărite)." if sarite else ".")
+            + "\n\nVrei să le pun în coada de transcriere acum?",
+        ):
+            self.aplicatie.arata_ecran("transcriere")
+            pagina = self.aplicatie._ia_pagina("transcriere")
+            if hasattr(pagina, "_primeste_fisiere"):
+                pagina._primeste_fisiere(importate)

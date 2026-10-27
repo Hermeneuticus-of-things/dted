@@ -13,10 +13,10 @@
 #define MyAppDescription "Dictare și transcriere în limba română"
 ; AppId-ul rămâne cel vechi (implicit era AppName), ca actualizarea să recunoască instalarea.
 #define MyAppIdVechi "Dictare&Transcriere Română"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.6.0"
 #define MyAppPublisher "D&TED"
 #define MyAppExeName "DTED.exe"
-#define MyDistDir "..\dist\DTED"
+#define MyDistDir "..\dist-v0.6.0\DTED"
 ; Iconița programului (microfon auriu, unde care vin spre microfon, litere argintii).
 ; Se copiază separat lângă program, ca scurtăturile să o arate chiar dacă DTED.exe
 ; a fost construit cu o iconiță mai veche.
@@ -38,8 +38,8 @@ DefaultDirName={autopf}\D&TED – Dictare și transcriere în limba română
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppIconName}
 UninstallDisplayName={#MyAppName}
-OutputDir=..\output
-OutputBaseFilename=Setup.DTED
+OutputDir=..\output-v0.6.0
+OutputBaseFilename=Setup.DTED-0.6.0
 ; Pictograma fără cadrul de 512 px (ISCC refuză resursa prea mare: „File is too large”).
 ; Iconița nouă a instalatorului (aceeași imagine ca a programului, fără cadrul de 512 px).
 SetupIconFile=iconita_setup_text.ico
@@ -76,3 +76,88 @@ Name: "{autoprograms}\D&TED – Dezinstalare"; Filename: "{uninstallexe}"; Comme
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+var
+  HardwarePage: TOutputMsgMemoWizardPage;
+
+function ArePlacaNvidia(var NumeAdaptor: String): Boolean;
+var
+  CheieClasa, SubCheie, Adaptor: String;
+  Index: Integer;
+begin
+  Result := False;
+  NumeAdaptor := '';
+  CheieClasa := 'SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}';
+  for Index := 0 to 15 do
+  begin
+    SubCheie := CheieClasa + '\' + Format('%.4d', [Index]);
+    if RegQueryStringValue(HKLM, SubCheie, 'DriverDesc', Adaptor) then
+    begin
+      if Pos('NVIDIA', Uppercase(Adaptor)) > 0 then
+      begin
+        Result := True;
+        NumeAdaptor := Adaptor;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
+function VersiuneVecheInstalata(var VersiuneVeche, UninstallCmd: String): Boolean;
+var
+  Cheie: String;
+begin
+  Result := False;
+  VersiuneVeche := '';
+  UninstallCmd := '';
+  Cheie := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppIdVechi}_is1';
+  if RegQueryStringValue(HKCU, Cheie, 'DisplayVersion', VersiuneVeche) then
+  begin
+    RegQueryStringValue(HKCU, Cheie, 'UninstallString', UninstallCmd);
+    Result := True;
+  end
+  else if RegQueryStringValue(HKLM, Cheie, 'DisplayVersion', VersiuneVeche) then
+  begin
+    RegQueryStringValue(HKLM, Cheie, 'UninstallString', UninstallCmd);
+    Result := True;
+  end;
+end;
+
+procedure InitializeWizard;
+var
+  LiberMB, TotalMB: Cardinal;
+  LiberGB: Integer;
+  NumeGPU, VersVeche, CmdVeche, Raport: String;
+  AreGPU, AreVeche: Boolean;
+begin
+  HardwarePage := CreateOutputMsgMemoPage(
+    wpWelcome,
+    'Verificare calculator și instalări anterioare',
+    'Verificăm resursele calculatorului pentru transcriere în limba română.',
+    'Rezultatul verificării automate (instalarea poate continua pe orice calculator):',
+    ''
+  );
+
+  LiberGB := 0;
+  if GetSpaceOnDisk(ExpandConstant('{autopf}'), True, LiberMB, TotalMB) then
+    LiberGB := LiberMB div 1024;
+
+  AreGPU := ArePlacaNvidia(NumeGPU);
+  AreVeche := VersiuneVecheInstalata(VersVeche, CmdVeche);
+
+  Raport := '• Sistem de operare: Windows ' + GetWindowsVersionString + #13#10;
+  Raport := Raport + '• Procesor (CPU): ' + GetEnv('NUMBER_OF_PROCESSORS') + ' fire de execuție' + #13#10;
+  Raport := Raport + '• Spațiu liber pe disc: ' + IntToStr(LiberGB) + ' GB (minim 6 GB necesari)' + #13#10;
+  if AreGPU then
+    Raport := Raport + '• Placă video (GPU): ' + NumeGPU + ' (transcriere rapidă pe GPU cu CUDA inclus)' + #13#10
+  else
+    Raport := Raport + '• Placă video (GPU): fără GPU NVIDIA dedicat — programul va folosi procesorul (CPU float32)' + #13#10;
+
+  if AreVeche then
+    Raport := Raport + #13#10 + '• Versiune anterioară găsită (' + VersVeche + '): va fi actualizată automat la {#MyAppVersion}, păstrând toate documentele și setările.'
+  else
+    Raport := Raport + #13#10 + '• Instalare curată: nu există conflicte cu versiuni anterioare.';
+
+  HardwarePage.RichEditViewer.Lines.Text := Raport;
+end;

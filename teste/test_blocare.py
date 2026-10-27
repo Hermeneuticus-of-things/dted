@@ -25,7 +25,7 @@ def test_script_mod1():
     assert "USBSTOR" in s and "-Value 4" in s
     assert "RadioState]::Off" in s
     assert "Wait-Process -Id 1234" in s
-    assert "USBSTOR" in s and "-Value 3" in s  # revenirea
+    assert "saved_usb" in s and "-Value ([int]$saved_usb)" in s  # revenirea la starea salvată
     assert "Remove-NetFirewallRule" in s
     print("script gardian Mod 1 OK")
 
@@ -44,8 +44,8 @@ def test_script_anulare():
     marcaj = Path(r"C:\temp\conf.txt")
     s = blocare.script_anulare(marcaj)
     assert "Remove-NetFirewallRule" in s
-    assert "USBSTOR" in s and "-Value 3" in s
-    assert "RadioState]::On" in s
+    assert "USBSTOR" in s and "$saved_usb = '3'" in s and "-Value ([int]$saved_usb)" in s
+    assert "saved_radios" in s and "RadioState]::On" not in s
     assert "conf.txt" in s
     print("script anulare OK")
 
@@ -67,12 +67,16 @@ def test_marcaj():
         original = blocare.cale_marcaj
         blocare.cale_marcaj = lambda: tmp / "conf.txt"
         try:
-            assert blocare.scrie_marcaj(blocare.MOD_TOT, 42, r"C:\app\DTED.exe")
+            pid_viu = os.getpid()
+            assert blocare.scrie_marcaj(blocare.MOD_TOT, pid_viu, r"C:\app\DTED.exe")
             citit = blocare.citeste_marcaj()
             assert citit["mod"] == blocare.MOD_TOT
-            assert citit["pid"] == "42"
+            assert citit["pid"] == str(pid_viu)
             assert citit["exe"] == r"C:\app\DTED.exe"
             assert blocare.starea_activa() == blocare.MOD_TOT
+            # Proces mort -> starea_activa() ignoră marcajul orfan
+            assert blocare.scrie_marcaj(blocare.MOD_TOT, 999999999, r"C:\app\DTED.exe")
+            assert blocare.starea_activa() is None
         finally:
             blocare.cale_marcaj = original
     # fără marcaj -> None

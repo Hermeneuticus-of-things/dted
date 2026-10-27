@@ -403,6 +403,49 @@ def fisier_recuperare_info() -> Path:
     return _folder_recuperare() / "text_nesalvat.json"
 
 
+def fisier_recuperare_audio() -> Path:
+    """Fișierul WAV temporar în care se salvează pe bucăți sunetul dictării (cerința 61)."""
+    return _folder_recuperare() / "audio_nesalvat.wav"
+
+
+def scrie_recuperare_audio(pcm, rata: int = 16000) -> Path | None:
+    """Salvează pe disc sunetul înregistrat până acum, ca să nu se piardă la o cădere (cerința 61)."""
+    try:
+        import wave
+        import numpy as np  # type: ignore[import-not-found]
+
+        date = np.asarray(pcm, dtype="float32")
+        if date.ndim > 1:
+            date = date.mean(axis=1)
+        if date.size == 0:
+            return None
+        bucati = np.clip(date, -1.0, 1.0)
+        intregi = (bucati * 32767.0).astype("<i2")
+        cale = fisier_recuperare_audio()
+        temporar = cale.with_suffix(".wav.tmp")
+        with wave.open(str(temporar), "wb") as fisier:
+            fisier.setnchannels(1)
+            fisier.setsampwidth(2)
+            fisier.setframerate(int(rata) or 16000)
+            fisier.writeframes(intregi.tobytes())
+        temporar.replace(cale)
+        return cale
+    except Exception as exc:
+        jurnal.atentionare(f"Nu am putut scrie sunetul de recuperare: {exc}")
+        return None
+
+
+def citeste_recuperare_audio() -> Path | None:
+    """Întoarce calea sunetului recuperat dacă există și nu e gol (cerința 61)."""
+    cale = fisier_recuperare_audio()
+    try:
+        if cale.exists() and cale.stat().st_size > 44:
+            return cale
+    except OSError:
+        pass
+    return None
+
+
 def scrie_recuperare(text: str, marca: str = "", detalii: str = "") -> bool:
     """Păstrează o copie de siguranță a textului de pe ecran."""
     try:
@@ -448,8 +491,8 @@ def citeste_recuperare() -> tuple[str, str, str] | None:
 
 
 def sterge_recuperare() -> None:
-    """Șterge copia de siguranță (după ce textul a fost salvat de adevărat)."""
-    for cale in (fisier_recuperare_text(), fisier_recuperare_info()):
+    """Șterge copia de siguranță (după ce textul și sunetul au fost salvate de-adevărat)."""
+    for cale in (fisier_recuperare_text(), fisier_recuperare_info(), fisier_recuperare_audio()):
         try:
             cale.unlink(missing_ok=True)
         except OSError:
@@ -540,3 +583,58 @@ def uita_transcris(cale: Path) -> None:
             )
         except OSError:
             pass
+
+
+EXTENSII_IMPORT_AUDIO: tuple[str, ...] = (
+    ".wav", ".mp3", ".m4a", ".ogg", ".flac", ".opus", ".webm", ".mp4", ".aac", ".wma"
+)
+
+
+def importa_audio_noi(
+    folder_sursa: Path, radacina_aleasa: Path | None = None
+) -> tuple[list[Path], int]:
+    """Importă doar fișierele audio noi dintr-un folder local (cerințele 35 și 47).
+
+    Sare peste fișierele care au fost deja transcrise (``a_fost_transcris``) sau
+    care există deja cu același nume și aceeași mărime în ``Audio`` ori ``Terminate``.
+    Întoarce ``(fișiere_importate, număr_sărite)``.
+    """
+    folder_sursa = Path(folder_sursa)
+    if not folder_sursa.exists() or not folder_sursa.is_dir():
+        return [], 0
+    dest_audio = folder("audio", radacina_aleasa)
+    dest_term = folder("terminate", radacina_aleasa)
+    existente: set[tuple[str, int]] = set()
+    for dosar in (dest_audio, dest_term):
+        try:
+            for f in dosar.iterdir():
+                if f.is_file():
+                    try:
+                        existente.add((f.name.lower(), f.stat().st_size))
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+
+    importate: list[Path] = []
+    sarite = 0
+    try:
+        candidati = sorted(
+            (f for f in folder_sursa.iterdir() if f.is_file() and f.suffix.lower() in EXTENSII_IMPORT_AUDIO),
+            key=lambda p: p.name.lower(),
+        )
+    except OSError:
+        return [], 0
+
+    for fisier in candidati:
+        try:
+            marime = fisier.stat().st_size
+        except OSError:
+            continue
+        if a_fost_transcris(fisier) or (fisier.name.lower(), marime) in existente:
+            sarite += 1
+            continue
+        copiat = copiaza_audio(fisier, radacina_aleasa)
+        importate.append(copiat)
+        existente.add((fisier.name.lower(), marime))
+    return importate, sarite

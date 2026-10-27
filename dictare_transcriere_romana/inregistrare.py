@@ -170,6 +170,7 @@ class Microfon:
         self.rata = rata
         self._flux = None
         self._bucati: list[np.ndarray] = []
+        self._tot: list[np.ndarray] = []  # tot sunetul, pentru redare/săritură (cerințele 32/38)
         self._blocare = threading.Lock()
         self.nivel = 0.0
         self.activ = False
@@ -201,6 +202,7 @@ class Microfon:
         sd = _sd()  # aruncă EroareMicrofon cu mesaj simplu dacă lipsește pachetul
         index = _index_dispozitiv(self.dispozitiv)
         self._bucati = []
+        self._tot = []
         self.nivel = 0.0
         ultima_eroare: Exception | None = None
         for rata, canale in self._configuratii():
@@ -234,7 +236,9 @@ class Microfon:
         if bloc.ndim > 1:
             bloc = bloc.mean(axis=1)
         with self._blocare:
-            self._bucati.append(bloc.copy())
+            copie = bloc.copy()
+            self._bucati.append(copie)
+            self._tot.append(copie)
         if bloc.size:
             self.nivel = min(1.0, float(np.sqrt(np.mean(np.square(bloc)))) * 6.0)
 
@@ -258,6 +262,22 @@ class Microfon:
         with self._blocare:
             esantioane = sum(len(bloc) for bloc in self._bucati)
         return esantioane / float(self.rata_reala or RATA_WHISPER)
+
+    def tot(self) -> Inregistrare:
+        """Întregul sunet de la pornire, la 16 kHz mono (pentru redare/săritură).
+
+        Spre deosebire de ``preia()`` (care consumă bucățile la transcriere),
+        aceasta păstrează tot sunetul, ca după oprirea dictării să poți să-l
+        redai de la un semn (cerințele 32 / 38).
+        """
+        with self._blocare:
+            bucati = list(self._tot)
+        if not bucati:
+            return Inregistrare(np.zeros(0, dtype=np.float32))
+        sunet = np.concatenate(bucati).astype(np.float32)
+        return Inregistrare(
+            reesantioneaza(sunet, self.rata_reala, RATA_WHISPER), RATA_WHISPER
+        )
 
     # ------------------------------------------------------------------ oprire
 
@@ -291,6 +311,7 @@ class Microfon:
                 self._flux = None
         with self._blocare:
             self._bucati = []
+            self._tot = []
         self.activ = False
         self.nivel = 0.0
 
