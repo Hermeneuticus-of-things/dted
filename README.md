@@ -31,6 +31,26 @@ irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-boo
 
 ---
 
+## ⬇️ DESCARCĂ D&TED — apasă pe un link și gata
+
+**Folosești Windows?** Ai nevoie de UNUL din cele trei rânduri de mai jos, nu de toate:
+
+| Vrei… | Apasă aici | Apoi… |
+|---|---|---|
+| **Cel mai simplu: instalează** | **[⬇️ DESCARCĂ SETUP.DTED-0.6.3.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/Setup.DTED-0.6.3.exe)** | aștepți să se descarce (~1,84 GB), dublu clic pe el → „Next” → „Instalează”. Gata. |
+| **Fără instalare, de pe stick** | **[⬇️ DESCARCĂ PORTABIL-DTED-0.6.3.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/portabil-DTED-0.6.3.zip)** | click dreapta pe zip → „Dezarhivează” → intri în folderul `DTED` → dublu clic pe `DTED.exe` |
+| **Totul automat, cu o comandă** | copiază în PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | scriptul descarcă singur kitul și îl verifică, apoi pornește instalatorul |
+
+**Ai deja D&TED pe calculator?** Nu descarci nimic: deschide programul → butonul **📦 Actualizări** (sus) → **Caută actualizări (internet)** → confirmă.
+
+**Folosești Linux?** → **[⬇️ DESCARCĂ DTED PENTRU LINUX](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/dted-0.6.3-linux.tar.gz)**, apoi în terminal: `tar -xzf dted-0.6.3-linux.tar.gz` și `./install.sh`.
+
+**Nu ești sigur ce ai descărcat?** Fiecare fișier are suma SHA-256 în [SHA256SUMS.txt](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.3/SHA256SUMS.txt); verificarea pas cu pas e mai jos, la „Instalare”.
+
+<sub>modelul de transcriere e deja în kit (la portabil îl are); nimic nu se descarcă la prima pornire, fără conturi, fără administrator</sub>
+
+---
+
 ## ✨ Funcții
 
 ### 🎤 Dictare pentru text de carte
