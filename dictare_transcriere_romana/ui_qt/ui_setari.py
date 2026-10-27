@@ -538,10 +538,15 @@ class FereastraSetari(QDialog):
         card = self._card(
             "Comenzi rostite în timpul dictării",
             "Rostește comanda clar, cu o pauză scurtă înainte și după, ca programul să o "
-            "deosebească de text: „punct”, „virgulă”, „punct și virgulă”, „două puncte”, "
-            "„semn de întrebare”, „semnul exclamării”, „deschide/închide ghilimele”, "
-            "„deschide/închide paranteză”, „cratimă”, „linie de dialog”, „linie de pauză”, "
-            "„procent”, „slash”, „ampersand”, „paragraf nou”, „rând nou”. Lista completă: F1 → Comenzi vocale.",
+            "deosebească de text. Variantele cu și fără diacritice merg la fel de bine:",
+            "• structură: „paragraf nou”; „rând nou” (sau „linie nouă”);",
+            "• punctuație: „punct”; „virgulă” (sau „virgula”); „punct și virgulă” (sau „punct si virgula”);",
+            "  „două puncte” (sau „doua puncte”); „semn de întrebare” (sau „semn de intrebare”, „semnul întrebării”);",
+            "  „semn de exclamare” (sau „semnul exclamării”);",
+            "• ghilimele: „deschide ghilimele” / „închide ghilimele”;",
+            "• paranteze: „deschide paranteză” / „închide paranteză”;",
+            "• linii și simboluri: „cratimă”; „linie de dialog”; „linie de pauză”; „procent”; „slash”;",
+            "  „ampersand” (sau „și comercial”). Lista completă și exemple: F1 → Comenzi vocale.",
         )
         card.layout().addWidget(QLabel(
             "Pauzele lungi de voce structurează singure textul: alegi aici după câte secunde "
