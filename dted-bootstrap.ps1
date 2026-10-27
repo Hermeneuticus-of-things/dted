@@ -36,7 +36,7 @@ $Dest = Join-Path $env:TEMP "dted-install"
 # versiune — niciodată nu se lasă amprentele versiunii precedente.
 # ----------------------------------------------------------------------------
 $Pachete = [ordered]@{
-    "Setup.DTED-0.6.5.exe" = "BFF49CA2796C9F13B499DE5EEE3A4D9C0E3B7E0885D5BE6DFD72D2F10D45987D"
+    "Setup.DTED-0.6.6.exe" = "AD31418B9BFB51E89CCD3A5AC2715E23296C22D5A078228EAC4A832586BD5FDA"
 }
 
 function Format-Amprenta { param([string]$s) ($s -replace '[^0-9a-fA-F]', '').ToUpper() }
