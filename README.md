@@ -122,7 +122,10 @@ Setări → Aspect).
 ## 🗺 Ce urmează
 
 - [ ] **Aplicație pentru macOS** — aceeași experiență de dictare, nativ pe Mac
-- [ ] **Motoare de transcriere noi, de calitate superioară** — pe măsură ce apar modele mai bune pentru română (și nu numai), intră ca opțiune, cu măsurători publicate
+- [ ] **Aplicație pentru Android** — dictare în română și pe telefon
+- [ ] **Motoare de transcriere mai bune, în mai multe limbi** — pe măsură ce apar modele de calitate superioară, intră ca opțiuni, cu măsurători publicate
+- [ ] **Corecția textului, îmbunătățită** — dicționar mai deștept, sugestii în context, corectări în timp real
+- [ ] **Textele salvate, criptate din oficiu** — pe disc nu se poate citi nimic din afara aplicației, chiar fără parolă; textul iese doar prin Export sau Salvează
 - [ ] **Alte limbi, cu recunoaștere vocală de calitate** — engleza prima, apoi cele cu modele locale bune; româna rămâne implicită și forțată
 - [ ] Modelul „pentru toți utilizatorii” — instalare partajată (admin o singură dată)
 - [ ] Editare audio — marcarea și ștergerea unor porțiuni din înregistrare
