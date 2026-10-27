@@ -2,249 +2,202 @@
 
 <div align="center">
 
-<img src="docs/img/interfata-v063.png" alt="D&TED v0.6.4: editorul cu text dictat, iar jos bara de dictare: Dictează (F5), Pauză microfon, De la capăt, Idee nouă, vumetru dB" width="880">
+<img src="docs/img/interfata-v064.png" alt="D&TED: editorul cu textul dictat, iar jos bara de dictare — Dictează (F5), Pauză microfon, P alineat, I alineat, vumetru dB" width="880">
 
-# 🎙️ D&amp;ED · Dictare &amp; Transcriere Express Digital
+# 🎙️ D&ED · Dictare & Transcriere Express Digital
 
-### Vorbește românește. Programul scrie. Totul pe calculatorul tău.
-
-Dictare live și transcriere de fișiere audio cu **Whisper** optimizat pentru română —
-fără internet, fără cont, fără cloud. Făcut pentru **text lung de carte**.
+### Vorbești românește. Programul scrie. Totul pe calculatorul tău.
 
 [![Versiune](https://img.shields.io/github/v/release/Hermeneuticus-of-things/dted?include_prereleases&label=versiune&color=2563eb)](https://github.com/Hermeneuticus-of-things/dted/releases)
 [![Teste](https://img.shields.io/github/actions/workflow/status/Hermeneuticus-of-things/dted/ci.yml?label=teste&logo=github)](https://github.com/Hermeneuticus-of-things/dted/actions)
-![Acuratețe RO](https://img.shields.io/badge/WER%20română-5%2C8%25-16a34a)
-![Platformă](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?logo=windows11)
-![Local](https://img.shields.io/badge/procesare-100%25%20local%C4%83-16a34a)
+![WER română 5,8%](https://img.shields.io/badge/WER%20rom%C3%A2n%C4%83-5%2C8%25-16a34a)
+![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?logo=windows11)
+![100% local](https://img.shields.io/badge/procesare-100%25%20local%C4%83-16a34a)
 
-### Instalează dintr-o singură comandă (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
-```
-
-<sub>descarcă kitul complet (inclusiv modelul), verifică SHA-256 pe fiecare bucată, instalează fără administrator</sub>
-
-[📥 Instalare](#-instalare) · [✨ Funcții](#-funcții) · [🎯 Acuratețe](#-acuratețe-măsurată) · [🔒 Confidențialitate](#-confidențialitate) · [🗺️ Roadmap](#️-ce-urmează-roadmap)
+[⬇️ Descarcă](#9-️-instalare--descărcare) · [✨ Funcțiile](#6-funcțiile-pe-rând) · [❓ Întrebări](#-întrebări-frecvente) · [🐞 Raportează](#-găsești-o-problemă-raportează-dintrun-clic) · [⚙️ Detalii tehnice](#️-detalii-tehnice)
 
 </div>
 
 ---
 
-## ⬇️ DESCARCĂ D&TED — apasă pe un link și gata
+## 1. Ce este
 
-**Folosești Windows?** Ai nevoie de UNUL din cele trei rânduri de mai jos, nu de toate:
+**D&TED e un program de dictare pentru limba română**, făcut pentru text lung de carte.
+Vorbești în microfon — textul apare pe ecran **cuvânt cu cuvânt, pe măsură ce vorbești** —
+îl corectezi ascultând înregistrarea, apoi îl salvezi ca document (DOCX, ODT, PDF…).
 
-| Vrei… | Apasă aici | Apoi… |
-|---|---|---|
-| **Cel mai simplu: instalează** | **[⬇️ DESCARCĂ SETUP.DTED-0.6.4.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/Setup.DTED-0.6.4.exe)** | aștepți să se descarce (~1,84 GB), dublu clic pe el → „Next” → „Instalează”. Gata. |
-| **Fără instalare, de pe stick** | **[⬇️ DESCARCĂ PORTABIL-DTED-0.6.4.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/portabil-DTED-0.6.4.zip)** | click dreapta pe zip → „Dezarhivează” → intri în folderul `DTED` → dublu clic pe `DTED.exe` |
-| **Totul automat, cu o comandă** | copiază în PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | scriptul descarcă singur kitul și îl verifică, apoi pornește instalatorul |
+Transcrie și **fișiere audio** gata înregistrate (MP3, WAV, M4A, OGG, FLAC, Opus),
+tot în română, tot local.
 
-**Ai deja D&TED pe calculator?** Nu descarci nimic: deschide programul → butonul **📦 Actualizări** (sus) → **Caută actualizări (internet)** → confirmă.
+Totul rulează **pe calculatorul tău**: fără internet, fără cont, fără cloud, fără abonamente.
 
-**Folosești Linux?** → **[⬇️ DESCARCĂ DTED PENTRU LINUX](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/dted-0.6.4-linux.tar.gz)**, apoi în terminal: `tar -xzf dted-0.6.4-linux.tar.gz` și `./install.sh`.
+## 2. Pentru cine
 
-**Nu ești sigur ce ai descărcat?** Fiecare fișier are suma SHA-256 în [SHA256SUMS.txt](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/SHA256SUMS.txt); verificarea pas cu pas e mai jos, la „Instalare”.
+- **Pentru cine scrie cărți** — volume, memorii, manuscrise: dictezi capitole întregi non-stop.
+- **Pentru lucrări lungi** — licențe, dizertații, articole, rapoarte.
+- **Pentru cei care nu pot sau nu vor să bată la tastatură** ore în șir.
+- **Pentru text sensibil** — jurnale, corespondență, materiale juridice: nimic nu pleacă de pe calculator.
+- **Pentru calculatoare obișnuite** — merge pe procesor, iar cu placă video NVIDIA e de ~20× mai rapid.
 
-<sub>modelul de transcriere e deja în kit (la portabil îl are); nimic nu se descarcă la prima pornire, fără conturi, fără administrator</sub>
-
----
-
-## ✨ Funcții
-
-### 🎤 Dictare pentru text de carte
-Apasă butonul **roșu** (sau F5) și vorbește — textul apare **în timp ce vorbești**, direct în editorul mare. Semnele `[mm:ss]` (Ctrl+B) marchează locurile importante. Fără pagini separate: o singură fereastră de lucru, ca la Express Dictate.
-
-### ▶ Ascultă și corectează
-Pune cursorul lângă un semn și apasă **F9** (sau Ctrl+R): transportul de jos redă **exact bucata respectivă** — Play verde, Stop albastru, derulare, poziție `01:23 / 05:40` și volum.
-
-<div align="center">
-<img src="docs/img/transport-redare-v063.png" alt="Modul de redare: bara de jos arată doar butoanele audio — Ascultă, Stop, derulare, poziție 00:42 / 03:10, volum" width="840">
-</div>
-
-### 🎚 Microfonul se reglează singur
-Vumetru profesional **cu gradații în dB** — 0 dB înseamnă distorsiune. Programul **aduce automat volumul microfonului** în zona bună: nu prea tare (să nu taie), nu prea încet (să se audă).
-
-### ⌨ Tastele tale, cum vrei tu
-
-Din **Setări → „Taste rapide”** îți alegi singur tastele pentru: dictează, ascultă, derulare,
-viteze, semnul [mm:ss], „De la capăt” și „Idee nouă”. Clic pe buton, apeși combinația, salvezi —
-iar „Pune tot la fel ca la început” le readuce pe cele din fabrică.
-
-<div align="center">
-<img src="docs/img/taste-rapide-v063.png" alt="Setări → Taste rapide: fiecare comandă are un buton în care apeși combinația dorită" width="640">
-</div>
-
-### 🧠 Se învață din corecturile tale
-Corectezi un cuvânt scris greșit → perechea se salvează singură și **se repară automat la următoarele transcrieri**. Dicționarul se poate exporta și importa (TXT/CSV/JSON).
-
-### 📋 Gestionarea dictărilor
-Lista „Dictările mele” arată tot: **Data, Ora, Durata, Prioritatea, Numele și primele cuvinte** din text. Clic dreapta pe o dictare: **Deschide**, **Redenumește (F2)**, **Șterge (Ctrl+Delete)** — merge la Coșul de reciclare, nu dispare definitiv.
-
-### 🎙️ Activare vocală (opțional)
-Din Setări → Sunet: programul **pornește singur dictarea când începi să vorbești** (prag reglabil în dB, ca „Voice Activate Level” din Express Dictate). Oprești cu F5 și se rearmează singur.
-
-### 🧹 Curățenie automată
-Bâlbâielile și buclele („nu, nu, nu") se strâng singure; dublările firești rămân.
-
-### 📂 Transcriere de fișiere, în rând
-Trage mai multe fișiere audio (MP3/WAV/M4A/OGG/FLAC/Opus) deodată — se transcriu **unul după altul**, iar cele deja transcrise se sar singure.
-
-### 💾 Export complet · 🔐 Criptare cu parolă
-Salvează în DOCX, ODT, TXT, RTF, HTML, SRT, VTT sau PDF. La cerere, documentele se **criptează AES-256** cu parolă (cea implicită: „Dictare" — schimb-o din Setări).
-
-### 🛡 Confidențialitate pentru text sensibil
-Programul **nu trimite nimic pe internet**. Te avertizează când internetul e pornit, poate bloca căile de ieșire în timpul dictării și îți arată mereu starea.
-
-### 🐞 Găsești o problemă? Un singur clic
-La orice eroare apare discret „⚠ Trimite raportul?" — fereastra vine **deja completată** cu detaliile tehnice din jurnal; tu adaugi doar ce făceai. Se trimite direct aici, pe GitHub — **fără text din carte, fără căi personale**.
-
-<div align="center">
-<img src="docs/img/raport.png" alt="Fereastra „Raportează o problemă” — pre-completată din jurnal" width="600">
-</div>
-
----
-
-## 🎯 Acuratețe măsurată
-
-Mostre: pasaj de **carte de 30 s** + propoziții scurte, voce românească sintetizată natural ([XTTS-v2-ro](https://huggingface.co/eduardem/xtts-v2-romanian-v2)), plus o înregistrare umană. WER = procent de cuvinte greșite (mai mic = mai bine). Măsurătorile complete: [`docs/MODELE_ROMANA.md`](docs/MODELE_ROMANA.md).
-
-| Model | Carte (30 s) | Total | Viteză (30 s audio) | Dimensiune |
-|---|---|---|---|---|
-| **[eek whisper-turbo-ro](https://huggingface.co/eek/whisper-turbo-ro-en)** — **implicit** ✔ | **5,4%** | **5,8%** | 1,3 s | 788 MB |
-| Whisper large-v3-turbo (standard) | 12,2% | 10,9% | 1,6 s | 1,6 GB |
-| Fine-tunat RO (TransferRapid) | 47,3% ⚠️ | 37,0% | 0,7 s | 1,6 GB |
-
-<sub>⚠️ fine-tunatul pe Common Voice taie textul lung — inutil pentru cărți. Modelul bun se alege singur; îl poți schimba din Setări → „Cum transcrie”.</sub>
-
-Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid decât în timp real**; fără placă video, merge pe procesor.
-
----
-
-## 📥 Instalare (versiunea v0.6.4) — alege varianta care ți se potrivește
-
-| Varianta | Pentru cine | Ce descarci | Internet la instalare? |
-|---|---|---|---|
-| **A. Kit pe stick (offline)** | vrei să instalezi și pe alt calculator, fără internet; text sensibil | `Setup.DTED-0.6.4.exe` (un singur fișier, ~1,85 GB) | **NU** — totul e inclus (model + CUDA) |
-| **B. Bootstrap (o comandă)** | ai internet, vrei totul automat | nimic — o comandă PowerShell | DA (descarcă kitul și îl verifică) |
-| **C. Portabil (fără instalare)** | vrei să-l pornești direct de pe stick, fără instalare | `portabil-DTED-0.6.4.zip` (~1,3 GB) | NU (doar CUDA, dacă ai placă video, din program) |
-| **D. Actualizare din program** | ai deja D&TED instalat | nimic — un buton din program | doar arhiva mică de ~1,2 MB |
-| **Linux** | calculator cu Linux (x86_64) | `dted-0.6.4-linux.tar.gz` | DA (descarcă modelul la instalare) |
-
-> **Toate fișierele sunt aici:** [github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.4](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.4) (secțiunea „Assets”), cu sumele SHA-256 în `SHA256SUMS.txt`.
-
-### A. Kit pe stick — instalare offline, pe orice Windows
-
-1. Descarcă **`Setup.DTED-0.6.4.exe`** din release (linkul de mai sus) — un singur fișier.
-2. Pune-l pe stick, apoi pe calculatorul unde vrei programul: dublu clic pe el → Next → Instalează.
-   - Nu cere administrator; modelul de transcriere (~800 MB) și bibliotecile plăcii video CUDA sunt **în kit** — nu se descarcă nimic.
-   - Wizard-ul îți arată pagina **„Ce știe să facă D&TED”** (o poți citi cât se instalează) și **verificarea calculatorului** (CPU, RAM, disc, placă video + VRAM).
-
-### B. Bootstrap — totul automat, cu o singură comandă
-
-1. Deschide **PowerShell** (Start → scrii „powershell” → Enter).
-2. Lipește rândul de mai jos și apasă Enter:
-
-```powershell
-irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
-```
-
-3. Scriptul descarcă kitul de la **versiunea fixă v0.6.4**, verifică **SHA-256** pe fiecare bucată
-   (amprenta greșită = oprire și refuz, nu instalează nimic) și pornește instalatorul grafic.
-   Scriptul poate fi citit înainte: [dted-bootstrap.ps1](https://github.com/Hermeneuticus-of-things/dted/blob/main/dted-bootstrap.ps1).
-
-### C. Portabil — pornești direct, fără instalare
-
-1. Descarcă **`portabil-DTED-0.6.4.zip`** din release.
-2. Click dreapta pe el → **„Extract All…” / „Dezarhivează”** → intri în folderul `DTED`.
-3. Dublu clic pe **`DTED.exe`**. Gata — programul pornește. Nu se scrie nimic în Windows, nu cere
-   administrator; ștergi folderul și programul dispare complet. Merge perfect de pe stick.
-   - Pe calculator **cu placă video NVIDIA**, deschide programul → ⚙ Setări → „Instalare și actualizări” →
-     butonul „Descarcă bibliotecile pentru placa video” — și transcrierea devine de ~20× mai rapidă.
-   - Fără placă video merge pe procesor, cu aceeași calitate, doar mai încet.
-
-### D. Ai deja D&TED? Actualizezi din program, cu un buton
-
-Deschide programul → **📦 Actualizări** (bara de sus) → **Caută actualizări (internet)** → îți arată
-„program: 0.6.3 → 0.6.4” → confirmi → programul descarcă arhiva mică
-[`program-0.6.4.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/program-0.6.4.zip),
-verifică amprenta, păstrează copia versiunii vechi și, după repornire, **rulează chiar versiunea nouă**.
-Butonul „Revino la versiunea anterioară” te aduce înapoi oricând.
-
-### Linux (x86_64) — cu scriptul `install.sh`
-
-Pe Linux nu există bootstrap `irm | iex` (acela e pentru Windows). Instalarea:
-
-1. Descarcă **[`dted-0.6.4-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/dted-0.6.4-linux.tar.gz)** din release.
-2. În terminal, în folderul unde l-ai descărcat:
-   ```bash
-   tar -xzf dted-0.6.4-linux.tar.gz
-   ./install.sh
-   ```
-3. Scriptul își face mediu Python propriu (fără administrator), pune comanda `dted` în `~/.local/bin`,
-   adaugă scurtătură în meniu și descarcă modelul cu verificare SHA-256; cu placă NVIDIA adaugă și CUDA.
-   Detalii și limite (criptarea fișierelor e doar Windows): [LINUX.md](LINUX.md).
-
-**Cerințe:** Windows 10/11 pe 64 de biți · 8 GB RAM recomandat · ~4 GB pe disc.
-
----
-
-## 🔒 Confidențialitate
+## 3. Ce face
 
 | | |
 |---|---|
-| ✅ Transcrierea rulează **100% local** (procesor sau placa ta video) | 🚫 Sunetul și textul nu pleacă niciodată pe internet |
-| ✅ Actualizările se caută **doar când apeși butonul** | 🚫 Fără conturi, fără telemetrie, fără cloud |
-| ✅ Raportarea problemelor arată exact ce trimite | 🚫 Rapoartele nu conțin text din carte, parole sau căi personale |
-
----
-
-## 🧪 Cod sursă și teste
-
-```bash
-git clone https://github.com/Hermeneuticus-of-things/dted.git
-cd dted
-python -m venv .venv && .venv\Scripts\pip install -r requirements.txt pytest
-.venv\Scripts\python -m pytest -q .\teste      # 115 teste
-.venv\Scripts\python pornire.py                # pornește aplicația
-```
-
-**115 teste automate** · CI pe **Windows și Linux** la fiecare commit · probe de transcriere reale pe placă video. Nucleul merge și pe Linux — vezi [LINUX.md](LINUX.md). Aplicația poate fi folosită și **din alte programe**, în mod serviciu (`DTED.exe --serviciu`).
+| 🎤 **Dictezi live** | textul curge în editor cuvânt cu cuvânt, fără să aștepte după tine |
+| ⏸ **Pauză microfon** | vorbești cu cineva lângă tine — programul nu aude nimic până la reluare |
+| ⏎ **P alineat** | ștergi fraza neterminată și începi un paragraf nou, de la margine (F6) |
+| ⇥ **I alineat** | ștergi fraza și începi paragraf nou **cu alineat** (tab), ca în cărțile tipărite (Shift+F6) |
+| ⏱ **Semne [mm:ss]** | marchezi locurile importante; „Ascultă” (F9) redă exact bucata respectivă |
+| 🎚 **Microfon automat** | vumetru în dB + reglaj automat: nu mai taie, nu mai e prea încet |
+| 🧠 **Învață de la tine** | corectezi un cuvânt o dată — îl scrie corect de atunci |
+| 📂 **Transcriere fișiere** | tragi mai multe audio deodată; cele transcrise se sar singure |
+| 💾 **Export complet** | DOCX, ODT, TXT, RTF, HTML, SRT, VTT, PDF |
+| 🔐 **Criptare** | documentele salvate pot fi criptate AES-256, cu parola ta |
+| 🛡 **Confidențialitate** | 100% local; la cerere taie internetul programului sau al tot calculatorului |
+| 📦 **Actualizări** | un buton în program; descarcă, verifică SHA-256, păstrează versiunea veche |
 
 <div align="center">
-<img src="docs/img/setari-sunet.png" alt="Setări — bife simple, reglaj automat al microfonului, alegerea modelului" width="600">
+<img src="docs/img/transport-redare-v064.png" alt="Modul de redare: bara de jos arată doar butoanele audio — Ascultă, Stop, derulare, poziție, volum" width="860">
 </div>
 
----
+## 4. Cum face
 
-## 🆕 Ce e nou în v0.6.4
+- **Motor**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) peste [CTranslate2](https://github.com/OpenNMT/CTranslate2), cu modelul
+  **[eek whisper-turbo-ro-en](https://huggingface.co/eek/whisper-turbo-ro-en)** optimizat pentru română — **implicit**.
+- **Măsurat pe text de carte** (mostre reale, WER = cuvinte greșite):
 
-- **Descarci modelul de transcriere din program** — Setări → „Cum transcrie” → butonul „Descarcă modelul ales (internet)”: modelul standard (1,6 GB) și cel optimizat pentru română (eek, 800 MB) au surse oficiale fixe și sume SHA-256 verificate; fine-tunatul RO primește o explicație clară (nu are încă sursă publică).
-- **Confidențialitate consolidată în repo și istoric** — scoase din documentație și din istoricul git toate detaliile de hardware și căile locale de disc; rapoartele de eroare anonimizează orice cale de disc, nu doar câteva.
+| Model | Carte (30 s) | Total | Viteză (30 s audio) | Mărime |
+|---|---|---|---|---|
+| **eek whisper-turbo-ro** — implicit ✔ | **5,4%** | **5,8%** | 1,3 s | 800 MB |
+| Whisper large-v3-turbo (standard) | 12,2% | 10,9% | 1,6 s | 1,6 GB |
+| Fine-tunat RO (TransferRapid) | 47,3% ⚠️ | 37,0% | 0,7 s | 1,6 GB |
 
-## 🗺️ Ce urmează (roadmap)
+<sub>⚠️ fine-tunatul taie textul lung — bun doar pentru clipuri scurte. Se alege din Setări → „Cum transcrie”, unde fiecare model poate fi <b>descărcat cu un buton</b> (cu SHA-256 verificat).</sub>
 
-*Rămas după v0.6.4 — dictarea pentru cărți e completă:*
+- **Live adevărat**: microfonul și modelul lucrează pe **fire separate** — captura nu se oprește cât timp
+  modelul scrie; o bucată de 2 s se transcrie în ~0,25 s pe placă video (GPU, float16) sau pe procesor
+  (CPU, float32 — aceeași calitate, doar mai încet). Programul își alege singur dispozitivul.
+- **Alineate ca în cărți**: fiecare idee nouă începe cu alineat — cu tab (stil tipărit) sau de la
+  margine (stil web). Le alegi tu; programul nu le amestecă niciodată.
 
-- [x] ~~**Instalatorul online (V2), fără administrator**~~ — **gata**: comanda `irm … | iex` de sus face exact asta (descarcă versiunea fixă, verifică SHA-256, instalează per-utilizator)
-- [x] ~~**Streaming cuvânt cu cuvânt și chunking adaptiv VAD la dictare**~~ — **gata (v0.6.2)**: latență minimă (bucăți adaptive 0,8–2,0 s tăiate la pauzele naturale de respirație), eliminat blocajele la dictare continuă non-stop și afișare fluidă cuvânt cu cuvânt în editor
-- [x] ~~**Afișare live cuvânt cu cuvânt la dictare + rulare fără cereri UAC**~~ — **gata (v0.6.2)**: cuvintele apar pe ecran pe măsură ce sunt rostite, iar izolarea de rețea în Mod 2 lucrează direct în proces fără UAC
-- [x] ~~**Recuperarea sunetului și a textului la cădere (cerința 61)**~~ — **gata (v0.6.2)**: atât textul, cât și fișierul `.wav` se salvează pe bucăți și se recuperează la repornire
-- [x] ~~**Reorganizare UI/UX fără suprapuneri + Actualizări din GitHub**~~ — **gata (v0.6.2)**: ecrane secundare cu bară de întoarcere la editor, Setări fără rânduri înghesuite și update rapid prin `program-0.6.4.zip`
-- [ ] **Modelul „pentru toți utilizatorii"** — instalare partajată (cere drepturi de administrator o singură dată)
-- [ ] **Editare audio** — marcarea și ștergerea unor porțiuni din înregistrare (Ctrl+Shift+S/E/D, ca la Express Dictate)
-- [ ] **Limbi suplimentare** — dictarea și în alte limbi (engleză prima, apoi cele cu model bun local); româna rămâne implicită și forțată ca astăzi
-- [ ] **Coloana Prioritate reală** — marchează o dictare „Urgentă” din listă (acasă momentan toate sunt „Normal”)
-- [ ] **Alte modele noi pentru română** — pe măsură ce apar, se adaugă ca opțiune în Setări
+## 5. Cum lucrezi
 
----
+1. Pornești programul — modelul se încarcă singur în fundal („modelul e încărcat” apare în bara de jos).
+2. Apesi **⏺ Dictează (F5)** și vorbești non-stop. Nu te opri să aștepți: textul curge.
+3. Te-ai încurcat? **⏎ P alineat (F6)** sau **⇥ I alineat (Shift+F6)** — fraza ștearsă, paragraf nou.
+   Vorbește cineva lângă tine? **⏸ Pauză microfon**.
+4. Marchezi locurile importante cu **⏱ Semn (Ctrl+B)** → apar `[mm:ss]` în text.
+5. După dictare, bara trece pe modul audio: **▶ Ascultă (F9)** de la semnul de lângă cursor, corectezi
+   direct în editor — și programul învață corecturile tale.
+6. Salvezi (Ctrl+S) în formatul pe care îl vrei, cu parolă dacă vrei. Gata.
+
+**Tastele principale** (se schimbă din Setări → „Taste rapide”, iar scurtătura stă scrisă pe fiecare buton):
+F5 dictează · F9 ascultă · F7/F8 derulare · F10–F12 viteze · F6 P alineat · Shift+F6 I alineat · Ctrl+B semn.
+
+## 6. Funcțiile, pe rând
+
+- **Dictare pentru text de carte** — o singură fereastră, text legat de sunet, fără pagini separate.
+- **Listă „Dictările mele”** — Dată, Oră, Durată, Prioritate, Nume, primele cuvinte; clic dreapta:
+  Deschide / Redenumește (F2) / Șterge la Coșul de reciclare.
+- **Activare vocală (opțional)** — programul pornește singur dictarea când începi să vorbești.
+- **Fereastră mică, mereu deasupra** — pornești/oprești dictarea din orice alt program.
+- **Curățenie automată** — bâlbâielile („nu, nu, nu”) se strâng singure; dublările firești rămân.
+- **Comenzi vocale** — „punct”, „virgulă”, „paragraf nou”, „rând nou”.
+- **Căutare în editor** (Ctrl+F), zoom text (Ctrl + / − / 0), teme: Luminos / Întunecat / Ca Windows.
+- **Verificare calculator** — CPU, RAM, disc, placă video + VRAM, driver, microfoane și boxe.
+- **Mod serviciu** — `DTED.exe --serviciu`, pentru folosirea din alte programe.
+
+## 7. Cum lucrați împreună
+
+- **Programul și tu**: el scrie, tu curăți. Corecturile tale intră în dicționar și se aplică de la
+  următoarea transcriere; „Nume și termeni” din Setări îi predau numele proprii (autor, personaje).
+- **Cu documentele tale**: deschizi DOCX/ODT existente, continui dictarea, salvezi înapoi.
+- **Cu stick-ul**: instalarea offline (varianta A de mai jos) se pune pe stick și instalează pe orice
+  calculator, fără internet; portabilul chiar rulează de pe stick.
+- **Cu confidențialitatea**: indicatorul din bara de jos arată mereu starea (🟢 internet pornit /
+  🟠 doar programul izolat / 🔴 totul tăiat). La dictare se poate bloca automat.
+- **Cu noi**: la orice eroare apare discret „⚠ Trimite raportul?” — fereastra vine completată din
+  jurnal, fără text din carte și fără căi personale, și se trimite direct pe GitHub.
+
+## 8. Ce urmează
+
+Rămas după v0.6.4 (dictarea pentru cărți e completă):
+
+- [ ] Modelul „pentru toți utilizatorii” — instalare partajată (admin o singură dată)
+- [ ] Editare audio — marcarea și ștergerea unor porțiuni din înregistrare
+- [ ] Limbi suplimentare — engleza prima; româna rămâne implicită
+- [ ] Coloana Prioritate reală în lista dictărilor
+- [ ] Alte modele noi pentru română, pe măsură ce apar
+
+## 9. ⬇️ Instalare / descărcare
+
+**Folosești Windows?** Ai nevoie de UNUL din cele trei rânduri:
+
+| Vrei… | Apasă aici | Apoi… |
+|---|---|---|
+| **Cel mai simplu: instalează** | **[⬇️ DESCARCĂ SETUP.DTED-0.6.4.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/Setup.DTED-0.6.4.exe)** | ~1,84 GB; dublu clic → Next → Instalează |
+| **Fără instalare, de pe stick** | **[⬇️ DESCARCĂ PORTABIL-DTED-0.6.4.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/portabil-DTED-0.6.4.zip)** | click dreapta → Dezarhivează → `DTED.exe` |
+| **Totul automat, o comandă** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | descarcă + verifică SHA-256 + instalează |
+
+**Ai deja D&TED?** → butonul **📦 Actualizări** din program → „Caută actualizări (internet)”:
+descarcă doar arhiva mică [`program-0.6.4.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/program-0.6.4.zip)
+(~1,25 MB), verifică amprenta, păstrează versiunea veche; după repornire rulează chiar versiunea nouă.
+
+**Linux (x86_64)?** → **[⬇️ DESCARCĂ DTED PENTRU LINUX](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/dted-0.6.4-linux.tar.gz)**,
+apoi `tar -xzf dted-0.6.4-linux.tar.gz` și `./install.sh`.
+
+**Kitul offline (exe) include tot** — modelul + CUDA; instalare 100% fără internet, fără administrator.
+Wizard-ul îți arată pagina „Ce știe să facă D&TED” și verificarea calculatorului (CPU, RAM, disc, placă video + VRAM).
+Aceleași fișiere, cu sume în [SHA256SUMS.txt](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.4/SHA256SUMS.txt),
+sunt pe [pagina release v0.6.4](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.4).
+
+**Cerințe:** Windows 10/11 pe 64 de biți · 8 GB RAM recomandate · ~4 GB pe disc. Nucleul merge și pe Linux.
+
+### ❓ Întrebări frecvente
+
+**Primele cuvinte apar greșit la început?** Așteaptă mesajul „modelul e încărcat” din bara de jos — după el, dictarea pornește instant.
+
+**Scrie cu întârziere pe calculator fără placă video?** Merge pe procesor, cu aceeași calitate — doar mai încet. Cu placă NVIDIA, butonul din Setări aduce CUDA (~1,2 GB).
+
+**Unde ajung documentele?** În Documente → „Dictare&Transcriere Română”; folderul se schimbă din Setări.
+
+**Cine vede textul meu?** Nimeni. Transcrierea e 100% locală; actualizările și rapoartele sunt singurele cu internet, doar când apeși tu.
+
+### 🐞 Găsești o problemă? Raportează dintr-un clic
+
+La orice eroare apare discret „⚠ Trimite raportul?” — fereastra vine **deja completată** cu detaliile
+tehnice din jurnal; tu adaugi doar ce făceai. Se trimite direct pe
+[GitHub Issues](https://github.com/Hermeneuticus-of-things/dted/issues) — **fără text din carte,
+fără căi personale** (toate căile de disc sunt anonimizate automat).
+
+<div align="center">
+<img src="docs/img/raport.png" alt="Fereastra „Raportează o problemă” — pre-completată din jurnal" width="560">
+</div>
+
+### ⚙️ Detalii tehnice
+
+- Cod sursă + teste:
+
+  ```bash
+  git clone https://github.com/Hermeneuticus-of-things/dted.git
+  cd dted
+  python -m venv .venv
+  .venv\Scripts\pip install -r requirements.txt pytest
+  .venv\Scripts\python -m pytest -q teste      # 128 teste
+  .venv\Scripts\python pornire.py               # pornește aplicația
+  ```
+
+- **128 de teste automate**, CI pe Windows și Linux la fiecare commit.
+- Modelele și măsurătorile complete: [`docs/MODELE_ROMANA.md`](docs/MODELE_ROMANA.md).
+- Nucleul pe Linux: [`LINUX.md`](LINUX.md).
+- Confidențialitate: transcriere locală; izolare de rețea pe proces (Mod 2, fără UAC) sau completă
+  (Mod 1, gardian reversibil); rapoarte anonimizate.
 
 <div align="center">
 
-**[⬇ Toate versiunile](https://github.com/Hermeneuticus-of-things/dted/releases)** · **[🐞 Problema? Raportează direct din program](https://github.com/Hermeneuticus-of-things/dted/issues)**
+**[⬇ Toate versiunile](https://github.com/Hermeneuticus-of-things/dted/releases)** · **[🐞 Problema? Raportează din program](https://github.com/Hermeneuticus-of-things/dted/issues)**
 
-Cu 🎙 și 🤍 pentru limba română · [modele și măsurători](docs/MODELE_ROMANA.md)
+Cu 🎙 și 🤍 pentru limba română
 
 <sub>D&amp;ED v0.6.4-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 

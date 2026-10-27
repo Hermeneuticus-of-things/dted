@@ -92,6 +92,7 @@ class PaginaDictare(QWidget):
         self._mini = None  # FereastraMini mereu deasupra (cerința 40 / D-8)
         self._text_dictare = ""  # textul final, pentru recuperarea la cădere (cerința 61)
         self._ultima_provizor = 0.0
+        self._anulat_pana = 0.0  # „de la capăt”/„alineat”: bucățile începute înainte de acest moment se aruncă
 
         self._coada_cuvinte: list[str] = []
         self._timer_cuvinte = QTimer(self)
@@ -763,7 +764,7 @@ class PaginaDictare(QWidget):
                 pass
             # Predă bucata firului de transcriere — captura reia imediat.
             try:
-                self._preda_transcriere(("final", sunet))
+                self._preda_transcriere(("final", sunet, time.monotonic()))
             except Exception as exc:
                 jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
                 continue
@@ -771,7 +772,7 @@ class PaginaDictare(QWidget):
         # La ieșire: firul de transcriere termină tot ce a primit, apoi salvarea.
         if self._fir_transcriere is not None:
             try:
-                self._coada_transcriere.put(("gata", None))
+                self._coada_transcriere.put(("gata", None, 0.0))
             except Exception:
                 pass
             self._fir_transcriere.join(timeout=180)
@@ -786,11 +787,15 @@ class PaginaDictare(QWidget):
         """
         while True:
             try:
-                fel, sunet = self._coada_transcriere.get()
+                fel, sunet, predat_la = self._coada_transcriere.get()
             except Exception:
                 return
             if fel == "gata" or sunet is None:
                 return
+            if predat_la <= self._anulat_pana:
+                # „P alineat”/„I alineat” au șters textul dintre timp: bucata asta
+                # ar re-scrie fraza pe care utilizatorul tocmai a anulat-o.
+                continue
             motor_local = self.aplicatie._motor
             if motor_local is None:
                 continue
@@ -851,7 +856,7 @@ class PaginaDictare(QWidget):
             return
         self._ultima_provizor = acum
         try:
-            self._coada_transcriere.put_nowait(("provizoriu", fereastra))
+            self._coada_transcriere.put_nowait(("provizoriu", fereastra, time.monotonic()))
         except queue.Full:
             pass
 
@@ -949,43 +954,41 @@ class PaginaDictare(QWidget):
     # ------------------------------------------------------------------ comenzi
 
     def _ia_de_la_capat(self) -> None:
-        """F6 — ia fraza de la capăt: șterge ce a scris din fraza neterminată.
+        """F6 — „⏎ P alineat”: șterge fraza neterminată și deschide un paragraf
+        nou care începe direct de la margine, fără alineat (stilul de pe web).
 
-        Merge și în timpul dictării, și după: cuvintele care așteaptă încă
-        în coada de afișare se aruncă și ele, ca să nu reapară după ștergere.
+        Merge și în timpul dictării, și după: cuvintele care așteaptă încă în
+        coada de afișare se aruncă, iar bucățile începute între timp sunt
+        anulate pe momentul predării — fraza ștearsă nu mai reapare.
         """
-        if getattr(self, "_coada_cuvinte", None):
-            self._coada_cuvinte.clear()
-        sters = False
-        if hasattr(self, "editor"):
-            try:
-                sters = self.editor.sterge_ultima_fraza()
-            except Exception:
-                sters = False
-        if hasattr(self, "editor"):
-            self.stare.text = self.editor.text()
-        if sters:
-            self.aplicatie.bara_stare.arata(
-                "De la capăt", "fraza curentă a fost ștearsă — redicteaz-o liniștit.", "lucru"
-            )
-        else:
-            self.aplicatie.bara_stare.arata(
-                "De la capăt", "nicio frază neterminată de șters.", "normal"
-            )
-
-    def _idee_noua(self) -> None:
-        """Shift+F6 — șterge fraza în curs și deschide o idee nouă (paragraf + tab)."""
+        self._anulat_pana = time.monotonic()
         if getattr(self, "_coada_cuvinte", None):
             self._coada_cuvinte.clear()
         if hasattr(self, "editor"):
             try:
-                self.editor.idee_noua()
+                self.editor.paragraf_nou(cu_alineat=False)
             except Exception:
                 pass
             self.stare.text = self.editor.text()
-            self.aplicatie.bara_stare.arata(
-                "Idee nouă", "fraza curentă ștearsă — scrii într-un paragraf nou, cu tab înainte.", "lucru"
-            )
+        self.aplicatie.bara_stare.arata(
+            "P alineat", "fraza ștearsă — scrii într-un paragraf nou, fără alineat.", "lucru"
+        )
+
+    def _idee_noua(self) -> None:
+        """Shift+F6 — „⇥ I alineat”: șterge fraza curentă și deschide un paragraf
+        nou cu alineat (tab în față), ca în cărțile tipărite."""
+        self._anulat_pana = time.monotonic()
+        if getattr(self, "_coada_cuvinte", None):
+            self._coada_cuvinte.clear()
+        if hasattr(self, "editor"):
+            try:
+                self.editor.paragraf_nou(cu_alineat=True)
+            except Exception:
+                pass
+            self.stare.text = self.editor.text()
+        self.aplicatie.bara_stare.arata(
+            "I alineat", "fraza ștearsă — scrii într-un paragraf nou, cu alineat (tab).", "lucru"
+        )
 
     def salveaza(self) -> None:
         text = self.editor.text()

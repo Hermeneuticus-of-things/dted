@@ -133,9 +133,8 @@ class Aplicatie(QMainWindow):
         self._construieste()
 
         # Scurtături tastatură. Cele principale se pot schimba din Setări → „Taste rapide”.
-        from .. import config as modul_config
-
-        tasta = modul_config.scurtaturi(self.configurare)
+        self._scurtaturi_config: list = []
+        self._inregistreaza_scurtaturi()
         QShortcut(QKeySequence("Ctrl+D"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+T"), self, lambda: self.arata_ecran("transcriere"))
         QShortcut(QKeySequence("Ctrl++"), self, self.mareste_scrisul)
@@ -146,20 +145,8 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+R"), self, self._comanda_asculta)  # 34: taste de redare
         QShortcut(QKeySequence("Ctrl+Shift+R"), self, self._opreste_ascultarea)
-        QShortcut(QKeySequence(tasta.get("dictare", "F5")), self, self._toggle_dictare)
-        QShortcut(QKeySequence(tasta.get("asculta", "F9")), self, self._comanda_asculta)
         QShortcut(QKeySequence("Home"), self, lambda: self._sare_redare(0.0))
         QShortcut(QKeySequence("End"), self, self._sare_la_capat)
-        QShortcut(QKeySequence(tasta.get("inapoi_5", "F7")), self, lambda: self._sare_redare(-5.0))
-        QShortcut(QKeySequence(tasta.get("inainte_5", "F8")), self, lambda: self._sare_redare(+5.0))
-        # fraza de la capăt / idee nouă (paragraf + tab)
-        QShortcut(QKeySequence(tasta.get("de_la_capat", "F6")), self, self._ia_de_la_capat)
-        QShortcut(QKeySequence(tasta.get("idee_noua", "Shift+F6")), self, self._idee_noua)
-        QShortcut(QKeySequence(tasta.get("stop_asculta", "Shift+Esc")), self, self._opreste_ascultarea)
-        QShortcut(QKeySequence(tasta.get("viteza_normala", "F10")), self, lambda: self._viteza_redare("normal"))
-        QShortcut(QKeySequence(tasta.get("viteza_lenta", "F11")), self, lambda: self._viteza_redare("lent"))
-        QShortcut(QKeySequence(tasta.get("viteza_rapida", "F12")), self, lambda: self._viteza_redare("rapid"))
-        QShortcut(QKeySequence(tasta.get("semn", "Ctrl+B")), self, self._insereaza_semn_global)  # 37 / D-7
         QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: închidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
@@ -423,20 +410,34 @@ class Aplicatie(QMainWindow):
         self.btn_pauza_microfon.setEnabled(False)
         dock_rand.addWidget(self.btn_pauza_microfon)
 
-        # „Ia fraza de la capăt” și „Idee nouă (tab)” — F6 / Shift+F6.
+        # „⏎ P alineat” și „⇥ I alineat” — F6 / Shift+F6 (sau ce a ales
+        # utilizatorul în Setări → „Taste rapide”; scurtătura stă pe buton).
+        from .. import config as modul_config_taste
+
+        _taste = modul_config_taste.scurtaturi(self.configurare)
         self.btn_de_la_capat = Buton(
-            self._dock_redare, "↺ De la capăt", self._ia_de_la_capat, latime=150, inaltime=36
+            self._dock_redare,
+            f"⏎ P alineat ({_taste.get('de_la_capat', 'F6')})",
+            self._ia_de_la_capat,
+            latime=170,
+            inaltime=36,
         )
         self.btn_de_la_capat.setToolTip(
-            "Șterge fraza dictată neterminată, ca să o iei de la capăt (F6)"
+            "Șterge fraza dictată neterminată și începe un paragraf nou, "
+            f"fără alineat ({_taste.get('de_la_capat', 'F6')})"
         )
         dock_rand.addWidget(self.btn_de_la_capat)
 
         self.btn_idee_noua = Buton(
-            self._dock_redare, "⇥ Idee nouă", self._idee_noua, latime=140, inaltime=36
+            self._dock_redare,
+            f"⇥ I alineat ({_taste.get('idee_noua', 'Shift+F6')})",
+            self._idee_noua,
+            latime=160,
+            inaltime=36,
         )
         self.btn_idee_noua.setToolTip(
-            "Șterge fraza curentă și deschide un paragraf nou, cu tab înainte (Shift+F6)"
+            "Șterge fraza curentă și începe un paragraf nou, cu alineat (tab), "
+            f"ca în cărțile tipărite ({_taste.get('idee_noua', 'Shift+F6')})"
         )
         dock_rand.addWidget(self.btn_idee_noua)
 
@@ -920,6 +921,59 @@ class Aplicatie(QMainWindow):
         comun.mareste_scris(1.0)
         self.editor.actualizeaza_font()
 
+    def _inregistreaza_scurtaturi(self) -> None:
+        """(Re)pune scurtăturile configurabile, după ce-a ales utilizatorul.
+
+        Chemată la pornire și după salvarea din Setări → „Taste rapide”: 
+        scurtăturile noi merg IMEDIAT, fără repornire, iar etichetele butoanelor
+        arată mereu combinația corectă.
+        """
+        from .. import config as modul_config
+
+        for sc in getattr(self, "_scurtaturi_config", []):
+            try:
+                sc.setParent(None)
+                sc.deleteLater()
+            except Exception:
+                pass
+        self._scurtaturi_config = []
+        tasta = modul_config.scurtaturi(self.configurare)
+
+        def sc(cheie, actiune):
+            q = QShortcut(QKeySequence(cheie), self, actiune)
+            self._scurtaturi_config.append(q)
+
+        sc(tasta.get("dictare", "F5"), self._toggle_dictare)
+        sc(tasta.get("asculta", "F9"), self._comanda_asculta)
+        sc(tasta.get("inapoi_5", "F7"), lambda: self._sare_redare(-5.0))
+        sc(tasta.get("inainte_5", "F8"), lambda: self._sare_redare(+5.0))
+        sc(tasta.get("de_la_capat", "F6"), self._ia_de_la_capat)
+        sc(tasta.get("idee_noua", "Shift+F6"), self._idee_noua)
+        sc(tasta.get("stop_asculta", "Shift+Esc"), self._opreste_ascultarea)
+        sc(tasta.get("viteza_normala", "F10"), lambda: self._viteza_redare("normal"))
+        sc(tasta.get("viteza_lenta", "F11"), lambda: self._viteza_redare("lent"))
+        sc(tasta.get("viteza_rapida", "F12"), lambda: self._viteza_redare("rapid"))
+        sc(tasta.get("semn", "Ctrl+B"), self._insereaza_semn_global)
+        # etichetele butoanelor arată combinația curentă
+        if hasattr(self, "btn_inregistreaza"):
+            pagina = self._pagini.get("dictare")
+            activ = bool(pagina is not None and getattr(pagina, "_activ", False))
+            t_dictare = tasta.get("dictare", "F5")
+            if activ:
+                self.btn_inregistreaza.set_text(f"⏹ Oprește ({t_dictare})")
+            else:
+                self.btn_inregistreaza.set_text(f"⏺ Dictează ({t_dictare})")
+        if hasattr(self, "btn_de_la_capat"):
+            self.btn_de_la_capat.setText(f"⏎ P alineat ({tasta.get('de_la_capat', 'F6')})")
+            self.btn_de_la_capat.setToolTip(
+                f"Șterge fraza dictată neterminată și începe un paragraf nou, fără alineat ({tasta.get('de_la_capat', 'F6')})"
+            )
+        if hasattr(self, "btn_idee_noua"):
+            self.btn_idee_noua.setText(f"⇥ I alineat ({tasta.get('idee_noua', 'Shift+F6')})")
+            self.btn_idee_noua.setToolTip(
+                f"Șterge fraza curentă și începe un paragraf nou, cu alineat (tab), ca în cărțile tipărite ({tasta.get('idee_noua', 'Shift+F6')})"
+            )
+
     def _toggle_dictare(self) -> None:
         """Porneste/oprește dictarea (F5 / Ctrl+Space / ⏺ roșu din transport).
 
@@ -986,12 +1040,18 @@ class Aplicatie(QMainWindow):
         if activ:
             self.btn_dictare.setText("⏹ Oprește dictarea")
             if hasattr(self, "btn_inregistreaza"):
-                self.btn_inregistreaza.set_text("⏹ Oprește (F5)")
+                from .. import config as _cfg_taste
+
+                t_dict = _cfg_taste.scurtaturi(self.configurare).get("dictare", "F5")
+                self.btn_inregistreaza.set_text(f"⏹ Oprește ({t_dict})")
             self.btn_dictare.setToolTip("Oprește dictarea (Ctrl+Space)")
         else:
             self.btn_dictare.setText("🎤 Dictează")
             if hasattr(self, "btn_inregistreaza"):
-                self.btn_inregistreaza.set_text("⏺ Dictează (F5)")
+                from .. import config as _cfg_taste
+
+                t_dict = _cfg_taste.scurtaturi(self.configurare).get("dictare", "F5")
+                self.btn_inregistreaza.set_text(f"⏺ Dictează ({t_dict})")
             self.btn_dictare.setToolTip("Dictează (Ctrl+D / Ctrl+Space)")
         self.btn_dictare.setProperty("dictare", "true" if activ else "false")
         stil = self.btn_dictare.style()
@@ -1833,6 +1893,7 @@ class Aplicatie(QMainWindow):
         comun.mareste_scris(getattr(config, "marire_scris", 100) / 100.0)
         self.editor.actualizeaza_font()
         self.editor.actualizeaza_etichete()
+        self._inregistreaza_scurtaturi()  # tastele noi merg imediat, fără repornire
         self._porneste_scurtaturile_globale(
             bool(getattr(config, "scurtaturi_globale", False))
         )

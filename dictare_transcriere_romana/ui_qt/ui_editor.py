@@ -273,18 +273,28 @@ class Editor(QWidget):
         self._control.setTextCursor(cursor)
         return True
 
-    def idee_noua(self) -> bool:
-        """Șterge fraza în curs și deschide o idee nouă: paragraf nou + tab înainte."""
+    def paragraf_nou(self, cu_alineat: bool) -> bool:
+        """Șterge fraza în curs și deschide un paragraf nou.
+
+        ``cu_alineat=True`` → tab în față (stilul din cărți, „I alineat”);
+        ``cu_alineat=False`` → paragraful începe de la margine (stilul de pe
+        web, „P alineat”). Fiecare idee nouă și fiecare argument nou încep
+        cu un alineat — al doilea sistem doar, nu amestecate.
+        """
         sters = self.sterge_ultima_fraza()
         cursor = self._control.textCursor()
         cursor.beginEditBlock()
-        cursor.insertText("\n\n\t")
+        cursor.insertText("\n\n" + ("\t" if cu_alineat else ""))
         cursor.endEditBlock()
         self._provizoriu_start = None
         self._provizoriu_lungime = 0
         self._text_ultim = self._control.toPlainText()
         self._control.setTextCursor(cursor)
         return sters
+
+    def idee_noua(self) -> bool:
+        """Păstrat pentru compatibilitate: paragraf nou cu alineat (tab)."""
+        return self.paragraf_nou(cu_alineat=True)
 
     def insereaza(self, text: str, spatiu_auto: bool = True) -> None:
         """Inserează text la poziția cursorului, cu un singur pas de anulare (Ctrl+Z).

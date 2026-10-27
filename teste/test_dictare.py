@@ -56,6 +56,7 @@ def test_fragmentul_sub_patru_secunde_se_proceseaza_dupa_oprire():
             self._text_dictare = ""
             self._marca_dictare = "test"
             self._ultima_provizor = 0.0
+            self._anulat_pana = 0.0
             self.config = SimpleNamespace(limba="ro", termeni="")
             self.motor = MotorTest()
             self.aplicatie = SimpleNamespace(
@@ -247,3 +248,59 @@ def test_fraza_de_la_capat_si_idee_noua_in_editor():
     assert ed.text() == "Fraza veche. "  # spațiul de după punct rămâne (era în textul de bază)
     ed.insereaza("Fraza refăcută corect.")
     assert ed.text() == "Fraza veche. Fraza refăcută corect."
+
+
+def test_bucata_inceputa_inainte_de_alineat_se_arunca():
+    """„P alineat”/„I alineat” anulează bucățile predâte înainte de momentul apăsării."""
+    import numpy as np
+
+    from dictare_transcriere_romana.ui_qt.ui_dictare import PaginaDictare
+
+    class MotorTest:
+        def __init__(self):
+            self.texte = []
+
+        def transcrie(self, sunet, **_optiuni):
+            self.texte.append("bucată")
+            return SimpleNamespace(text="fraza veche reapărută")
+
+    class CoadaTest:
+        def trimite(self, functie, *argumente):
+            functie(*argumente)
+
+    class DictareTest:
+        pass
+
+    d = DictareTest()
+    d._anulat_pana = 0.0
+    d.config = SimpleNamespace(limba="ro", termeni="")
+    d.motor = MotorTest()
+    d.aplicatie = SimpleNamespace(_motor=d.motor, coada=CoadaTest())
+    d._coada_transcriere = queue.Queue()
+
+    # bucata a fost predată la t=10; utilizatorul a apăsat „alineat” la t=20
+    d._coada_transcriere.put(("final", np.zeros(32_000, dtype=np.float32), 10.0))
+    d._anulat_pana = 20.0
+    d._coada_transcriere.put(("gata", None, 0.0))
+    PaginaDictare._bucla_transcriere(d)
+
+    assert d.motor.texte == []  # bucata veche nu s-a transcris deloc
+
+
+def test_p_alineat_si_i_alineat_in_editor():
+    """P alineat: paragraf nou de la margine. I alineat: paragraf nou cu tab."""
+    from PySide6.QtWidgets import QApplication
+    from dictare_transcriere_romana.ui_qt.ui_editor import Editor
+    from dictare_transcriere_romana import stare as stare_modul
+
+    _app = QApplication.instance() or QApplication([])
+    ed = Editor(None, stare_modul.Stare())
+
+    ed.set_text("Prima idee. a doua nu a ieșit")
+    ed.paragraf_nou(cu_alineat=False)
+    assert ed.text() == "Prima idee.\n\n"
+    ed.insereaza("A doua idee, de la margine.")
+    assert ed.text() == "Prima idee.\n\nA doua idee, de la margine."
+
+    ed.paragraf_nou(cu_alineat=True)
+    assert ed.text().endswith("\n\n\t")

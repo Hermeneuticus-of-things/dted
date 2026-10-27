@@ -49,8 +49,8 @@ app.processEvents()
 f._seteaza_mod_transport("dictare")
 f.btn_pauza_microfon.setEnabled(True)
 app.processEvents()
-f.grab().save(str(folder / "interfata-v063.png"))
-print("salvat interfata-v063.png")
+f.grab().save(str(folder / "interfata-v064.png"))
+print("salvat interfata-v064.png")
 
 # 2) Modul de redare: după o dictare, bara arată doar butoanele audio.
 f._are_sunet = True
@@ -60,8 +60,8 @@ f.btn_transport_stop.setEnabled(True)
 f._eticheta_redare.setText("00:42 / 03:10")
 f._slider_redare.setValue(220)
 app.processEvents()
-f.grab().save(str(folder / "transport-redare-v063.png"))
-print("salvat transport-redare-v063.png")
+f.grab().save(str(folder / "transport-redare-v064.png"))
+print("salvat transport-redare-v064.png")
 f.close()
 
 # 3) Setări → „Taste rapide”.
@@ -75,7 +75,14 @@ for i in range(dlg.lista_sectiuni.count()):
         break
 dlg.show()
 app.processEvents()
-dlg.grab().save(str(folder / "taste-rapide-v063.png"))
-print("salvat taste-rapide-v063.png")
+dlg.grab().save(str(folder / "taste-rapide-v064.png"))
+print("salvat taste-rapide-v064.png")
+for i in range(dlg.lista_sectiuni.count()):
+    if dlg.lista_sectiuni.item(i).text() == "Sunet":
+        dlg.lista_sectiuni.setCurrentRow(i)
+        break
+app.processEvents()
+dlg.grab().save(str(folder / "modele-v064.png"))
+print("salvat modele-v064.png")
 dlg.close()
 print("GATA")

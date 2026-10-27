@@ -40,14 +40,14 @@ ECRANE: dict[str, Ghid] = {
         titlu="Ce e nou în v0.6.3",
         ce_vezi=[
             "Textul dictat apare pe ecran cuvânt cu cuvânt, pe măsură ce vorbești; partea gri se confirmă în câteva secunde.",
-            "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”, „↺ De la capăt” și „⇥ Idee nouă”.",
+            "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”, „⏎ P alineat” și „⇥ I alineat”.",
             "Modelul de transcriere se încarcă singur în fundal, imediat după pornirea programului.",
         ],
         ce_faci=[
             "Dictezi non-stop: apasă butonul roșu (F5) și vorbește — programul scrie în timp ce vorbești, nu te mai așteaptă.",
             "Vorbești cu cineva lângă tine? Apasă „⏸ Pauză microfon”: programul nu mai aude nimic; la reluare, dictarea continuă de unde a rămas.",
-            "Ai rostit o frază greșit? Apasă „↺ De la capăt” (F6): fraza neterminată se șterge, inclusiv cuvintele de pe ecran, și o redictezi.",
-            "Începi o idee nouă? Apasă „⇥ Idee nouă” (Shift+F6): șterge fraza curentă și deschide un paragraf nou, cu tab înainte.",
+            "Ai rostit o frază greșit? Apasă „⏎ P alineat” (F6): fraza neterminată se șterge, inclusiv cuvintele de pe ecran, și începi un paragraf nou de la margine.",
+            "Începi o idee nouă? Apasă „⇥ I alineat” (Shift+F6): șterge fraza curentă și deschide un paragraf nou, cu alineat (tab), ca în cărțile tipărite.",
             "Tastele ți se par incomode? Setări → „Taste rapide”: îți alegi singur tastele; butonul „Pune tot la fel ca la început” le aduce pe cele din fabrică.",
         ],
         urmeaza=[
@@ -94,21 +94,21 @@ ECRANE: dict[str, Ghid] = {
     "dictare": Ghid(
         titlu="Dictare vocală",
         ce_vezi=[
-            "Jos, în bara de transport: butonul roșu „⏺ Dictează (F5)”, „▶ Ascultă”, „⏹ Stop”, „⏸ Pauză microfon”, „↺ De la capăt” și „⇥ Idee nouă”.",
+            "Jos, în bara de transport: butonul roșu „⏺ Dictează (F5)”, „▶ Ascultă”, „⏹ Stop”, „⏸ Pauză microfon”, „⏎ P alineat” și „⇥ I alineat” — scurtăturile stau scrise pe butoane.",
             "Vumetrul se mișcă când vorbești; textul apare în editor cuvânt cu cuvânt, pe măsură ce rostești.",
             "Partea gri a textului e provizorie (se confirmă în câteva secunde); partea neagră e sigură.",
         ],
         ce_faci=[
             "Apasă butonul roșu (sau F5) și vorbește non-stop — nu te opri să aștepți: programul scrie în timp ce vorbești.",
             "Vorbești cu altcineva? Apasă „⏸ Pauză microfon”; apasă-l din nou ca să continui dictarea.",
-            "Fraza nu a ieșit? „↺ De la capăt” (F6) o șterge pe cea neterminată și o redictezi liniștit.",
-            "Idee nouă? „⇥ Idee nouă” (Shift+F6) șterge fraza curentă și deschide un paragraf nou, cu tab înainte.",
+            "Fraza nu a ieșit? „⏎ P alineat” (F6) o șterge pe cea neterminată și deschide un paragraf nou, de la margine.",
+            "Idee nouă? „⇥ I alineat” (Shift+F6) șterge fraza curentă și deschide un paragraf nou, cu alineat (tab), ca în cărțile tipărite.",
             "„⏱ Semn” (Ctrl+B) pune [mm:ss] la cursor; „▶ Ascultă” (F9) redă bucata de la semn ca să o corectezi.",
             "Apasă din nou butonul roșu când ai terminat; textul și înregistrarea se salvează singure.",
         ],
         urmeaza=[
             "Corectezi în editor (cuvintele corectate se învață), apoi salvezi ca DOCX/ODT sau deschizi în LibreOffice.",
-            "Tastele se pot schimba din Setări → „Taste rapide”.",
+            "Tastele se schimbă din Setări → „Taste rapide” și merg imediat; scurtătura curentă stă scrisă pe fiecare buton.",
         ],
         probleme=[
             (

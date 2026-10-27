@@ -571,8 +571,16 @@ class Buton(QPushButton):
         self._aplica_stil()
 
     def set_text(self, text: str) -> None:
-        """Schimbă textul butonului, pătrunzând scurtătura dacă există."""
+        """Schimbă textul butonului, pătrunzând scurtătura dacă există.
+
+        Idempotent: dacă textul dat conține deja scurtătura „(…)", se pune
+        exact el — altfel scurtătura actuală se păstrează la coadă. Așa nu se
+        mai acumulează „(F5) (F5) (F5)" la fiecare pornire/oprire.
+        """
         curent = self.text()
+        if " (" in text and text.endswith(")"):
+            self.setText(text)  # apelantul a scris deja scurtătura
+            return
         if " (" in curent:
             scurt = curent[curent.index(" ("):]
             self.setText(f"{text}{scurt}")
