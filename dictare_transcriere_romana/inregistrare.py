@@ -174,6 +174,7 @@ class Microfon:
         self._blocare = threading.Lock()
         self.nivel = 0.0
         self.activ = False
+        self.pauza = False  # adevărat = fluxul rulează, dar nu mai strâng sunet
         self.rata_reala = rata
         self.ultima_eroare = ""
 
@@ -232,6 +233,11 @@ class Microfon:
     # ------------------------------------------------------------------ captură
 
     def _primeste(self, date, cadre, timp, stare) -> None:  # noqa: ANN001
+        if self.pauza:
+            # Pauză de microfon: fluxul rulează, dar nu strângem nimic (utilizatorul
+            # vorbește cu altcineva — programul nu trebuie să scrie ce aude).
+            self.nivel = 0.0
+            return
         bloc = np.asarray(date, dtype=np.float32)
         if bloc.ndim > 1:
             bloc = bloc.mean(axis=1)

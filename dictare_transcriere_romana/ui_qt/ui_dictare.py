@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import queue
 import threading
 import time
 try:
@@ -55,6 +56,10 @@ SECUNDE_MINIME_PAUZA = 0.8
 PRAG_RMS_LINISTE = 0.018
 #: Fragmentele mai scurte se păstrează la oprire, dacă au suficientă vorbire.
 SECUNDE_MINIME_LA_OPRIRE = 0.35
+#: Din câte secunde de vorbire se cere afișarea provizorie live (cuvânt cu cuvânt).
+SECUNDE_PROVIZORIU = 1.0
+#: Intervalul minim între două transcrieri provizorii (secunde).
+INTERVAL_PROVIZORIU = 0.9
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
 
@@ -75,6 +80,8 @@ class PaginaDictare(QWidget):
         self.editor: Editor = aplicatie.editor
 
         self._fir: threading.Thread | None = None
+        self._fir_transcriere: threading.Thread | None = None
+        self._coada_transcriere: "queue.Queue" = queue.Queue(maxsize=3)
         self._microfon = None
         self._anulat = threading.Event()
         self._activ = False
@@ -83,6 +90,8 @@ class PaginaDictare(QWidget):
         self._semnuri: list[str] = []
         self._dictare_sunet = None  # Inregistrare completă (pentru „Mergi la semn", cerința 38)
         self._mini = None  # FereastraMini mereu deasupra (cerința 40 / D-8)
+        self._text_dictare = ""  # textul final, pentru recuperarea la cădere (cerința 61)
+        self._ultima_provizor = 0.0
 
         self._coada_cuvinte: list[str] = []
         self._timer_cuvinte = QTimer(self)
@@ -144,6 +153,11 @@ class PaginaDictare(QWidget):
         )
         self.buton_opreste.set_activ(False)
         rand_buton.addWidget(self.buton_opreste)
+        self.buton_pauza = Buton(
+            corp, "⏸ Pauză microfon", self._comuta_pauza, latime=220, inaltime=48
+        )
+        self.buton_pauza.set_activ(False)
+        rand_buton.addWidget(self.buton_pauza)
         self.buton_semn = Buton(
             corp, "⏱ Semn", self._insereaza_semn, scurtatura="Ctrl+B", latime=200, inaltime=48
         )
@@ -328,9 +342,13 @@ class PaginaDictare(QWidget):
         self._secunde_audio = 0.0
         self._semnuri = []
         self._dictare_sunet = None
+        self._text_dictare = ""
+        self._ultima_provizor = 0.0
         self._marca_dictare = biblioteca.marca_acum()
         self.stare.marca = self._marca_dictare
         self.buton_semn.set_activ(True)
+        self.buton_pauza.set_text("⏸ Pauză microfon")
+        self.buton_pauza.set_activ(True)
 
         # N-3/cerința 5: blocarea căilor de ieșire cât timp se dictează.
         self._blocat_de_noi = False
@@ -356,6 +374,11 @@ class PaginaDictare(QWidget):
         self.buton_opreste.set_activ(True)
         self.aplicatie.bara_stare.arata("Dictează", "Vorbește în microfon.", "lucru")
 
+        self._coada_transcriere = queue.Queue(maxsize=3)
+        self._fir_transcriere = threading.Thread(
+            target=self._bucla_transcriere, name="transcriere-dictare", daemon=True
+        )
+        self._fir_transcriere.start()
         self._fir = threading.Thread(target=self._bucla, name="dictare", daemon=True)
         self._fir.start()
 
@@ -364,6 +387,12 @@ class PaginaDictare(QWidget):
         self._timer_nivel.timeout.connect(self._actualizeaza_nivel)
         self._timer_nivel.start(60)
         self._sunet('start')
+        actualizeaza = getattr(self.aplicatie, "_actualizeaza_buton_dictare", None)
+        if actualizeaza is not None:
+            try:
+                actualizeaza()
+            except Exception:
+                pass
 
     def _asistent_microfon(self) -> None:
         """Cerința 52: prima dată când se dictează, arată cum se aude microfonul."""
@@ -437,7 +466,43 @@ class PaginaDictare(QWidget):
             jurnal.info(f"Activare vocală: nivel {db:.1f} dB ≥ prag {prag:.0f} dB.")
             self._porneste(automat=True)
 
-    def _opreste(self) -> None:        # Oprim captarea înaintea semnalului, ca firul de dictare să poată
+    def _comuta_pauza(self) -> None:
+        """Pauză rapidă de microfon: vorbești cu altcineva, programul nu scrie.
+
+        Fluxul rămâne deschis (repornirea e instant), dar nu se mai strânge
+        sunet; la reluare dictarea continuă exact de unde a rămas.
+        """
+        m = self._microfon
+        if m is None:
+            return
+        m.pauza = not m.pauza
+        if m.pauza:
+            self.buton_pauza.set_text("⏵ Reprenește microfonul")
+            self.nivel_bar.pune_db(-60.0)
+            self.aplicatie.bara_stare.arata(
+                "Pauză",
+                "microfonul nu mai ascultă — vorbește liniștit. Apasă din nou ca să continui dictarea.",
+                "atentie",
+            )
+        else:
+            self.buton_pauza.set_text("⏸ Pauză microfon")
+            self.aplicatie.bara_stare.arata(
+                "Dictează", "microfonul ascultă din nou.", "lucru"
+            )
+        # Bara de transport din fereastra principală arată aceeași stare (dacă există).
+        actualizeaza = getattr(self.aplicatie, "_actualizeaza_buton_dictare", None)
+        if actualizeaza is not None:
+            try:
+                actualizeaza()
+            except Exception:
+                pass
+
+    def _opreste(self) -> None:
+        if self._microfon is None and not self._activ:
+            # Al doilea apel (de la firul de dictare, după ce butonul a oprit
+            # deja totul) — nu repetăm salvarea și mesajele.
+            return
+        # Oprim captarea înaintea semnalului, ca firul de dictare să poată
         # transcrie apoi tot ce a rămas în coada microfonului.
         if self._microfon is not None:
             try:
@@ -495,11 +560,19 @@ class PaginaDictare(QWidget):
         self.buton_start._aplica_stil()
         self.buton_start.set_activ(True)
         self.buton_opreste.set_activ(False)
+        self.buton_pauza.set_text("⏸ Pauză microfon")
+        self.buton_pauza.set_activ(False)
         self.buton_semn.set_activ(False)
         from .. import nivele as _nivele
 
         self.nivel_bar.pune_db(_nivele.DB_MINIM)
         self.eticheta_nivel.setText("Dictarea s-a oprit.")
+        actualizeaza = getattr(self.aplicatie, "_actualizeaza_buton_dictare", None)
+        if actualizeaza is not None:
+            try:
+                actualizeaza()
+            except Exception:
+                pass
         self.aplicatie.bara_stare.arata(
             "Gata", f"Dictarea s-a terminat ({self._secunde_audio:.1f} s).", "succes"
         )
@@ -600,14 +673,19 @@ class PaginaDictare(QWidget):
     # ------------------------------------------------------------------ bucla dictare
 
     def _bucla(self) -> None:
-        """Captură sunet și transcriere pe bucăți adaptive (0,8 - 2,0 s), în fundal."""
+        """Captură sunet și predarea bucăților firului de transcriere, în fundal.
+
+        Captura NU mai așteaptă după model: când o bucată e gata (pauză scurtă
+        sau 2,0 s de vorbire continuă), e predată firului „transcriere-dictare”
+        și captura continuă imediat — dicția non-stop nu se mai blochează.
+        """
         from ..inregistrare import Microfon
 
         # Copie locală: „Oprește” pune self._microfon = None din firul interfeței.
         microfon = self._microfon
         if microfon is None:
             return
-        text_acum = ""
+        microfon.pauza = False
 
         while True:
             # Așteaptă până când utilizatorul face o pauză scurtă (>= 200 ms) după cel puțin 0.8s
@@ -632,6 +710,10 @@ class PaginaDictare(QWidget):
                         pass
                 if sec_curent >= SECUNDE_BUCATA:
                     break
+                # Afișare provizorie live: cuvintele apar pe ecran cât timp
+                # vorbim, înainte ca bucata să fie închisă și confirmată.
+                if sec_curent >= SECUNDE_PROVIZORIU:
+                    self._cere_provizoriu(microfon)
 
             secunde_buffer = microfon.scurgere()
             oprita = self._anulat.is_set()
@@ -674,38 +756,120 @@ class PaginaDictare(QWidget):
                 if getattr(self.config, "scurteaza_pauze", False):
                     sunet = codecuri.scurteaza_pauzele(sunet, rate=16_000)
 
+            # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
             try:
-                # Feedback imediat: utilizatorul știe că programul „scrie”, nu s-a oprit.
-                try:
-                    self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
-                except Exception:
-                    pass
-                motor_local = self.aplicatie._motor
+                self.aplicatie.coada.trimite(self._spune_procesare, len(sunet) / 16_000.0)
+            except Exception:
+                pass
+            # Predă bucata firului de transcriere — captura reia imediat.
+            try:
+                self._preda_transcriere(("final", sunet))
+            except Exception as exc:
+                jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
+                continue
+
+        # La ieșire: firul de transcriere termină tot ce a primit, apoi salvarea.
+        if self._fir_transcriere is not None:
+            try:
+                self._coada_transcriere.put(("gata", None))
+            except Exception:
+                pass
+            self._fir_transcriere.join(timeout=180)
+        self.aplicatie.coada.trimite(self._opreste)
+
+    def _bucla_transcriere(self) -> None:
+        """Fir de transcriere: preia bucățile din coadă și le scrie în editor.
+
+        Bucățile finale înlocuiesc afișarea provizorie (care a arătat deja
+        cuvintele pe măsură ce erau rostite). Tot aici se ține textul pentru
+        recuperarea la cădere (cerința 61).
+        """
+        while True:
+            try:
+                fel, sunet = self._coada_transcriere.get()
+            except Exception:
+                return
+            if fel == "gata" or sunet is None:
+                return
+            motor_local = self.aplicatie._motor
+            if motor_local is None:
+                continue
+            try:
                 rezultat = motor_local.transcrie(
                     sunet,
                     limba=getattr(self.config, "limba", "ro") or "ro",
                     termeni=getattr(self.config, "termeni", "") or "",
                     progres=None,
                     faza=None,
+                    rapid=True,
+                    provizoriu=(fel == "provizoriu"),
                 )
             except motor.Anulat:
-                break
+                continue
             except Exception as exc:
                 jurnal.atentionare(f"Eroare transcriere dictare: {exc}")
                 continue
-
             fragment = (rezultat.text or "").strip()
-            if fragment:
-                text_acum += (" " if text_acum else "") + fragment
-                try:
-                    biblioteca.scrie_recuperare(
-                        text_acum, getattr(self, "_marca_dictare", "") or "dictare"
-                    )
-                except Exception:
-                    pass
-                self.aplicatie.coada.trimite(self._adauga_text, fragment)
+            if not fragment:
+                continue
+            if fel == "provizoriu":
+                self.aplicatie.coada.trimite(self._adauga_text_live, fragment)
+            else:
+                from .. import inlocuiri, text_ro
 
-        self.aplicatie.coada.trimite(self._opreste)
+                curatat = text_ro.marcaje_paragraf(
+                    text_ro.curata_repetari(inlocuiri.aplica(fragment))
+                )
+                if curatat:
+                    self._text_dictare += (" " if self._text_dictare else "") + curatat
+                    try:
+                        biblioteca.scrie_recuperare(
+                            self._text_dictare,
+                            getattr(self, "_marca_dictare", "") or "dictare",
+                        )
+                    except Exception:
+                        pass
+                    self.aplicatie.coada.trimite(self._adauga_text, curatat)
+
+    def _cere_provizoriu(self, microfon) -> None:
+        """Cere o transcriere provizorie a ferestrei curente, fără s-o golească.
+
+        Se întâmplă doar când modelul e „în pas” cu dictarea (coada goală) —
+        pe calculatoare mai lente afișarea provizorie cedează automat locul
+        bucatelor finale, ca dictarea să nu rămână în urmă.
+        """
+        acum = time.monotonic()
+        if acum - self._ultima_provizor < INTERVAL_PROVIZORIU:
+            return
+        if not self._coada_transcriere.empty():
+            return
+        try:
+            fereastra = microfon.fereastra_curenta()
+        except Exception:
+            return
+        if len(fereastra) < int(SECUNDE_PROVIZORIU * 16_000):
+            return
+        self._ultima_provizor = acum
+        try:
+            self._coada_transcriere.put_nowait(("provizoriu", fereastra))
+        except queue.Full:
+            pass
+
+    def _preda_transcriere(self, element) -> None:
+        """Pune bucata în coada firului de transcriere, fără să piardă sunet.
+
+        Dacă modelul rămâne în urmă (procesor lent), captura așteaptă până se
+        face loc — niciun cuvânt dictat nu se pierde.
+        """
+        limita = time.monotonic() + 180.0
+        while True:
+            try:
+                self._coada_transcriere.put(element, timeout=0.2)
+                return
+            except queue.Full:
+                if time.monotonic() > limita:
+                    jurnal.atentionare("Coada de transcriere nu se golește; renunț la bucată.")
+                    return
 
     def _spune_procesare(self, secunde: float) -> None:
         """Arată în bara de stare că ultimele secunde se transformă în text."""
@@ -755,6 +919,8 @@ class PaginaDictare(QWidget):
         """Afișează provizoriu pe ecran cuvintele pe măsură ce sunt rostite („mama… are… mere…”)."""
         from .. import inlocuiri, text_ro
 
+        if not self._activ:
+            return  # dictarea s-a oprit între timp: nu mai afișăm provizorii rămași
         fragment = text_ro.marcaje_paragraf(text_ro.curata_repetari(inlocuiri.aplica(fragment)))
         if not fragment:
             return
@@ -781,6 +947,45 @@ class PaginaDictare(QWidget):
             self._goleste_coada_cuvinte()
 
     # ------------------------------------------------------------------ comenzi
+
+    def _ia_de_la_capat(self) -> None:
+        """F6 — ia fraza de la capăt: șterge ce a scris din fraza neterminată.
+
+        Merge și în timpul dictării, și după: cuvintele care așteaptă încă
+        în coada de afișare se aruncă și ele, ca să nu reapară după ștergere.
+        """
+        if getattr(self, "_coada_cuvinte", None):
+            self._coada_cuvinte.clear()
+        sters = False
+        if hasattr(self, "editor"):
+            try:
+                sters = self.editor.sterge_ultima_fraza()
+            except Exception:
+                sters = False
+        if hasattr(self, "editor"):
+            self.stare.text = self.editor.text()
+        if sters:
+            self.aplicatie.bara_stare.arata(
+                "De la capăt", "fraza curentă a fost ștearsă — redicteaz-o liniștit.", "lucru"
+            )
+        else:
+            self.aplicatie.bara_stare.arata(
+                "De la capăt", "nicio frază neterminată de șters.", "normal"
+            )
+
+    def _idee_noua(self) -> None:
+        """Shift+F6 — șterge fraza în curs și deschide o idee nouă (paragraf + tab)."""
+        if getattr(self, "_coada_cuvinte", None):
+            self._coada_cuvinte.clear()
+        if hasattr(self, "editor"):
+            try:
+                self.editor.idee_noua()
+            except Exception:
+                pass
+            self.stare.text = self.editor.text()
+            self.aplicatie.bara_stare.arata(
+                "Idee nouă", "fraza curentă ștearsă — scrii într-un paragraf nou, cu tab înainte.", "lucru"
+            )
 
     def salveaza(self) -> None:
         text = self.editor.text()

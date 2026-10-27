@@ -47,6 +47,26 @@ try:
         if _v_local and _tuplu_v(_v_local) > _tuplu_v(_v_baza):
             if str(_prog_actualizat) not in sys.path:
                 sys.path.insert(0, str(_prog_actualizat))
+            # În programul construit (PyInstaller), modulele înghețate au prioritate
+            # față de sys.path, deci simpla adăugare de cale nu ajunge: încărcăm
+            # explicit pachetul actualizat în sys.modules, ca actualizarea
+            # descărcată din program să conteze cu adevărat la repornire.
+            try:
+                import importlib.util
+
+                _pachet = _prog_actualizat / "dictare_transcriere_romana"
+                if "dictare_transcriere_romana" not in sys.modules:
+                    _spec = importlib.util.spec_from_file_location(
+                        "dictare_transcriere_romana",
+                        _pachet / "__init__.py",
+                        submodule_search_locations=[str(_pachet)],
+                    )
+                    if _spec is not None and _spec.loader is not None:
+                        _modul = importlib.util.module_from_spec(_spec)
+                        sys.modules["dictare_transcriere_romana"] = _modul
+                        _spec.loader.exec_module(_modul)
+            except Exception:
+                pass
         elif _v_local and _tuplu_v(_v_local) <= _tuplu_v(_v_baza):
             # Instalatorul nou e la zi sau mai nou decât vechea actualizare descărcată: curățăm override-ul vechi.
             _shutil.rmtree(_prog_actualizat, ignore_errors=True)

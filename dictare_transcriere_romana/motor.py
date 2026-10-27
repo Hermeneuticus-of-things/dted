@@ -425,9 +425,20 @@ class MotorWhisper:
         jurnal.info(STARE_PLACA_VIDEO)
 
     def incarca(self) -> None:
-        """Încarcă modelul, dacă nu este deja în memorie."""
+        """Încarcă modelul, dacă nu este deja în memorie.
+
+        Pre-încărcarea din fundal (la pornirea programului) și prima
+        transcriere pot apela simultan; blocarea cu dublă verificare
+        împiedică încărcarea modelului de două ori.
+        """
         if self._model is not None:
             return
+        with self._blocare:
+            if self._model is not None:
+                return
+            self._incarca_nelocuit()
+
+    def _incarca_nelocuit(self) -> None:
         fisier = cai.fisier_model(getattr(self, "model_preferat", None))
         if not fisier.exists():
             raise EroareMotor(
@@ -509,11 +520,20 @@ class MotorWhisper:
         termeni: str = "",
         progres: Callable[[float], None] | None = None,
         faza: Callable[[str], None] | None = None,
+        rapid: bool = False,
+        provizoriu: bool = False,
     ) -> Rezultat:
         """Transcrie un fișier audio sau un tablou numpy mono float32.
 
         ``progres`` primește o fracțiune între 0 și 1, iar ``faza`` mesaje
         scurte, în română, pentru afișare.
+
+        ``rapid=True`` (folosit la dictare) alege viteza în locul rafinamentului:
+        fără timpii de cuvinte și cu o singură ipoteză (beam 1) — bucata scurtă
+        de dictare apare pe ecran cât mai repede. La fișiere rămâne varianta
+        de calitate maximă. ``provizoriu=True`` e transcrierea live a ferestrei
+        care încă crește (afișare cuvânt cu cuvânt); nu mai are nevoie nici de
+        filtrul VAD, care ar putea tăia ultimul cuvânt rostit.
         """
         # Cererea se poate anula și cât timp se încarcă modelul (zeci de secunde):
         # semnalul se șterge înainte de încărcare și se verifică după ea.
@@ -531,7 +551,7 @@ class MotorWhisper:
             faza("Transcriu…")
         start = time.time()
         try:
-            segmente_rezultat, info = self._ruleaza(sursa, limba_faster, termeni, progres)
+            segmente_rezultat, info = self._ruleaza(sursa, limba_faster, termeni, progres, rapid, provizoriu)
         except Anulat:
             raise
         except Exception as exc:
@@ -542,7 +562,7 @@ class MotorWhisper:
                 self._dispozitiv = "cpu"
                 self._model = None
                 self.incarca()
-                segmente_rezultat, info = self._ruleaza(sursa, limba_faster, termeni, progres)
+                segmente_rezultat, info = self._ruleaza(sursa, limba_faster, termeni, progres, rapid, provizoriu)
             else:
                 raise EroareMotor(
                     "Transcrierea nu a putut fi făcută.",
@@ -604,7 +624,13 @@ class MotorWhisper:
         )
 
     def _ruleaza(
-        self, sursa, limba, termeni: str, progres: Callable[[float], None] | None
+        self,
+        sursa,
+        limba,
+        termeni: str,
+        progres: Callable[[float], None] | None,
+        rapid: bool = False,
+        provizoriu: bool = False,
     ):
         """Rulează faster-whisper, iterează segmentele și raportează progresul.
 
@@ -626,13 +652,18 @@ class MotorWhisper:
 
         # faster-whisper returnează (iterator_de_segmente, info). Iterează
         # iteratorul manual pentru progres, fără a avea nevoie de tqdm shim.
+        # La dictare (rapid): beam 1 și fără timpii de cuvinte — răspunsul
+        # primează; la fișiere rămâne varianta de calitate maximă (beam 5 +
+        # word_timestamps pentru subtitrări). La bucata provizorie (fereastra
+        # care încă crește) nici VAD-ul nu mai rulează, ca să nu taie finalul.
         segmente_generator, info = self._model.transcribe(
             audio,
             language=limba,
             task="transcribe",
-            vad_filter=True,  # detectează pausele în vorbire
+            vad_filter=not (rapid and provizoriu),
             condition_on_previous_text=False,
-            word_timestamps=True,  # cerința 33: text legat de sunet
+            word_timestamps=not rapid,  # cerința 33: text legat de sunet (fișiere)
+            beam_size=1 if rapid else 5,
             hotwords=termeni if termeni else None,  # cerinta 55: nume si termeni
             initial_prompt=prompt_romana(termeni) if limba == "ro" else None,
         )

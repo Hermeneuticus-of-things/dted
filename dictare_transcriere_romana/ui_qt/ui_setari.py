@@ -21,6 +21,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -32,6 +33,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QPushButton,
     QScrollArea,
     QSizePolicy,
     QSlider,
@@ -88,11 +90,84 @@ SECTIUNI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Limbă și termeni", ("_rand_limba", "_rand_termeni", "_rand_dictionar")),
     ("Sunet", ("_rand_microfon", "_rand_difuzor", "_rand_dictare")),
     ("Transcriere și salvare", ("_rand_transcriere", "_rand_salvare", "_rand_program")),
+    ("Taste rapide", ("_rand_taste_rapide",)),
     ("Parolă și criptare", ("_rand_parola",)),
     ("Confidențialitate", ("_rand_blocare",)),
     ("Aspect", ("_rand_afisare", "_rand_aspect")),
     ("Actualizări", ("_rand_actualizari",)),
 )
+
+
+#: Tastele rapide pe care utilizatorul le poate schimba: nume stabil → etichetă în română.
+TASTE_RAPIDE: tuple[tuple[str, str], ...] = (
+    ("dictare", "Dictează / oprește dictarea (⏺ roșu)"),
+    ("asculta", "Ascultă de la semn / pauză"),
+    ("stop_asculta", "Oprește ascultarea"),
+    ("inapoi_5", "Derulează înapoi 5 secunde"),
+    ("inainte_5", "Derulează înainte 5 secunde"),
+    ("viteza_normala", "Redare cu viteză normală"),
+    ("viteza_lenta", "Redare lentă"),
+    ("viteza_rapida", "Redare rapidă"),
+    ("de_la_capat", "Ia fraza de la capăt (șterge fraza neterminată)"),
+    ("idee_noua", "Idee nouă (șterge fraza + paragraf cu tab)"),
+    ("semn", "Semnul [mm:ss] în text"),
+)
+
+
+class PrindeTasta(QPushButton):
+    """Buton care prinde combinația de taste apăsată de utilizator.
+
+    Clic pe buton → „Apasă tastele…”, utilizatorul apasă combinația și ea
+    rămâne scrisă pe buton. Esc anulează; se poate reveni la valoarea din
+    fabrică oricând.
+    """
+
+    def __init__(self, secventa: str, parinte: QWidget | None = None):
+        super().__init__(secventa or "—", parinte)
+        self.secventa = (secventa or "").strip()
+        self._prinde = False
+        self.setMinimumWidth(210)
+        self.clicked.connect(self._porneste_prinderea)
+
+    def _porneste_prinderea(self) -> None:
+        self._prinde = True
+        self.setText("Apasă tastele…")
+        self.setFocus()
+
+    def keyPressEvent(self, eveniment) -> None:  # noqa: ANN001
+        if not self._prinde:
+            super().keyPressEvent(eveniment)
+            return
+        tasta = eveniment.key()
+        if tasta in (
+            Qt.Key.Key_Control,
+            Qt.Key.Key_Shift,
+            Qt.Key.Key_Alt,
+            Qt.Key.Key_Meta,
+        ):
+            return  # modificatorii singuri nu sunt o combinație
+        self._prinde = False
+        if tasta == Qt.Key.Key_Escape:
+            self.setText(self.secventa or "—")  # anulat
+            return
+        try:
+            combinatie = eveniment.modifiers() | Qt.Key(tasta)
+        except (TypeError, ValueError):
+            combinatie = None
+        secventa = QKeySequence(combinatie).toString() if combinatie is not None else ""
+        if not secventa:
+            try:
+                secventa = QKeySequence(Qt.Key(tasta)).toString()
+            except (TypeError, ValueError):
+                secventa = ""
+        if secventa:
+            self.secventa = secventa
+        self.setText(self.secventa or "—")
+
+    def pune_implicit(self, secventa: str) -> None:
+        """Revenire la valoarea din fabrică (butonul „Pune tot la fel ca la început”)."""
+        self.secventa = secventa
+        self.setText(secventa or "—")
 
 
 class _DialogAlegere(QDialog):
@@ -455,6 +530,39 @@ class FereastraSetari(QDialog):
         )
 
     # ------------------------------------------------------- parolă și criptare
+
+    def _rand_taste_rapide(self) -> None:
+        """Secțiunea „Taste rapide”: fiecare comandă principală are tasta ei."""
+        alese = config_modul.scurtaturi(self.config)
+        card = self._card(
+            "Tastele rapide ale programului",
+            "Clic pe un buton, apoi apasă combinația de taste pe care o vrei. "
+            "Tastele noi se folosesc după ce salvezi și repornești programul. "
+            "Butonul de jos pune totul la fel ca la început.",
+        )
+        for nume, eticheta in TASTE_RAPIDE:
+            rand = QHBoxLayout()
+            et = QLabel(eticheta)
+            et.setFont(fonturi("baza"))
+            rand.addWidget(et, stretch=1)
+            buton = PrindeTasta(alese.get(nume, ""), card)
+            setattr(self, f"_tasta_{nume}", buton)
+            rand.addWidget(buton)
+            card.layout().addLayout(rand)
+        rand_implicit = QHBoxLayout()
+        btn_implicit = Buton(
+            card, "Pune tot la fel ca la început", self._taste_implicit, latime=300, inaltime=40
+        )
+        rand_implicit.addWidget(btn_implicit)
+        rand_implicit.addStretch(1)
+        card.layout().addLayout(rand_implicit)
+
+    def _taste_implicit(self) -> None:
+        """Revenirea la tastele din fabrică pentru TOATE comenzile."""
+        for nume, _eticheta in TASTE_RAPIDE:
+            buton = getattr(self, f"_tasta_{nume}", None)
+            if buton is not None:
+                buton.pune_implicit(config_modul.SCURTATURI_IMPLICIT.get(nume, ""))
 
     def _rand_parola(self) -> None:
         from .. import parola
@@ -1296,6 +1404,16 @@ class FereastraSetari(QDialog):
             return {}
 
     def _aduna(self) -> None:
+        # Tastele rapide alese de utilizator (Setări → „Taste rapide”).
+        try:
+            self.config.scurtaturi = {
+                nume: getattr(self, f"_tasta_{nume}").secventa
+                for nume, _et in TASTE_RAPIDE
+                if (getattr(self, f"_tasta_{nume}", None) is not None)
+                and getattr(self, f"_tasta_{nume}").secventa
+            }
+        except (AttributeError,):
+            pass
         try:
             self.config.dispozitiv = self.var_dispozitiv
         except (AttributeError,):

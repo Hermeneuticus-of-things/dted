@@ -131,7 +131,10 @@ class Aplicatie(QMainWindow):
 
         self._construieste()
 
-        # Scurtături tastatură.
+        # Scurtături tastatură. Cele principale se pot schimba din Setări → „Taste rapide”.
+        from .. import config as modul_config
+
+        tasta = modul_config.scurtaturi(self.configurare)
         QShortcut(QKeySequence("Ctrl+D"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+T"), self, lambda: self.arata_ecran("transcriere"))
         QShortcut(QKeySequence("Ctrl++"), self, self.mareste_scrisul)
@@ -142,18 +145,21 @@ class Aplicatie(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Space"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+R"), self, self._comanda_asculta)  # 34: taste de redare
         QShortcut(QKeySequence("Ctrl+Shift+R"), self, self._opreste_ascultarea)
-        QShortcut(QKeySequence("F5"), self, self._toggle_dictare)
-        QShortcut(QKeySequence("F9"), self, self._comanda_asculta)
+        QShortcut(QKeySequence(tasta.get("dictare", "F5")), self, self._toggle_dictare)
+        QShortcut(QKeySequence(tasta.get("asculta", "F9")), self, self._comanda_asculta)
         QShortcut(QKeySequence("Home"), self, lambda: self._sare_redare(0.0))
         QShortcut(QKeySequence("End"), self, self._sare_la_capat)
-        QShortcut(QKeySequence("F7"), self, lambda: self._sare_redare(-5.0))
-        QShortcut(QKeySequence("F8"), self, lambda: self._sare_redare(+5.0))
-        QShortcut(QKeySequence("Shift+Esc"), self, self._opreste_ascultarea)  # Stop (Express Dictate)
-        QShortcut(QKeySequence("F10"), self, lambda: self._viteza_redare("normal"))
-        QShortcut(QKeySequence("F11"), self, lambda: self._viteza_redare("lent"))
-        QShortcut(QKeySequence("F12"), self, lambda: self._viteza_redare("rapid"))
-        QShortcut(QKeySequence("Ctrl+B"), self, self._insereaza_semn_global)  # 37 / D-7: semn la dictare sau redare
-        QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: �nchidere cu Esc (trece prin closeEvent)
+        QShortcut(QKeySequence(tasta.get("inapoi_5", "F7")), self, lambda: self._sare_redare(-5.0))
+        QShortcut(QKeySequence(tasta.get("inainte_5", "F8")), self, lambda: self._sare_redare(+5.0))
+        # fraza de la capăt / idee nouă (paragraf + tab)
+        QShortcut(QKeySequence(tasta.get("de_la_capat", "F6")), self, self._ia_de_la_capat)
+        QShortcut(QKeySequence(tasta.get("idee_noua", "Shift+F6")), self, self._idee_noua)
+        QShortcut(QKeySequence(tasta.get("stop_asculta", "Shift+Esc")), self, self._opreste_ascultarea)
+        QShortcut(QKeySequence(tasta.get("viteza_normala", "F10")), self, lambda: self._viteza_redare("normal"))
+        QShortcut(QKeySequence(tasta.get("viteza_lenta", "F11")), self, lambda: self._viteza_redare("lent"))
+        QShortcut(QKeySequence(tasta.get("viteza_rapida", "F12")), self, lambda: self._viteza_redare("rapid"))
+        QShortcut(QKeySequence(tasta.get("semn", "Ctrl+B")), self, self._insereaza_semn_global)  # 37 / D-7
+        QShortcut(QKeySequence("Escape"), self, self.close)  # D-3: închidere cu Esc (trece prin closeEvent)
 
         self._la_pornire()
 
@@ -299,11 +305,6 @@ class Aplicatie(QMainWindow):
         self.menu_ajutor.addAction("🐞 Raportează o problemă", self._deschide_raport)
         self.menu_ajutor.addAction("🎯 Tur ghidat", self._porneste_tur)
         self.menu_ajutor.addSeparator()
-        self.menu_ajutor.addAction(
-            "🔍 Verifică programul și calculatorul",
-            lambda: self.arata_ecran("verificare"),
-        )
-        self.menu_ajutor.addSeparator()
         self.menu_ajutor.addAction("ℹ &Despre", self._despre)
 
         btn_ajutor = QToolButton()
@@ -410,6 +411,33 @@ class Aplicatie(QMainWindow):
         dock_rand.addWidget(self.btn_transport_stop)
         self.btn_transport.setEnabled(False)
         self.btn_transport_stop.setEnabled(False)
+
+        # Pauză de microfon: vorbești cu cineva, programul nu scrie (revenire instant).
+        self.btn_pauza_microfon = Buton(
+            self._dock_redare, "⏸ Pauză microfon", self._comuta_pauza_dictare, latime=190, inaltime=36
+        )
+        self.btn_pauza_microfon.setToolTip(
+            "Pauză de microfon în timpul dictării: programul nu mai ascultă până la reluare"
+        )
+        self.btn_pauza_microfon.setEnabled(False)
+        dock_rand.addWidget(self.btn_pauza_microfon)
+
+        # „Ia fraza de la capăt” și „Idee nouă (tab)” — F6 / Shift+F6.
+        self.btn_de_la_capat = Buton(
+            self._dock_redare, "↺ De la capăt", self._ia_de_la_capat, latime=150, inaltime=36
+        )
+        self.btn_de_la_capat.setToolTip(
+            "Șterge fraza dictată neterminată, ca să o iei de la capăt (F6)"
+        )
+        dock_rand.addWidget(self.btn_de_la_capat)
+
+        self.btn_idee_noua = Buton(
+            self._dock_redare, "⇥ Idee nouă", self._idee_noua, latime=140, inaltime=36
+        )
+        self.btn_idee_noua.setToolTip(
+            "Șterge fraza curentă și deschide un paragraf nou, cu tab înainte (Shift+F6)"
+        )
+        dock_rand.addWidget(self.btn_idee_noua)
 
         btn_inapoi = QToolButton()
         btn_inapoi.setText("⏪")
@@ -887,10 +915,33 @@ class Aplicatie(QMainWindow):
             pagina._porneste()
         self._actualizeaza_buton_dictare()
 
+    def _comuta_pauza_dictare(self) -> None:
+        """Pauză rapidă de microfon din bara de transport (buton ⏸)."""
+        pagina = self._pagini.get("dictare")
+        if pagina is not None and getattr(pagina, "_activ", False):
+            pagina._comuta_pauza()
+            self._actualizeaza_buton_dictare()
+
+    def _ia_de_la_capat(self) -> None:
+        """F6: șterge fraza dictată neterminată, ca să o iei de la capăt."""
+        pagina = self._pagini.get("dictare")
+        if pagina is not None:
+            pagina._ia_de_la_capat()
+
+    def _idee_noua(self) -> None:
+        """Shift+F6: șterge fraza curentă + paragraf nou cu tab înainte."""
+        pagina = self._pagini.get("dictare")
+        if pagina is not None:
+            pagina._idee_noua()
+
     def _actualizeaza_buton_dictare(self) -> None:
-        """Schimbă textul și stilul butonului „Dictează” după starea dictării."""
+        """Schimbă textul și stilul butoanelor de dictare după starea dictării."""
         pagina = self._pagini.get("dictare")
         activ = bool(pagina is not None and getattr(pagina, "_activ", False))
+        pauza = bool(getattr(getattr(pagina, "_microfon", None), "pauza", False)) if activ else False
+        if hasattr(self, "btn_pauza_microfon"):
+            self.btn_pauza_microfon.setEnabled(activ)
+            self.btn_pauza_microfon.set_text("⏵ Reprenește microfonul" if pauza else "⏸ Pauză microfon")
         if activ:
             self.btn_dictare.setText("⏹ Oprește dictarea")
             if hasattr(self, "btn_inregistreaza"):
@@ -1370,6 +1421,29 @@ class Aplicatie(QMainWindow):
         QTimer.singleShot(600, self._intreaba_de_lucrul_neterminat)
         QTimer.singleShot(1200, self._verifica_driverele_la_pornire)
         QTimer.singleShot(1500, self._verifica_microfonul_la_pornire)
+        # Modelul se încarcă singur în fundal: prima dictare pornește instant,
+        # fără așteptarea de zeci de secunde până se citește modelul.
+        QTimer.singleShot(1000, self._preincarca_motor_in_fundal)
+
+    def _preincarca_motor_in_fundal(self) -> None:
+        """Încarcă modelul de transcriere în fundal, imediat după pornire."""
+        def lucru() -> None:
+            try:
+                m = self._motor
+                if m is None or m.incarcat:
+                    return
+                if not cai.fisier_model(getattr(m, "model_preferat", None)).exists():
+                    return  # prima pornire: modelul îl aduce fluxul obișnuit de descărcare
+                m.incarca()
+                self.coada.trimite(
+                    lambda: self.bara_stare.arata(
+                        "Gata", "modelul de transcriere e încărcat — poți dicta oricând.", "succes"
+                    )
+                )
+            except Exception as exc:
+                jurnal.atentionare(f"Pre-încărcarea modelului a eșuat: {exc}")
+
+        threading.Thread(target=lucru, name="preincarca-model", daemon=True).start()
 
     def _verifica_microfonul_la_pornire(self) -> None:
         """Cerinta 52: asistent microfon - verifica daca exista microfon."""

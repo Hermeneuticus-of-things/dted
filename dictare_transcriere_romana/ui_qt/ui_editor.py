@@ -242,6 +242,50 @@ class Editor(QWidget):
         self._control.setTextCursor(cursor)
         self._text_ultim = self._control.toPlainText()
 
+    def sterge_ultima_fraza(self) -> bool:
+        """Șterge fraza dictată în curs (de la ultimul . ! ? până la cursor).
+
+        Se folosește când vrei să iei fraza de la capăt: ce a scris programul
+        din fraza neterminată dispare, inclusiv cuvintele provizorii live, și
+        redictezi liniștit. Întoarce adevărat dacă a șters ceva.
+        """
+        document_text = self._control.toPlainText()
+        cursor = self._control.textCursor()
+        pozitie = min(cursor.position(), len(document_text))
+        # Nu trecem de textul provizoriu live: fraza neterminată începe măcar de acolo.
+        limita = self._provizoriu_start if self._provizoriu_start is not None else 0
+        start = limita
+        for indice in range(pozitie - 1, limita - 1, -1):
+            if document_text[indice] in ".!?…":
+                start = indice + 1
+                break
+        start = max(start, limita)
+        if pozitie <= start:
+            return False
+        stergator = self._control.textCursor()
+        stergator.setPosition(start)
+        stergator.setPosition(pozitie, QTextCursor.MoveMode.KeepAnchor)
+        stergator.removeSelectedText()
+        self._provizoriu_start = None
+        self._provizoriu_lungime = 0
+        self._text_ultim = self._control.toPlainText()
+        cursor.setPosition(start)
+        self._control.setTextCursor(cursor)
+        return True
+
+    def idee_noua(self) -> bool:
+        """Șterge fraza în curs și deschide o idee nouă: paragraf nou + tab înainte."""
+        sters = self.sterge_ultima_fraza()
+        cursor = self._control.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText("\n\n\t")
+        cursor.endEditBlock()
+        self._provizoriu_start = None
+        self._provizoriu_lungime = 0
+        self._text_ultim = self._control.toPlainText()
+        self._control.setTextCursor(cursor)
+        return sters
+
     def insereaza(self, text: str, spatiu_auto: bool = True) -> None:
         """Inserează text la poziția cursorului, cu un singur pas de anulare (Ctrl+Z).
 

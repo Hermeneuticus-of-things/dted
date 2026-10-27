@@ -66,8 +66,13 @@ class FereastraMini(QWidget):
             self, "■ Oprește dictarea", self._opreste, fel="pericol", inaltime=36
         )
         self.buton_opreste.set_activ(False)
+        self.buton_pauza = Buton(
+            self, "⏸ Pauză", self._pauza, inaltime=36
+        )
+        self.buton_pauza.set_activ(False)
         rand_butoane.addWidget(self.buton_porneste)
         rand_butoane.addWidget(self.buton_opreste)
+        rand_butoane.addWidget(self.buton_pauza)
         layout.addLayout(rand_butoane)
 
         self._timer = QTimer(self)
@@ -77,9 +82,13 @@ class FereastraMini(QWidget):
 
     def _actualizeaza(self) -> None:
         activ = self.sursa is not None and getattr(self.sursa, "_activ", False)
-        # Pornirea e disponibilă doar când microfonul nu dictează; oprirea, invers.
+        # Butonul de pornire e activ doar când microfonul NU dictează; oprirea, dimpotrivă.
         self.buton_porneste.set_activ(not activ)
         self.buton_opreste.set_activ(activ)
+        # Pauza de microfon: activă doar în timpul dictării, cu text după stare.
+        pauza = bool(getattr(getattr(self.sursa, "_microfon", None), "pauza", False))
+        self.buton_pauza.set_activ(activ)
+        self.buton_pauza.set_text("⏵ Reprenește" if pauza else "⏸ Pauză")
         nivel = self.sursa.nivel_microfon if activ else 0.0
         valoare = min(1000, int(nivel * 1000))
         self.nivel_bar.setValue(valoare)
@@ -105,3 +114,11 @@ class FereastraMini(QWidget):
     def _opreste(self) -> None:
         if self.sursa is not None and getattr(self.sursa, "_activ", False):
             self.sursa._opreste()
+
+    def _pauza(self) -> None:
+        """Pauză / reluare microfon din fereastra mică (doar în timpul dictării)."""
+        if self.sursa is None or not getattr(self.sursa, "_activ", False):
+            return
+        comuta = getattr(self.sursa, "_comuta_pauza", None)
+        if comuta is not None:
+            comuta()

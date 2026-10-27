@@ -7,7 +7,7 @@ Toate setările au valori sigure implicit, iar fișierul se scrie în așa fel
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
@@ -62,6 +62,39 @@ class Config:
     asistent_microfon_vazut: bool = False # asistentul de microfon de la prima dictare (52)
     activare_vocala: bool = False         # pornește singură dictarea când auzi vocea (Express Dictate)
     prag_activare_db: int = -35           # pragul activării vocale, în dB
+    scurtaturi: dict[str, str] = field(default_factory=lambda: dict(SCURTATURI_IMPLICIT))
+
+
+#: Tastele rapide pe care utilizatorul și le poate schimba din Setări → „Taste rapide”.
+#: Cheile sunt nume stabile (nu se schimbă), valorile sunt secvențe QKeySequence.
+SCURTATURI_IMPLICIT: dict[str, str] = {
+    "dictare": "F5",                # pornește/oprește dictarea (⏺ roșu)
+    "asculta": "F9",                # ascultă de la semn / pauză
+    "stop_asculta": "Shift+Esc",    # oprește ascultarea
+    "inapoi_5": "F7",               # derulează înapoi 5 s
+    "inainte_5": "F8",              # derulează înainte 5 s
+    "viteza_normala": "F10",
+    "viteza_lenta": "F11",
+    "viteza_rapida": "F12",
+    "de_la_capat": "F6",            # șterge fraza neterminată, o iei de la capăt
+    "idee_noua": "Shift+F6",        # șterge fraza + paragraf nou cu tab
+    "semn": "Ctrl+B",               # semnul [mm:ss] la cursor
+}
+
+
+def scurtaturi(config: "Config | None" = None) -> dict[str, str]:
+    """Tastele rapide alese, cu valorile implicite pentru cele neschiebrate."""
+    baza = dict(SCURTATURI_IMPLICIT)
+    if config is None:
+        try:
+            config = incarca()
+        except Exception:
+            config = None
+    alese = getattr(config, "scurtaturi", None) or {}
+    for cheie, valoare in alese.items():
+        if isinstance(valoare, str) and valoare.strip():
+            baza[str(cheie)] = valoare.strip()
+    return baza
 
 
 def incarca() -> Config:
