@@ -106,7 +106,7 @@ Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid d
 
 | Varianta | Pentru cine | Ce descarci | Internet la instalare? |
 |---|---|---|---|
-| **A. Kit pe stick (offline)** | vrei să instalezi și pe alt calculator, fără internet; text sensibil | `Setup.DTED-0.6.3.exe` + `Setup.DTED-0.6.3-1.bin` (~1,85 GB) | **NU** — totul e inclus (model + CUDA) |
+| **A. Kit pe stick (offline)** | vrei să instalezi și pe alt calculator, fără internet; text sensibil | `Setup.DTED-0.6.3.exe` (un singur fișier, ~1,85 GB) | **NU** — totul e inclus (model + CUDA) |
 | **B. Bootstrap (o comandă)** | ai internet, vrei totul automat | nimic — o comandă PowerShell | DA (descarcă kitul și îl verifică) |
 | **C. Portabil (fără instalare)** | vrei să-l pornești direct de pe stick, fără instalare | `portabil-DTED-0.6.3.zip` (~1,3 GB) | NU (doar CUDA, dacă ai placă video, din program) |
 | **D. Actualizare din program** | ai deja D&TED instalat | nimic — un buton din program | doar arhiva mică de ~1,2 MB |
@@ -116,9 +116,8 @@ Pe placă video NVIDIA compatibilă transcrierea rulează de **~20× mai rapid d
 
 ### A. Kit pe stick — instalare offline, pe orice Windows
 
-1. Descarcă **`Setup.DTED-0.6.3.exe`** și **`Setup.DTED-0.6.3-1.bin`** din release (linkul de mai sus).
-2. Copiază **amândouă pe un stick** (trebuie să stea în același folder — exe-ul citește singur bucata .bin).
-3. Pe calculatorul unde vrei programul: dublu clic pe `Setup.DTED-0.6.3.exe` → Next → Instalează.
+1. Descarcă **`Setup.DTED-0.6.3.exe`** din release (linkul de mai sus) — un singur fișier.
+2. Pune-l pe stick, apoi pe calculatorul unde vrei programul: dublu clic pe el → Next → Instalează.
    - Nu cere administrator; modelul de transcriere (~800 MB) și bibliotecile plăcii video CUDA sunt **în kit** — nu se descarcă nimic.
    - Wizard-ul îți arată pagina **„Ce știe să facă D&TED”** (o poți citi cât se instalează) și **verificarea calculatorului** (CPU, RAM, disc, placă video + VRAM).
 

@@ -45,11 +45,13 @@ OutputBaseFilename=Setup.DTED-0.6.3
 SetupIconFile=iconita_setup_text.ico
 Compression=lzma2
 SolidCompression=yes
-; GitHub limitează fișierele la 2 GB ⇒ instalatorul se împarte în bucăți < 2 GB.
-; ISCC produce "Setup DTED.exe" + "Setup DTED-1.bin", "Setup DTED-2.bin", ... —
-; toate trebuie să stea în același folder la instalare (exe-ul le citește singur).
-DiskSpanning=yes
-DiskSliceSize=2000000000
+; GitHub limitează fișierele la 2 GB ⇒ dacă într-o versiune viitoare kitul
+; crește peste ~2,1 GB, re-activează împărțirea (DiskSpanning=yes) — rezultă
+; "Setup DTED.exe" + "Setup DTED-1.bin", ... — toate trebuie să stea în același
+; folder la instalare (exe-ul le citește singur). La v0.6.3 kitul comprimat e
+; ~1,84 GB, deci instalatorul poate fi UN SINGUR fișier (mai ușor de descărcat).
+DiskSpanning=no
+DiskSliceSize=2100000000
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -147,9 +149,9 @@ begin
   Result := 0;
   if CheieAdaptorNvidia = '' then
     Exit;
-  if RegQueryBinaryValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.qwMemorySize', Bin, Marime) then
+  if RegQueryBinaryValue(HKLM, CheieAdaptorNvidia, 'HardwareInformation.qwMemorySize', Bin) then
   begin
-    if Marime >= 8 then
+    if Length(Bin) >= 8 then
     begin
       V := 0;
       for I := 8 downto 1 do
