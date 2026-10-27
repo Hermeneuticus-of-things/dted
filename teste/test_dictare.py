@@ -17,9 +17,9 @@ from dictare_transcriere_romana.ui_qt.ui_dictare import PaginaDictare, _gata_de_
 
 
 def test_fragmentul_sub_patru_secunde_se_proceseaza_dupa_oprire():
-    assert not _gata_de_transcris(3.9, False)
-    assert _gata_de_transcris(3.9, True)
-    assert not _gata_de_transcris(0.49, True)
+    assert not _gata_de_transcris(1.9, False)
+    assert _gata_de_transcris(1.9, True)
+    assert not _gata_de_transcris(0.34, True)
 
     audio_final = [0.0] * 16_000
 
@@ -91,3 +91,30 @@ def test_afisare_live_cuvant_cu_cuvant_in_editor():
     # La finalizarea bucății, textul provizoriu este înlocuit curat cu forma finală
     ed.insereaza("Mama are mere.")
     assert ed.text() == "Început. Mama are mere."
+
+
+def test_flux_streaming_cuvinte_pagina_dictare():
+    from PySide6.QtWidgets import QApplication
+    from dictare_transcriere_romana.ui_qt.ui_editor import Editor
+    from dictare_transcriere_romana import stare as stare_modul
+
+    _app = QApplication.instance() or QApplication([])
+    stare = stare_modul.Stare()
+    ed = Editor(None, stare)
+
+    class DummyApp:
+        pass
+
+    dummy = DummyApp()
+    dummy.stare = stare
+    dummy.configurare = SimpleNamespace(asistent_microfon_vazut=True, blocare_dictare="nimic")
+    dummy.editor = ed
+    dummy.coada = SimpleNamespace(trimite=lambda f, *a, **k: f(*a, **k))
+
+    pagina = PaginaDictare(None, dummy)
+    # Adăugăm un fragment cu mai multe cuvinte
+    pagina._adauga_text("Ana are mere.")
+    pagina._goleste_coada_cuvinte()
+    assert "Ana" in ed.text()
+    assert "are" in ed.text()
+    assert "mere." in ed.text()

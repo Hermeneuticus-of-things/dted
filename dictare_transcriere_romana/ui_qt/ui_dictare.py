@@ -47,10 +47,14 @@ from .comun import (
 from .ui_editor import Editor
 from .ui_internet import avertizeaza
 
-#: Cât de des se transcriere (secunde).
-SECUNDE_BUCATA = 4.0
+#: Cât de des se transcriere când vorbirea este continuă (secunde).
+SECUNDE_BUCATA = 2.0
+#: Minimul pentru a declanșa transcrierea la o pauză scurtă de vorbire (secunde).
+SECUNDE_MINIME_PAUZA = 0.8
+#: Pragul de pauză în sunet (RMS pe ultimele ~200 ms).
+PRAG_RMS_LINISTE = 0.018
 #: Fragmentele mai scurte se păstrează la oprire, dacă au suficientă vorbire.
-SECUNDE_MINIME_LA_OPRIRE = 0.5
+SECUNDE_MINIME_LA_OPRIRE = 0.35
 #: Pragul de nivel microfon, pentru animație.
 NIVEL_MAX = 1.0
 
@@ -79,6 +83,11 @@ class PaginaDictare(QWidget):
         self._semnuri: list[str] = []
         self._dictare_sunet = None  # Inregistrare completă (pentru „Mergi la semn", cerința 38)
         self._mini = None  # FereastraMini mereu deasupra (cerința 40 / D-8)
+
+        self._coada_cuvinte: list[str] = []
+        self._timer_cuvinte = QTimer(self)
+        self._timer_cuvinte.timeout.connect(self._emite_cuvant_urmator)
+        self._timer_cuvinte.start(35)
 
         self._construieste()
         QTimer.singleShot(100, self._verifica_microfon)
@@ -440,6 +449,8 @@ class PaginaDictare(QWidget):
             self._microfon = None
             if inreg is not None:
                 self._secunde_audio = inreg.secunde
+            # Golește orice cuvânt rămas în coada de streaming direct în editor
+            self._goleste_coada_cuvinte()
             # 32/34/35: sunetul rămâne disponibil pentru „▶ Ascultă” din editor
             try:
                 self.aplicatie.primeste_inregistrarea(self._dictare_sunet)
@@ -589,7 +600,7 @@ class PaginaDictare(QWidget):
     # ------------------------------------------------------------------ bucla dictare
 
     def _bucla(self) -> None:
-        """Captură sunet și transcriere pe bucăți, în fundal."""
+        """Captură sunet și transcriere pe bucăți adaptive (0,8 - 2,0 s), în fundal."""
         from ..inregistrare import Microfon
 
         # Copie locală: „Oprește” pune self._microfon = None din firul interfeței.
@@ -599,48 +610,32 @@ class PaginaDictare(QWidget):
         text_acum = ""
 
         while True:
-            # Așteaptă o bucată completă, dar afișează cuvintele LIVE pe măsură ce sunt rostite
-            # (~0,6 s) și închide bucata mai devreme dacă apare o pauză scurtă în vorbire.
-            ultimul_live = time.monotonic()
-            pauza_scurta = False
-            while microfon.scurgere() < SECUNDE_BUCATA and not self._anulat.is_set():
-                time.sleep(0.1)
-                acum_t = time.monotonic()
+            # Așteaptă până când utilizatorul face o pauză scurtă (>= 200 ms) după cel puțin 0.8s
+            # sau când s-a atins durata maximă a bucății (2.0s la vorbire continuă fără oprire).
+            pauza_detectata = False
+            while not self._anulat.is_set():
+                time.sleep(0.04)
                 sec_curent = microfon.scurgere()
-                if (
-                    hasattr(microfon, "fereastra_curenta")
-                    and sec_curent >= 0.65
-                    and (acum_t - ultimul_live) >= 0.55
-                    and not self._anulat.is_set()
-                ):
-                    ultimul_live = acum_t
+                if sec_curent >= SECUNDE_MINIME_PAUZA and hasattr(microfon, "fereastra_curenta"):
                     try:
                         import numpy as np
 
                         fereastra = microfon.fereastra_curenta()
-                        if len(fereastra) >= int(0.6 * 16_000) and float(np.max(np.abs(fereastra))) > 0.015:
-                            rez_live = self.aplicatie._motor.transcrie(
-                                fereastra,
-                                limba=getattr(self.config, "limba", "ro") or "ro",
-                                termeni=getattr(self.config, "termeni", "") or "",
-                                progres=None,
-                                faza=None,
-                            )
-                            frag_live = (rez_live.text or "").strip()
-                            if frag_live and hasattr(self, "_adauga_text_live"):
-                                self.aplicatie.coada.trimite(self._adauga_text_live, frag_live)
-                            # Dacă utilizatorul a făcut o pauză scurtă (~0,5 s) după ce a rostit cuvinte,
-                            # finalizăm bucata imediat, fără să mai așteptăm 4 secunde.
-                            if len(fereastra) >= int(1.5 * 16_000):
-                                coada_liniste = fereastra[-int(0.5 * 16_000) :]
-                                if float(np.sqrt(np.mean(coada_liniste ** 2))) < 0.008:
-                                    pauza_scurta = True
-                                    break
+                        if len(fereastra) >= int(SECUNDE_MINIME_PAUZA * 16_000):
+                            coada_liniste = fereastra[-int(0.20 * 16_000):]
+                            rms_coada = float(np.sqrt(np.mean(coada_liniste ** 2)))
+                            rms_peak = float(np.sqrt(np.mean(fereastra ** 2)))
+                            if rms_coada < PRAG_RMS_LINISTE or (rms_peak > 0.03 and rms_coada < 0.22 * rms_peak):
+                                pauza_detectata = True
+                                break
                     except Exception:
                         pass
+                if sec_curent >= SECUNDE_BUCATA:
+                    break
+
             secunde_buffer = microfon.scurgere()
             oprita = self._anulat.is_set()
-            if not (_gata_de_transcris(secunde_buffer, oprita) or (pauza_scurta and secunde_buffer >= SECUNDE_MINIME_LA_OPRIRE)):
+            if not (_gata_de_transcris(secunde_buffer, oprita) or (pauza_detectata and secunde_buffer >= SECUNDE_MINIME_LA_OPRIRE)):
                 if oprita:
                     break
                 continue
@@ -719,6 +714,43 @@ class PaginaDictare(QWidget):
                 "Scriu…", f"Scriu ultimele {secunde:.0f} secunde spuse. Poți vorbi mai departe.", "lucru"
             )
 
+    def _emite_cuvant_urmator(self) -> None:
+        """Emite cuvintele pe ecran în flux continuu (efect de mașină de scris / streaming)."""
+        if not getattr(self, "_coada_cuvinte", None):
+            return
+        viteza = 1
+        if len(self._coada_cuvinte) > 12:
+            viteza = 3
+        elif len(self._coada_cuvinte) > 6:
+            viteza = 2
+        for _ in range(viteza):
+            if not self._coada_cuvinte:
+                break
+            t = self._coada_cuvinte.pop(0)
+            if t == "\n\n":
+                if hasattr(self, "editor") and hasattr(self.editor, "_control"):
+                    c = self.editor._control.textCursor()
+                    c.insertText("\n\n")
+            else:
+                if hasattr(self, "editor"):
+                    self.editor.insereaza(t)
+        if hasattr(self, "editor"):
+            self.stare.text = self.editor.text()
+
+    def _goleste_coada_cuvinte(self) -> None:
+        """Golește imediat toate cuvintele rămase în editor (la oprire sau teste)."""
+        while getattr(self, "_coada_cuvinte", None):
+            t = self._coada_cuvinte.pop(0)
+            if t == "\n\n":
+                if hasattr(self, "editor") and hasattr(self.editor, "_control"):
+                    c = self.editor._control.textCursor()
+                    c.insertText("\n\n")
+            else:
+                if hasattr(self, "editor"):
+                    self.editor.insereaza(t)
+        if hasattr(self, "editor"):
+            self.stare.text = self.editor.text()
+
     def _adauga_text_live(self, fragment: str) -> None:
         """Afișează provizoriu pe ecran cuvintele pe măsură ce sunt rostite („mama… are… mere…”)."""
         from .. import inlocuiri, text_ro
@@ -730,15 +762,23 @@ class PaginaDictare(QWidget):
             self.editor.arata_provizoriu(fragment)
 
     def _adauga_text(self, fragment: str) -> None:
-        # Textul dictat se inserează la cursor, cu un singur Ctrl+Z per fragment
-        # (cerința 48): nu mai înlocuim tot textul prin set_text.
+        """Textul dictat este împărțit în cuvinte și afișat cuvânt cu cuvânt pe ecran."""
         from .. import inlocuiri, text_ro
 
         fragment = text_ro.marcaje_paragraf(text_ro.curata_repetari(inlocuiri.aplica(fragment)))
         if not fragment:
             return
-        self.editor.insereaza(fragment)
-        self.stare.text = self.editor.text()
+        parag = fragment.split("\n\n")
+        if not hasattr(self, "_coada_cuvinte"):
+            self._coada_cuvinte = []
+        for idx, p in enumerate(parag):
+            words = [w for w in p.split(" ") if w]
+            self._coada_cuvinte.extend(words)
+            if idx < len(parag) - 1:
+                self._coada_cuvinte.append("\n\n")
+        # Dacă timerul nu rulează (ex. în teste fără buclă de evenimente), golește imediat:
+        if not getattr(self, "_timer_cuvinte", None) or not self._timer_cuvinte.isActive():
+            self._goleste_coada_cuvinte()
 
     # ------------------------------------------------------------------ comenzi
 

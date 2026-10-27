@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference    = "SilentlyContinue"   # descărcare mai iute în PowerShell 5.1
 
 # Etichetă de versiune FIXĂ (nu „ultima versiune" — fiecare publicare are eticheta ei).
-$Tag  = "v0.6.1"
+$Tag  = "v0.6.2"
 $Repo = "Hermeneuticus-of-things/dted"
 $Base = "https://github.com/$Repo/releases/download/$Tag"
 $Dest = Join-Path $env:TEMP "dted-install"

@@ -96,6 +96,8 @@ class Redare:
         self._offset = 0.0
         self._pornit_la: float | None = None
         self._viteza = 1.0
+        self._selectie_start: float | None = None
+        self._selectie_sfarsit: float | None = None
 
     # ------------------------------------------------------------------ încărcare
 
@@ -105,6 +107,8 @@ class Redare:
         self._pcm = pcm
         self._rata = int(rata) if rata else 16000
         self._offset = 0.0
+        self._selectie_start = None
+        self._selectie_sfarsit = None
 
     def are(self) -> bool:
         return self._pcm is not None and len(self._pcm) > 0
@@ -194,3 +198,53 @@ class Redare:
     def la_capat(self) -> bool:
         """A ajuns la sfârșit (redarea se oprește singură)."""
         return self.are() and self.pozitie() >= self.durata() - 0.05
+
+    # ------------------------------------------------------------------ editare audio (Ctrl+Shift+S/E/D)
+
+    def marcheaza_inceput(self, secunde: float | None = None) -> float:
+        """Marchează începutul porțiunii audio de șters (Ctrl+Shift+S)."""
+        poz = self.pozitie() if secunde is None else float(secunde)
+        poz = max(0.0, min(poz, self.durata()))
+        self._selectie_start = poz
+        if self._selectie_sfarsit is not None and self._selectie_sfarsit < poz:
+            self._selectie_sfarsit = None
+        return poz
+
+    def marcheaza_sfarsit(self, secunde: float | None = None) -> float:
+        """Marchează sfârșitul porțiunii audio de șters (Ctrl+Shift+E)."""
+        poz = self.pozitie() if secunde is None else float(secunde)
+        poz = max(0.0, min(poz, self.durata()))
+        self._selectie_sfarsit = poz
+        if self._selectie_start is not None and self._selectie_sfarsit < self._selectie_start:
+            self._selectie_start, self._selectie_sfarsit = self._selectie_sfarsit, self._selectie_start
+        return poz
+
+    def selectie(self) -> tuple[float | None, float | None]:
+        """Întoarce ``(start, sfârșit)`` în secunde pentru porțiunea marcată."""
+        return self._selectie_start, self._selectie_sfarsit
+
+    def reseteaza_selectie(self) -> None:
+        self._selectie_start = None
+        self._selectie_sfarsit = None
+
+    def sterge_selectie(self) -> bool:
+        """Șterge din înregistrare porțiunea marcată între început și sfârșit (Ctrl+Shift+D)."""
+        if not self.are():
+            return False
+        if self._selectie_start is None or self._selectie_sfarsit is None:
+            return False
+        if self._selectie_sfarsit <= self._selectie_start:
+            return False
+        import numpy as np
+
+        if self.ruleaza():
+            self.pauza()
+        tablou = np.asarray(self._pcm, dtype=np.float32)
+        i_start = max(0, min(len(tablou), int(round(self._selectie_start * self._rata))))
+        i_sfarsit = max(i_start, min(len(tablou), int(round(self._selectie_sfarsit * self._rata))))
+        if i_sfarsit <= i_start:
+            return False
+        self._pcm = np.concatenate([tablou[:i_start], tablou[i_sfarsit:]]).astype(np.float32)
+        self._offset = min(self._selectie_start, self.durata())
+        self.reseteaza_selectie()
+        return True

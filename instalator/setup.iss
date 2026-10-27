@@ -13,10 +13,10 @@
 #define MyAppDescription "Dictare și transcriere în limba română"
 ; AppId-ul rămâne cel vechi (implicit era AppName), ca actualizarea să recunoască instalarea.
 #define MyAppIdVechi "Dictare&Transcriere Română"
-#define MyAppVersion "0.6.1"
+#define MyAppVersion "0.6.2"
 #define MyAppPublisher "D&TED"
 #define MyAppExeName "DTED.exe"
-#define MyDistDir "..\dist-v0.6.1\DTED"
+#define MyDistDir "..\dist-v0.6.2\DTED"
 ; Iconița programului (microfon auriu, unde care vin spre microfon, litere argintii).
 ; Se copiază separat lângă program, ca scurtăturile să o arate chiar dacă DTED.exe
 ; a fost construit cu o iconiță mai veche.
@@ -38,8 +38,8 @@ DefaultDirName={autopf}\D&TED – Dictare și transcriere în limba română
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppIconName}
 UninstallDisplayName={#MyAppName}
-OutputDir=..\output-v0.6.1
-OutputBaseFilename=Setup.DTED-0.6.1
+OutputDir=..\output-v0.6.2
+OutputBaseFilename=Setup.DTED-0.6.2
 ; Pictograma fără cadrul de 512 px (ISCC refuză resursa prea mare: „File is too large”).
 ; Iconița nouă a instalatorului (aceeași imagine ca a programului, fără cadrul de 512 px).
 SetupIconFile=iconita_setup_text.ico
