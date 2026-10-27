@@ -118,15 +118,15 @@ Setări → Aspect).
   în timpul dictării îți amintește P/I alineat, pauza de microfon și comenzile vocale; după dictare,
   ascultarea și corecturile care se învață; la pornire, primii pași. Cu „↻” alt sfat, „×” liniște,
   și comutator permanent în Setări → Aspect.
-- **README redesenat de la zero** în stilul beautify-github-readme: hero SVG proiect-nativ,
-  dovada pe prima vedere, secțiuni scurte și căutabile.
 
 ## 🗺 Ce urmează
 
+- [ ] **Aplicație pentru macOS** — aceeași experiență de dictare, nativ pe Mac
+- [ ] **Motoare de transcriere noi, de calitate superioară** — pe măsură ce apar modele mai bune pentru română (și nu numai), intră ca opțiune, cu măsurători publicate
+- [ ] **Alte limbi, cu recunoaștere vocală de calitate** — engleza prima, apoi cele cu modele locale bune; româna rămâne implicită și forțată
 - [ ] Modelul „pentru toți utilizatorii” — instalare partajată (admin o singură dată)
 - [ ] Editare audio — marcarea și ștergerea unor porțiuni din înregistrare
 - [ ] Comenzi vocale avansate — selecție, formatare, controlul dictării pe voce
-- [ ] Limbi suplimentare — engleza prima; româna rămâne implicită
 - [ ] Coloana Prioritate reală în lista dictărilor
 
 **Limite oneste:** criptarea fișierelor e doar Windows (CNG); nucleul merge pe Linux, cu
