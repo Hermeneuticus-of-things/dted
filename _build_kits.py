@@ -80,7 +80,7 @@ with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "w:gz") as t:
     ):
         p = RADACINA / nume
         if p.exists():
-            t.add(p, arcname=p.as_posix())
+            t.add(p, arcname=p.relative_to(RADACINA).as_posix())
 print("LINUX-OK", flush=True)
 
 # 4) manifestul actualizărilor (versiuni.json)
