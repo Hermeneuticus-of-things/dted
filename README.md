@@ -128,6 +128,13 @@ Setări → Aspect).
   - liniștea se măsoară în **timp real** (nu în pași de 40 ms) și fereastra audio se citește o singură dată pe sondaj (mai puțin consum);
   - bara de sfaturi nu mai clipește goală la pornirea programului.
 
+### 🆕 Ce e nou în v0.6.10
+
+- **Actualizări reparate și stabile** — arhiva are căile cerute de instalatorul
+  intern, validarea pachetului nu mai eșuează, iar aplicația caută mereu update-ul
+  la aceeași adresă; manifestul public se actualizează automat numai după
+  verificarea asset-urilor release-ului.
+
 ## 🗺 Ce urmează
 
 - [ ] **Aplicație pentru macOS** — aceeași experiență de dictare, nativ pe Mac
@@ -150,19 +157,20 @@ detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
 
 | Vrei… | Apasă aici | Apoi… |
 |---|---|---|
-| **Cel mai simplu** | **[⬇️ SETUP.DTED-0.6.6.EXE](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/Setup.DTED-0.6.6.exe)** | ~1,84 GB, totul inclus (model + CUDA); dublu clic → Next |
-| **Fără instalare** | **[⬇️ PORTABIL-DTED-0.6.6.ZIP](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/portabil-DTED-0.6.6.zip)** | dezarhivezi → `DTED.exe` (merge de pe stick) |
-| **Totul automat** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | descarcă + verifică SHA-256 + instalează |
+| **Cel mai simplu** | **[⬇️ Ultimul instalator](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | alege `Setup.DTED-<versiune>.exe`; totul inclus, dublu clic → Next |
+| **Fără instalare** | **[⬇️ Ultima versiune portabilă](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | descarcă arhiva `portabil-DTED-<versiune>.zip`, dezarhivezi → `DTED.exe` |
+| **Totul automat** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | găsește release-ul „latest”, verifică SHA-256 și instalează |
 
-**Ai deja D&TED?** → **📦 Actualizări** în program → descarcă doar
-[`program-0.6.6.zip`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/program-0.6.6.zip)
-(~1,25 MB), cu SHA-256, backup și revenire.
+**Ai deja D&TED?** → **📦 Actualizări** în program. Aplicația citește manifestul fix
+`main/versiuni.json`, verifică SHA-256 și păstrează backup pentru revenire. La fiecare
+release, `program.zip` este publicat în aceeași cale stabilă; vezi
+[`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
 
-**Linux (x86_64)?** → [`dted-0.6.6-linux.tar.gz`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/dted-0.6.6-linux.tar.gz)
-→ `tar -xzf …` → `./install.sh`.
+**Linux (x86_64)?** → descarcă ultima arhivă `dted-<versiune>-linux.tar.gz` din
+[Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest) → `tar -xzf …` → `./install.sh`.
 
-Toate fișierele, cu sumele în [`SHA256SUMS.txt`](https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.6/SHA256SUMS.txt),
-sunt pe [pagina release](https://github.com/Hermeneuticus-of-things/dted/releases/tag/v0.6.6).
+Toate fișierele și sumele SHA-256 sunt în release-ul cel mai nou de pe
+[GitHub Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest).
 Cerințe: Windows 10/11 pe 64 de biți · 8 GB RAM recomandate · ~4 GB disc.
 
 ### ❓ Întrebări frecvente
@@ -196,10 +204,10 @@ python -m venv .venv
 
 <div align="center">
 
-**[⬇ Toate versiunile](https://github.com/Hermeneuticus-of-things/dted/releases)** · **[🐞 Raportează din program](https://github.com/Hermeneuticus-of-things/dted/issues)**
+**[⬇ Toate versiunile](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** · **[🐞 Raportează din program](https://github.com/Hermeneuticus-of-things/dted/issues)**
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;ED v0.6.6-beta · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;ED v0.6.10 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>

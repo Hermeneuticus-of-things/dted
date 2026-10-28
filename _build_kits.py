@@ -1,6 +1,6 @@
 """Construiește kiturile per-versiune: portabil, program-zip, Linux, manifest.
 
-Folosire: python _build_kits.py 0.6.9   (după ce dist-v<versiune>\DTED există)
+Folosire: python _build_kits.py <versiune>   (după ce dist-v<versiune>\\DTED există)
 
 REGULI DE PACKAGING (bug-ul de la 0.6.7/0.6.8):
 - program-zip-ul conține DOAR „dictare_transcriere_romana/...” la rădăcină —
@@ -11,16 +11,24 @@ REGULI DE PACKAGING (bug-ul de la 0.6.7/0.6.8):
 """
 import hashlib
 import json
+import shutil
 import sys
 import tarfile
 import zipfile
 from pathlib import Path
 
 RADACINA = Path(__file__).resolve().parent
-VERSIUNE = sys.argv[1] if len(sys.argv) > 1 else "0.6.9"
+if len(sys.argv) != 2:
+    raise SystemExit("Folosire: python _build_kits.py <versiune>")
+VERSIUNE = sys.argv[1]
 DIST = RADACINA / f"dist-v{VERSIUNE}" / "DTED"
 PACHET = RADACINA / "dictare_transcriere_romana"
 NUME_PACHET = "dictare_transcriere_romana"
+
+if not DIST.is_dir():
+    raise SystemExit(f"Lipsește folderul de build: {DIST}")
+if not (PACHET / "__init__.py").is_file():
+    raise SystemExit(f"Lipsește pachetul aplicației: {PACHET / '__init__.py'}")
 
 # 1) portabil: tot kitul, fără bibliotecile CUDA (programul le descarcă singur)
 with zipfile.ZipFile(RADACINA / f"portabil-DTED-{VERSIUNE}.zip", "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
@@ -40,20 +48,23 @@ with zipfile.ZipFile(RADACINA / f"program-{VERSIUNE}.zip", "w", zipfile.ZIP_DEFL
             continue
         if fisier.suffix.lower() not in {".py", ".ico", ".png"}:
             continue
-        z.write(fisier, fisier.relative_to(PACHET).as_posix())
-    proba = RADACINA / "_test_audio_ro.mp3"
-    if proba.exists():
-        z.write(proba, proba.name)
-
+        z.write(
+            fisier,
+            (Path(NUME_PACHET) / fisier.relative_to(PACHET)).as_posix(),
+        )
 # VERIFICARE de structură (bug 0.6.7/0.6.8): toate intrările de pachet pornesc cu numele pachetului
 with zipfile.ZipFile(RADACINA / f"program-{VERSIUNE}.zip") as z:
     nume = z.namelist()
-    stricate = [n for n in nume if n.startswith(NUME_PACHET + "/") is False and n != "_test_audio_ro.mp3"]
+    stricate = [n for n in nume if not n.startswith(NUME_PACHET + "/")]
     if stricate:
         raise SystemExit(f"EROARE packaging: intrări în afara pachetului: {stricate[:5]}")
     if f"{NUME_PACHET}/__init__.py" not in nume:
         raise SystemExit("EROARE packaging: lipsește __init__.py la rădăcină")
 print("ZIP-UPDATE-OK (structură verificată)", flush=True)
+
+# Numele versionat rămâne pentru arhiva istorică; aplicația folosește mereu
+# aceeași cale din release-ul marcat „latest”.
+shutil.copyfile(RADACINA / f"program-{VERSIUNE}.zip", RADACINA / "program.zip")
 
 # 3) arhiva Linux: surse + scripturi + documentație (arcname relativ la RADACINA)
 with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "w:gz") as t:
@@ -73,13 +84,13 @@ with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "w:gz") as t:
 print("LINUX-OK", flush=True)
 
 # 4) manifestul actualizărilor (versiuni.json)
-dim = (RADACINA / f"program-{VERSIUNE}.zip").stat().st_size
-sha = hashlib.sha256((RADACINA / f"program-{VERSIUNE}.zip").read_bytes()).hexdigest()
+dim = (RADACINA / "program.zip").stat().st_size
+sha = hashlib.sha256((RADACINA / "program.zip").read_bytes()).hexdigest()
 (RADACINA / "versiuni.json").write_text(
     json.dumps({
         "program": {
             "versiune": VERSIUNE,
-            "url": f"https://github.com/Hermeneuticus-of-things/dted/releases/download/v{VERSIUNE}/program-{VERSIUNE}.zip",
+            "url": "https://github.com/Hermeneuticus-of-things/dted/releases/latest/download/program.zip",
             "sha256": sha,
             "dimensiune": dim,
         },

@@ -20,31 +20,33 @@ Orice agent care lucrează la acest repo le urmează fără să ceară permisiun
    - `instalator/setup.iss` → `MyAppVersion`, `MyDistDir`, `OutputDir`, `OutputBaseFilename`;
    - `README.md` → secțiunea de instalare (nume fișiere, linkuri release) + o intrare nouă în
      „Ce e nou în v<versiune>” — scurt, lizibil, cu ce s-a schimbat;
-   - `versiuni.json` (manifestul actualizărilor) → versiune, URL `program-<versiune>.zip`,
+   - `versiuni.json` (manifestul actualizărilor) → versiune, URL fix
+     `https://github.com/Hermeneuticus-of-things/dted/releases/latest/download/program.zip`,
      SHA-256 real și dimensiunea reală a arhivei;
-   - `dted-bootstrap.ps1` → `$Tag = "v<versiune>"` + amprentele SHA-256 ale fișierelor
-     Setup.DTED-<versiune>.exe și .bin (AMPRENTE REALE, calculate pe fișierele construite —
-     nu le lăsa niciodată de la versiunea precedentă; verifică întotdeauna perechea tag/sume).
+   - `dted-bootstrap.ps1` rămâne fără tag și sume hardcodate: găsește release-ul
+     GitHub `latest` și verifică instalatorul/bucățile cu `SHA256SUMS.txt` din același release.
 3. **Actualizările trebuie să fie solide și vizibile**: manifestul de pe GitHub `main` e mereu la
    zi cu ultima versiune, butonul „Caută actualizări” din program trebuie să găsească noul
    număr, iar după aplicare versiunea nouă chiar rulează (vezi override-ul din `pornire.py`).
 4. Înainte de push: **suita completă de teste verde** (`.venv/Scripts/python -m pytest -q teste`).
    După push: tag `v<versiune>` + release GitHub cu toate kiturile (Setup .exe + .bin,
-   `program-<versiune>.zip`, arhiva Linux, `SHA256SUMS.txt`).
+   `program-<versiune>.zip`, copia identică `program.zip`, arhiva Linux, `SHA256SUMS.txt`).
 5. **Curățenie**: fără `.bak*`, `__pycache__`, build-uri vechi sau fișiere-artefact în repo.
    La UI/UX: **fără dubluri** — dacă o comandă are deja buton, nu o mai pune și în meniu.
 
 ## Reguli de update/packaging (obligatorii — bug-ul 0.6.7/0.6.8 nu se repetă)
 
-1. **program-<versiune>.zip** conține EXCLUSIV „dictare_transcriere_romana/…” la rădăcină.
+1. **`program-<versiune>.zip` și `program.zip`** conțin EXCLUSIV „dictare_transcriere_romana/…” la rădăcină și sunt identice.
    Construire: `python _build_kits.py <versiune>` (calculează arcname relativ și VERIFICĂ
    structura — eșuează singur dacă apar căi străine). NU construi zip-uri „de mână”.
-2. După fiecare build, verifici zip-ul publicat **de pe URL-ul din versiuni.json** (nu local):
-   prima intrare = „dictare_transcriere_romana/…”, iar SHA-256 = cel din manifest.
-3. **versiuni.json din repo (branch main) e manifestul live** — trebuie să arate ultima
-   versiune publicată, cu URL și SHA-256 reale. Fără el, „Caută actualizări” nu are ce găsi.
+2. Aplicația folosește exclusiv URL-ul stabil `releases/latest/download/program.zip`;
+   fiecare release stabil nou trebuie să aibă acel asset, identic cu arhiva versionată.
+3. **`versiuni.json` din repo (branch main) e manifestul live** — păstrează URL-ul fix
+   și se actualizează numai după publicarea/verificarea asset-ului `program.zip`.
+   SHA-256 și dimensiunea trebuie să corespundă exact arhivei descărcate de la URL-ul stabil.
 4. `actualizare.aplica` validează pachetul extras („dictare_transcriere_romana/__init__.py”
    trebuie să existe; structurile stricate se curăță automat). Nu marca versiunea ca aplicată
    dacă validarea pică.
 5. Update-ul e „bun” DOAR după probă reală: aplicația instalată, după update și repornire,
    afișează versiunea nouă la „Despre” și noul changelog la F1 → „Ce e nou”.
+6. Procedura completă și verificările de release sunt în `docs/ACTUALIZARI.md`.

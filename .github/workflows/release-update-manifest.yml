@@ -1,0 +1,131 @@
+name: Publică manifestul update-ului
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manifest-update-main
+  cancel-in-progress: false
+
+jobs:
+  publicare-manifest:
+    if: github.event.release.prerelease == false && github.event.release.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descarcă sursele main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Descarcă asset-urile release-ului
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "::error::Eticheta release-ului trebuie să fie v<major>.<minor>.<patch>."
+            exit 1
+          fi
+          latest_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          if [[ "$latest_tag" != "$TAG" ]]; then
+            echo "Release-ul $TAG nu mai este latest ($latest_tag); manifestul rămâne neatins."
+            echo "is_latest=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "is_latest=true" >> "$GITHUB_OUTPUT"
+          version="${TAG#v}"
+          mkdir -p "$RUNNER_TEMP/dted-release"
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/dted-release" \
+            --pattern "program.zip" \
+            --pattern "program-$version.zip" \
+            --pattern "SHA256SUMS.txt"
+
+      - name: Verifică arhivele și actualizează manifestul
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_DIR: ${{ runner.temp }}/dted-release
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import zipfile
+          from pathlib import Path
+
+          tag = os.environ["TAG"]
+          match = re.fullmatch(r"v(\d+\.\d+\.\d+)", tag)
+          if not match:
+              raise SystemExit(f"Etichetă invalidă: {tag}")
+          version = match.group(1)
+          release_dir = Path(os.environ["RELEASE_DIR"])
+          stable = release_dir / "program.zip"
+          versioned = release_dir / f"program-{version}.zip"
+          sums_file = release_dir / "SHA256SUMS.txt"
+          for path in (stable, versioned, sums_file):
+              if not path.is_file():
+                  raise SystemExit(f"Asset obligatoriu lipsă: {path.name}")
+
+          stable_bytes = stable.read_bytes()
+          if stable_bytes != versioned.read_bytes():
+              raise SystemExit("program.zip nu este identic cu arhiva versionată.")
+          digest = hashlib.sha256(stable_bytes).hexdigest()
+
+          sums = {}
+          for line in sums_file.read_text(encoding="utf-8").splitlines():
+              item = re.fullmatch(r"\s*([0-9a-fA-F]{64})\s+\*?(.+?)\s*", line)
+              if item:
+                  sums[item.group(2)] = item.group(1).lower()
+          for name in ("program.zip", f"program-{version}.zip"):
+              if sums.get(name) != digest:
+                  raise SystemExit(f"SHA-256 absent sau incorect pentru {name}.")
+
+          with zipfile.ZipFile(stable) as archive:
+              names = archive.namelist()
+              prefix = "dictare_transcriere_romana/"
+              if not names or not names[0].startswith(prefix):
+                  raise SystemExit("Prima cale din arhivă nu este pachetul aplicației.")
+              if any(not name.startswith(prefix) for name in names):
+                  raise SystemExit("Arhiva conține fișiere în afara pachetului aplicației.")
+              if f"{prefix}__init__.py" not in names:
+                  raise SystemExit("Arhiva nu conține pachetul Python necesar.")
+
+          manifest_path = Path("versiuni.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["program"] = {
+              "versiune": version,
+              "url": "https://github.com/Hermeneuticus-of-things/dted/releases/latest/download/program.zip",
+              "sha256": digest,
+              "dimensiune": len(stable_bytes),
+          }
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Manifestul pentru D&TED {version} a fost validat și actualizat.")
+          PY
+
+      - name: Publică manifestul pe main
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add versiuni.json
+          if git diff --cached --quiet; then
+            echo "Manifestul main este deja actualizat."
+            exit 0
+          fi
+          git commit -m "chore: update live manifest for $TAG"
+          git push origin HEAD:main

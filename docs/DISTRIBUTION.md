@@ -61,18 +61,22 @@ Modelele utilizatorului (fără admin) → `%LOCALAPPDATA%` (ex. `%LOCALAPPDATA%
 
 **Pentru:** instalare minimală „un singur fișier mic” care trage restul de pe Releases.
 
-**Conținut:**
-- Bootstrapper mic (ps1/exe) care:
-  1. Citește ultimul release `Hermeneuticus-of-things/dted` (API GitHub sau pagină Releases).
-  2. Descarcă installerul Standard (sau portable).
-  3. Opțional: descarcă eek dacă nu e în installer; descarcă OpenLLM-Ro doar dacă utilizatorul bifează „memorie lungă” / full.
-  4. Verifică SHA-256 din `SHA256SUMS` de pe release.
+**Conținut actual:**
+- `dted-bootstrap.ps1` citește release-ul stabil `latest` din API-ul GitHub.
+- Selectează installerul și eventualele bucăți `.bin` care corespund tag-ului
+  primit, apoi descarcă și verifică fiecare asset cu `SHA256SUMS.txt` din
+  același release.
 - Necesită internet la bootstrap; după instalare, Standard se aplică.
+- Procedura de publicare și toate URL-urile fixe sunt documentate în
+  [`ACTUALIZARI.md`](ACTUALIZARI.md).
 
 **Build (plan):**
-1. Script `bootstrap/dted-bootstrap.ps1` (există deja variante istorice în workspace — aliniază la Releases actuale).
-2. Publică bootstrapperul ca asset ușor pe fiecare release + documentează în README.
-3. Rate limits GitHub: preferă URL-uri `releases/download/…` directe, nu API autentificat pentru utilizatori finali.
+1. Scriptul curent este `dted-bootstrap.ps1`; nu hardcoda tag-uri sau amprente,
+   ci folosește endpoint-ul public `releases/latest` și checksum-urile release-ului.
+2. Linkul raw `main/dted-bootstrap.ps1` rămâne stabil și servește permanent
+   varianta curentă a scriptului.
+3. Aplicația folosește URL-ul fix `releases/latest/download/program.zip`;
+   release-ul trebuie să conțină aliasul identic `program.zip`.
 
 ---
 
