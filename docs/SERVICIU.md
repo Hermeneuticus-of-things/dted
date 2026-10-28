@@ -26,11 +26,11 @@ Codul e în `dictare_transcriere_romana/serviciu.py`, iar testele, cu motor și 
 - `stare` mai are `model` (alegerea), `model_folosit` (folderul încărcat efectiv) și `modele`: `[{nume, descriere, instalat}]`.
 - „auto” înseamnă preferința din setările D&TED; implicit eek (`whisper-turbo-ro-en-ct2`, WER 5,8%) dacă e instalat, altfel modelul standard.
 
-### Publicarea v0.4.2 (pe Windows, ca la versiunile anterioare)
+### Publicarea unei versiuni noi
 
-1. `pyinstaller dictare.spec` (DTED.exe cu modul serviciu și comanda `model`).
-2. Construiește instalatorul din `instalator/`, apoi calculează amprentele: `Get-FileHash Setup.DTED-0.4.2*.* -Algorithm SHA256`.
-3. Actualizează `versiuni.json` (`"program": {"versiune": "0.4.2"}`), `dted-bootstrap.ps1` (`$Tag = "v0.4.2"` și amprentele) și `SHA256SUMS.txt`.
-4. Publică eticheta `v0.4.2` cu fișierele pe GitHub Releases.
+Pentru instalator, arhive, manifestul de actualizare și bootstrap, urmează
+procedura curentă din [`ACTUALIZARI.md`](ACTUALIZARI.md). Bootstrap-ul nu se mai
+editează la fiecare versiune: selectează release-ul GitHub `latest` și verifică
+asset-urile față de `SHA256SUMS.txt` din acel release.
 
 Scribner verifică dacă D&TED știe comanda `model` (după lista `modele` din `stare`); dacă nu, îi spune autorului să actualizeze D&TED.

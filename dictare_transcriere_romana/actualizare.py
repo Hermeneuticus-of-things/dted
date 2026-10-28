@@ -40,6 +40,8 @@ from . import cai
 FISIER_VERSIUNI = "versiuni.json"
 #: Folderul sub care stau copiile de siguranță ale componentelor vechi.
 FOLDER_BACKUP = "_backup"
+#: Pachetul Python care trebuie să existe după extragerea arhivei de update.
+NUME_PACHET = "dictare_transcriere_romana"
 
 #: Componentele actualizabile (nume → dosar din folderul de instalare).
 COMPONENTE = {

@@ -1,79 +1,77 @@
-# ============================================================================
-#  D&TED — Dictare și transcriere expresă digitală
-#  Instalare dintr-o singură comandă, de la o etichetă de versiune fixă, cu
-#  verificarea amprentei SHA-256.
-#
-#  Folosire (ferestre PowerShell):
-#     irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
-#
-#  Scriptul, pas cu pas:
-#    1. descarcă instalatorul (împărțit în bucăți mai mici de 2 GB) de la eticheta
-#       fixă v0.1.0;
-#    2. verifică amprenta SHA-256 pentru FIECARE bucată (amprentele sunt scrise
-#       mai jos, în acest script);
-#    3. REFUZĂ instalarea dacă vreo amprentă nu se potrivește;
-#    4. pornește instalatorul Inno (acesta își găsește singur bucățile .bin din
-#       același dosar).
-#
-#  Scriptul nu modifică nimic pe calculator înainte ca toate amprentele să fi
-#  fost verificate una câte una.
-# ============================================================================
+# Instalare de la ultima versiune publicata pe GitHub.
+# Folosire: irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 | iex
 
 $ErrorActionPreference = "Stop"
-$ProgressPreference    = "SilentlyContinue"   # descărcare mai iute în PowerShell 5.1
+$ProgressPreference = "SilentlyContinue"
 
-# Etichetă de versiune FIXĂ (nu „ultima versiune" — fiecare publicare are eticheta ei).
-$Tag  = "v0.6.9"
 $Repo = "Hermeneuticus-of-things/dted"
-$Base = "https://github.com/$Repo/releases/download/$Tag"
+$ApiUrl = "https://api.github.com/repos/$Repo/releases/latest"
 $Dest = Join-Path $env:TEMP "dted-install"
-
-# ----------------------------------------------------------------------------
-# Amprentele SHA-256 sunt închise AICI, în script (eticheta fixă v0.6.3).
-# Rândul: "nume fișier" = "amprenta". Ordinea: întâi instalatorul .exe, apoi
-# bucățile .bin în ordine (Setup DTED-1.bin, -2.bin, ...).
-# AMPRENTELE SE CALCULEAZĂ pe fișierele construite și se schimbă la FIECARE
-# versiune — niciodată nu se lasă amprentele versiunii precedente.
-# ----------------------------------------------------------------------------
-$Pachete = [ordered]@{
-    "Setup.DTED-0.6.9.exe" = "88C39F9E8A8F49D12E992722D08A3969FB8F2A991426217DD53B202AFAAAFD6B"
+$Headers = @{
+    Accept = "application/vnd.github+json"
+    "User-Agent" = "DTED-Bootstrap/1.0"
 }
 
-function Format-Amprenta { param([string]$s) ($s -replace '[^0-9a-fA-F]', '').ToUpper() }
+Write-Host "D&TED — caut ultima versiune publicata..." -ForegroundColor Cyan
+$Release = Invoke-RestMethod -Uri $ApiUrl -Headers $Headers
+if ($Release.draft -or $Release.prerelease -or $Release.tag_name -notmatch '^v(\d+\.\d+\.\d+)$') {
+    throw "GitHub nu a returnat un release stabil D&TED cu eticheta v<versiune>."
+}
 
-Write-Host ""
-Write-Host ("D&TED — instalare de la {0} (etichetă de versiune fixă)" -f $Tag) -ForegroundColor Cyan
+$Versiune = $Matches[1]
+$PachetExe = "Setup.DTED-$Versiune.exe"
+$Pachete = @($Release.assets | Where-Object {
+    $_.name -eq $PachetExe -or $_.name -match (
+        '^Setup\.DTED-' + [regex]::Escape($Versiune) + '-\d+\.bin$'
+    )
+})
+$Exe = @($Pachete | Where-Object { $_.name -eq $PachetExe })
+$Sume = @($Release.assets | Where-Object { $_.name -eq "SHA256SUMS.txt" })
+if ($Exe.Count -ne 1 -or $Sume.Count -ne 1) {
+    throw "Release-ul $($Release.tag_name) nu contine instalatorul si SHA256SUMS.txt asteptate."
+}
 
-if (-not (Test-Path $Dest)) { New-Item -ItemType Directory -Path $Dest | Out-Null }
+$Pachete = @($Exe) + @($Pachete | Where-Object { $_.name -ne $PachetExe } | Sort-Object name)
+if (-not (Test-Path $Dest)) {
+    New-Item -ItemType Directory -Path $Dest | Out-Null
+}
 
-# Alege instalatorul (.exe) din manifest.
-$exeName = $Pachete.Keys | Where-Object { $_ -match '\.exe$' } | Select-Object -First 1
-if (-not $exeName) { throw "Manifestul nu conține instalatorul (.exe)!" }
+$FisierSume = Join-Path $Dest "SHA256SUMS.txt"
+Invoke-WebRequest -Uri $Sume[0].browser_download_url -OutFile $FisierSume -UseBasicParsing
+$LiniiSume = Get-Content -Path $FisierSume
 
-foreach ($num in $Pachete.Keys) {
-    $asteptat = Format-Amprenta $Pachete[$num]
-    if ($asteptat.Length -ne 64) { throw ("Amprentă greșită în manifest pentru '{0}'." -f $num) }
-
-    $url = $Base + "/" + ([uri]::EscapeDataString($num))
-    $out = Join-Path $Dest $num
-    Write-Host ("  se descarcă  {0} ..." -f $num) -ForegroundColor Gray
-    Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
-
-    $real = (Get-FileHash -Path $out -Algorithm SHA256).Hash.ToUpper()
-    if ($real -ne $asteptat) {
-        Remove-Item $out -Force -ErrorAction SilentlyContinue
-        throw (("VERIFICAREA AMPRENTEI SHA-256 A EȘUAT pentru '{0}':`n" + `
-               "  așteptat: {1}`n" + `
-               "  primit:   {2}`n" + `
-               "Instalarea a fost REFUZATĂ (fișier stricat ori alterat).") -f $num, $asteptat, $real)
+foreach ($Pachet in $Pachete) {
+    if ($Pachet.name -notmatch '^Setup\.DTED-[\d.]+(?:-\d+)?\.(?:exe|bin)$') {
+        throw "Nume de asset neasteptat in release: $($Pachet.name)"
     }
-    Write-Host ("  în regulă  {0}  (amprenta SHA-256 se potrivește)" -f $num) -ForegroundColor Green
+
+    $NumeEscapat = [regex]::Escape($Pachet.name)
+    $LiniiPotrivite = @($LiniiSume | Where-Object {
+        $_ -match ('^\s*[0-9a-fA-F]{64}\s+\*?' + $NumeEscapat + '\s*$')
+    })
+    if ($LiniiPotrivite.Count -ne 1) {
+        throw "SHA-256 lipsa sau duplicat pentru $($Pachet.name) in SHA256SUMS.txt."
+    }
+    $AmprentaAsteptata = [regex]::Match(
+        $LiniiPotrivite[0], '^\s*([0-9a-fA-F]{64})'
+    ).Groups[1].Value.ToUpperInvariant()
+
+    $Cale = Join-Path $Dest $Pachet.name
+    Write-Host "  se descarca $($Pachet.name)..." -ForegroundColor Gray
+    Invoke-WebRequest -Uri $Pachet.browser_download_url -OutFile $Cale -UseBasicParsing
+    $AmprentaReala = (Get-FileHash -Path $Cale -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($AmprentaReala -ne $AmprentaAsteptata) {
+        Remove-Item -LiteralPath $Cale -Force -ErrorAction SilentlyContinue
+        throw "Verificarea SHA-256 a esuat pentru $($Pachet.name); instalarea a fost refuzata."
+    }
+    Write-Host "  SHA-256 verificat: $($Pachet.name)" -ForegroundColor Green
 }
 
-$exePath = Join-Path $Dest $exeName
-Write-Host ""
-Write-Host "Toate bucățile au fost verificate. Se pornește instalatorul..." -ForegroundColor Cyan
+Write-Host "Pornesc D&TED $Versiune..." -ForegroundColor Cyan
 Push-Location $Dest
-try { Start-Process -FilePath $exePath -Wait } finally { Pop-Location }
-Write-Host "D&TED — instalarea a pornit." -ForegroundColor Green
-
+try {
+    Start-Process -FilePath (Join-Path $Dest $PachetExe) -Wait
+}
+finally {
+    Pop-Location
+}
