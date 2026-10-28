@@ -41,45 +41,46 @@ def test_ce_s_a_schimbat():
 def test_backup_aplicare_revenire():
     def corp(tmp):
         comp = tmp / "program"
-        pachet_vechi = comp / "dictare_transcriere_romana"
-        pachet_vechi.mkdir(parents=True)
-        (pachet_vechi / "__init__.py").write_text("", encoding="utf-8")
-        (pachet_vechi / "motor.py").write_text("vechi", encoding="utf-8")
+        comp.mkdir(parents=True)
+        (comp / "motor.py").write_text("vechi", encoding="utf-8")
 
         # backup
         backup = act.backup_componenta("program", "1.0")
-        assert backup and (
-            backup / "dictare_transcriere_romana" / "motor.py"
-        ).read_text(encoding="utf-8") == "vechi"
+        assert backup and (backup / "motor.py").read_text(encoding="utf-8") == "vechi"
 
-        # aplica (pachet descărcat)
+        # aplica (pachet descărcat): dosar cu pachetul în interior
         pachet = tmp / "pachet_nou" / "dictare_transcriere_romana"
         pachet.mkdir(parents=True)
         (pachet / "__init__.py").write_text("", encoding="utf-8")
         (pachet / "motor.py").write_text("nou", encoding="utf-8")
-        assert act.aplica("program", "1.1", pachet.parent)
-        assert (
-            comp / "dictare_transcriere_romana" / "motor.py"
-        ).read_text(encoding="utf-8") == "nou"
+        assert act.aplica("program", "1.1", tmp / "pachet_nou")
+        assert (comp / "dictare_transcriere_romana" / "motor.py").read_text(encoding="utf-8") == "nou"
         assert act.versiuni_instalate()["program"]["versiune"] == "1.1"
 
         # revine
         assert act.revine("program", "1.0")
-        assert (
-            comp / "dictare_transcriere_romana" / "motor.py"
-        ).read_text(encoding="utf-8") == "vechi"
+        assert (comp / "motor.py").read_text(encoding="utf-8") == "vechi"
         assert act.versiuni_instalate()["program"]["versiune"] == "1.0"
 
-        # aplica din arhiva .zip (cum se descarcă de pe GitHub Releases)
+        # aplica din arhiva .zip (cum se descarcă de pe GitHub Releases):
+        # zip-ul oficial conține pachetul la rădăcină
         import zipfile
         arhiva_zip = tmp / "program-1.2.zip"
         with zipfile.ZipFile(arhiva_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr("dictare_transcriere_romana/__init__.py", "")
             zf.writestr("dictare_transcriere_romana/motor.py", "din_zip")
+            zf.writestr("dictare_transcriere_romana/__init__.py", "")
         assert act.aplica("program", "1.2", arhiva_zip)
-        assert (
-            comp / "dictare_transcriere_romana" / "motor.py"
-        ).read_text(encoding="utf-8") == "din_zip"
+        # zip-ul oficial conține pachetul în subfolderul lui: comp/dictare_transcriere_romana/motor.py
+        assert (comp / "dictare_transcriere_romana" / "motor.py").read_text(encoding="utf-8") == "din_zip"
+        assert (comp / "dictare_transcriere_romana" / "__init__.py").is_file()
+
+        # zip cu structură stricată (bug 0.6.7/0.6.8): NU se marchează aplicat
+        arhiva_stricata = tmp / "program-1.3.zip"
+        with zipfile.ZipFile(arhiva_stricata, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("OpenCode/altceva/motor.py", "x")
+        assert act.aplica("program", "1.3", arhiva_stricata) is False
+        # zip-ul stricat nu a atins componenta: rămâne ce a instalat 1.2
+        assert (comp / "dictare_transcriere_romana" / "motor.py").read_text(encoding="utf-8") == "din_zip"
         assert act.versiuni_instalate()["program"]["versiune"] == "1.2"
     _cu_director_temp(corp)
     print("backup + aplica + revine OK")
