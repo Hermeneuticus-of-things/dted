@@ -36,12 +36,12 @@ from typing import Callable
 
 from . import cai
 
+#: Numele folderului-pachet (și al intrărilor din arhivele de actualizare).
+NUME_PACHET = "dictare_transcriere_romana"  # string (rglob primește pattern string)
 #: Numele fișierului cu versiunile instalate.
 FISIER_VERSIUNI = "versiuni.json"
 #: Folderul sub care stau copiile de siguranță ale componentelor vechi.
 FOLDER_BACKUP = "_backup"
-#: Pachetul Python care trebuie să existe după extragerea arhivei de update.
-NUME_PACHET = "dictare_transcriere_romana"
 
 #: Componentele actualizabile (nume → dosar din folderul de instalare).
 COMPONENTE = {
@@ -260,7 +260,7 @@ def _despacheteaza_corect(pachet: Path, tinta: Path) -> bool:
     if (pachet_extras / "__init__.py").is_file():
         return True  # structura corectă
     # caută pachetul în subfoldere (structură stricată)
-    gasit = list(tinta.rglob(NUME_PACHET / "__init__.py"))
+    gasit = list(tinta.rglob(NUME_PACHET + "/__init__.py"))
     if not gasit:
         shutil.rmtree(tinta, ignore_errors=True)
         return False
@@ -285,25 +285,36 @@ def aplica(nume: str, versiune_noua: str, pachet_descarcat: Path) -> bool:
     pachet_descarcat = Path(pachet_descarcat)
     instalate = versiuni_instalate()
     veche = instalate.get(nume, {}).get("versiune", "")
+
+    # VALIDARE ÎNAINTE DE ORICE ȘTERGERE: pachetul trebuie să conțină
+    # „dictare_transcriere_romana/__init__.py” (la rădăcină sau în subfoldere).
+    # Un pachet stricat NU atinge componenta instalată (rămâne cea veche).
+    import zipfile
+
+    if pachet_descarcat.is_dir():
+        if not list(pachet_descarcat.rglob(NUME_PACHET + "/__init__.py")):
+            return False
+    elif pachet_descarcat.is_file() and zipfile.is_zipfile(pachet_descarcat):
+        with zipfile.ZipFile(pachet_descarcat, "r") as arhiva:
+            nume_in_arhiva = arhiva.namelist()
+        if NUME_PACHET + "/__init__.py" not in nume_in_arhiva:
+            return False  # structură stricată: nu atingem nimic
+    else:
+        return False
+
     backup_componenta(nume, veche) if veche else None
     tinta = _componenta_folder(nume)
     if tinta.exists():
         shutil.rmtree(tinta, ignore_errors=True)
     if pachet_descarcat.is_dir():
-        # dosar despachetat: dacă el deja ÎNCEPE cu pachetul, copiem direct;
-        # altfel căutăm pachetul în el (structuri împachetate greșit)
         if (pachet_descarcat / NUME_PACHET / "__init__.py").is_file():
             shutil.copytree(pachet_descarcat, tinta)
         else:
-            gasit = list(pachet_descarcat.rglob(NUME_PACHET / "__init__.py"))
-            if not gasit:
-                return False
+            gasit = list(pachet_descarcat.rglob(NUME_PACHET + "/__init__.py"))
             shutil.copytree(gasit[0].parent, tinta)
-    elif pachet_descarcat.is_file() and zipfile.is_zipfile(pachet_descarcat):
+    else:
         if not _despacheteaza_corect(pachet_descarcat, tinta):
             return False
-    else:
-        return False
     if not (tinta / NUME_PACHET / "__init__.py").is_file():
         return False  # ultima plasă de siguranță: fără pachet valid, nu marchezi update-ul
     instalate[nume] = {"versiune": versiune_noua}
