@@ -1,0 +1,42 @@
+name: Raportare problemă
+description: Raportează o eroare fără să incluzi textul documentelor tale.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nu atașa texte dictate, înregistrări audio, parole sau informații private.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Ce s-a întâmplat?
+      description: Spune pe scurt ce nu a funcționat.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Cum putem reproduce problema?
+      description: Enumeră pașii, folosind exemple fără date personale.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versiunea D&TED
+      description: O găsești în Ajutor → Despre.
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Sistem de operare
+      placeholder: Windows 11, Linux etc.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ce te așteptai să se întâmple?

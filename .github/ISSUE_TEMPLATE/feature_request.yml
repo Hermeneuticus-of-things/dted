@@ -1,0 +1,23 @@
+name: Propunere de funcție
+description: Sugerează o îmbunătățire pentru D&TED.
+title: "[Propunere]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Ce problemă vrei să rezolvi?
+      description: Explică situația în care te-ar ajuta funcția.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Cum ai vrea să funcționeze?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Ai încercat altă soluție?

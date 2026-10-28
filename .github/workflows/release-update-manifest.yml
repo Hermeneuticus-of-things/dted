@@ -41,12 +41,27 @@ jobs:
           echo "is_latest=true" >> "$GITHUB_OUTPUT"
           version="${TAG#v}"
           mkdir -p "$RUNNER_TEMP/dted-release"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '[.assets[] | {name, size, digest}]' \
+            > "$RUNNER_TEMP/dted-release/release-assets.json"
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --dir "$RUNNER_TEMP/dted-release" \
             --pattern "program.zip" \
             --pattern "program-$version.zip" \
+            --pattern "dted-$version-linux.tar.gz" \
             --pattern "SHA256SUMS.txt"
+
+      - name: Verifică toate asset-urile release-ului
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_DIR: ${{ runner.temp }}/dted-release
+        run: |
+          python scripts/validate_release_assets.py \
+            "$TAG" \
+            "$RELEASE_DIR" \
+            "$RELEASE_DIR/release-assets.json"
 
       - name: Verifică arhivele și actualizează manifestul
         if: steps.release.outputs.is_latest == 'true'
@@ -55,49 +70,23 @@ jobs:
           RELEASE_DIR: ${{ runner.temp }}/dted-release
         run: |
           python - <<'PY'
-          import hashlib
           import json
           import os
-          import re
-          import zipfile
           from pathlib import Path
 
           tag = os.environ["TAG"]
-          match = re.fullmatch(r"v(\d+\.\d+\.\d+)", tag)
-          if not match:
-              raise SystemExit(f"Etichetă invalidă: {tag}")
-          version = match.group(1)
+          version = tag.removeprefix("v")
           release_dir = Path(os.environ["RELEASE_DIR"])
           stable = release_dir / "program.zip"
-          versioned = release_dir / f"program-{version}.zip"
-          sums_file = release_dir / "SHA256SUMS.txt"
-          for path in (stable, versioned, sums_file):
-              if not path.is_file():
-                  raise SystemExit(f"Asset obligatoriu lipsă: {path.name}")
-
           stable_bytes = stable.read_bytes()
-          if stable_bytes != versioned.read_bytes():
-              raise SystemExit("program.zip nu este identic cu arhiva versionată.")
-          digest = hashlib.sha256(stable_bytes).hexdigest()
-
-          sums = {}
-          for line in sums_file.read_text(encoding="utf-8").splitlines():
-              item = re.fullmatch(r"\s*([0-9a-fA-F]{64})\s+\*?(.+?)\s*", line)
-              if item:
-                  sums[item.group(2)] = item.group(1).lower()
-          for name in ("program.zip", f"program-{version}.zip"):
-              if sums.get(name) != digest:
-                  raise SystemExit(f"SHA-256 absent sau incorect pentru {name}.")
-
-          with zipfile.ZipFile(stable) as archive:
-              names = archive.namelist()
-              prefix = "dictare_transcriere_romana/"
-              if not names or not names[0].startswith(prefix):
-                  raise SystemExit("Prima cale din arhivă nu este pachetul aplicației.")
-              if any(not name.startswith(prefix) for name in names):
-                  raise SystemExit("Arhiva conține fișiere în afara pachetului aplicației.")
-              if f"{prefix}__init__.py" not in names:
-                  raise SystemExit("Arhiva nu conține pachetul Python necesar.")
+          digest = json.loads(
+              (release_dir / "release-assets.json").read_text(encoding="utf-8")
+          )
+          digest = next(
+              asset["digest"].removeprefix("sha256:")
+              for asset in digest
+              if asset["name"] == "program.zip"
+          )
 
           manifest_path = Path("versiuni.json")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
