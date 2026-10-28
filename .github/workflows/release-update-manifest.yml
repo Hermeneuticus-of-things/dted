@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 
 concurrency:
   group: manifest-update-main
@@ -63,7 +65,8 @@ jobs:
             "$RELEASE_DIR" \
             "$RELEASE_DIR/release-assets.json"
 
-      - name: Verifică arhivele și actualizează manifestul
+      - name: Verifică arhivele și pregătește manifestul
+        id: manifest
         if: steps.release.outputs.is_latest == 'true'
         env:
           TAG: ${{ github.event.release.tag_name }}
@@ -102,19 +105,97 @@ jobs:
           )
           print(f"Manifestul pentru D&TED {version} a fost validat și actualizat.")
           PY
+          if git diff --quiet -- versiuni.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Publică manifestul pe main
-        if: steps.release.outputs.is_latest == 'true'
+      - name: Deschide PR pentru manifest și rulează CI pe ramura lui
+        if: steps.release.outputs.is_latest == 'true' && steps.manifest.outputs.changed == 'true'
         env:
           TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add versiuni.json
-          if git diff --cached --quiet; then
-            echo "Manifestul main este deja actualizat."
-            exit 0
+          version="${TAG#v}"
+          branch="automation/live-manifest-${TAG//./-}"
+          pull_request="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --head "$GITHUB_REPOSITORY_OWNER:$branch" \
+            --json number,headRefOid \
+            --jq '.[0] // empty')"
+
+          if [[ -n "$pull_request" ]]; then
+            pr_number="$(jq -r .number <<< "$pull_request")"
+            expected_sha="$(jq -r .headRefOid <<< "$pull_request")"
+            echo "PR #$pr_number există deja; rulez CI pe ramura lui."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git switch --create "$branch"
+            git add versiuni.json
+            git commit -m "chore: update live manifest for $TAG"
+            expected_sha="$(git rev-parse HEAD)"
+
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+              if ! git diff --quiet "origin/$branch" -- versiuni.json; then
+                echo "::error::Ramura $branch există cu alt manifest; nu o suprascriu."
+                exit 1
+              fi
+              expected_sha="$(git rev-parse "origin/$branch")"
+            else
+              git push --set-upstream origin "$branch"
+            fi
+
+            body="$(cat <<EOF
+          ## Ce schimbă acest pull request?
+
+          Actualizează manifestul live pentru release-ul validat D&TED $version. Aplicația va putea găsi această versiune după integrarea manifestului în \`main\`.
+
+          ## Verificare
+
+          - [x] Am rulat validatorul de asset-uri pentru release-ul $TAG: kituri, dimensiuni, SHA-256 și structura arhivelor verificate.
+          - [ ] Am rulat \`python scripts/check_release_contract.py\` — va rula ca status check obligatoriu pe această ramură.
+          - [ ] Am rulat \`.venv/Scripts/python -m pytest -q teste\` — suita va rula ca status check obligatoriu pe această ramură.
+          - [x] Am urmat \`docs/ACTUALIZARI.md\` și am verificat asset-urile release-ului.
+          EOF
+          )"
+            pr_url="$(gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head "$branch" \
+              --title "chore: update live manifest for $TAG" \
+              --body "$body")"
+            pr_number="${pr_url##*/}"
           fi
-          git commit -m "chore: update live manifest for $TAG"
-          git push origin HEAD:main
+
+          gh workflow run ci.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$branch"
+
+          echo "Aștept verificările CI pentru commit $expected_sha."
+          run_id=""
+          for attempt in $(seq 1 120); do
+            run_id="$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow ci.yml \
+              --branch "$branch" \
+              --event workflow_dispatch \
+              --limit 20 \
+              --json databaseId,headSha \
+              --jq ".[] | select(.headSha == \"$expected_sha\") | .databaseId" \
+              | head -n 1)"
+            if [[ -n "$run_id" ]]; then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "$run_id" ]]; then
+            echo "::error::Nu am găsit rularea CI pentru PR #$pr_number ($expected_sha)."
+            exit 1
+          fi
+          gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status
+          echo "PR #$pr_number are verificări CI verzi; manifestul nu a fost scris direct în main."
