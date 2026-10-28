@@ -121,19 +121,16 @@ Setări → Aspect).
 
 ### 🆕 Ce e nou în v0.6.9
 
-- **Vânătoare de bug-uri pe toate dimensiunile** (cod, motor, grafică, workflow, română):
-  - **comenzile vocale funcționează acum cu adevărat la dictare** — „punct”, „virgulă”, „deschide ghilimele”, „linie de dialog” etc. erau implementate, dar nu erau chemate niciodată din fluxul de dictare;
-  - fraza ștearsă cu **⏎ P alineat / ⇥ I alineat** nu mai reapărea în recuperarea după o cădere a programului;
-  - prefixul de pauză (rând/paragraf nou) nu se mai pierdea la confirmarea bucății;
-  - liniștea se măsoară în **timp real** (nu în pași de 40 ms) și fereastra audio se citește o singură dată pe sondaj (mai puțin consum);
-  - bara de sfaturi nu mai clipește goală la pornirea programului.
+- **Dictarea și formatarea textului sunt mai previzibile** — comenzile vocale pentru punctuație și alineate se aplică mai bine, iar textul recuperat după o problemă păstrează ce ai scris.
+- **Pauzele și sfaturile din program se comportă mai natural**, pentru o experiență mai clară în timpul dictării.
 
 ### 🆕 Ce e nou în v0.6.10
 
-- **Actualizări reparate și stabile** — arhiva are căile cerute de instalatorul
-  intern, validarea pachetului nu mai eșuează, iar aplicația caută mereu update-ul
-  la aceeași adresă; manifestul public se actualizează automat numai după
-  verificarea asset-urilor release-ului.
+- **Actualizările se găsesc din program**, fără să fie nevoie să cauți manual fișierul potrivit.
+
+### 🆕 Ce e nou în v0.6.11
+
+- **Pornire mai sigură după instalare sau actualizare** — aplicația este gata de folosit, iar asistentul de instalare rămâne disponibil dacă ai nevoie de el.
 
 ## 🗺 Ce urmează
 
@@ -208,6 +205,6 @@ python -m venv .venv
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;ED v0.6.10 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;ED v0.6.11 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>

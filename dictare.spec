@@ -2,8 +2,9 @@
 # PyInstaller, mod folder (onedir): dist\DTED\DTED.exe + _internal\
 # Dictate & Transcription Express Digital (D&TED) – Dictare și transcriere în limba română
 #
-# În pachet: Python, PySide6, faster-whisper, ctranslate2, PyAV, numpy, sounddevice
-# și ffmpeg (imageio-ffmpeg). Sunt incluse și torch (2.14.1+cpu), openai-whisper
+# În pachet: Python, PySide6, Tkinter (asistentul de instalare), faster-whisper,
+# ctranslate2, PyAV, numpy, sounddevice și ffmpeg (imageio-ffmpeg). Sunt incluse
+# și torch (2.14.1+cpu), openai-whisper
 # (20250625) și customtkinter (6.0.0) — kit offline complet (cerința 9 / N-7 V1).
 # Modelul (~1,6 GB) și bibliotecile CUDA (cuBLAS 12 + cuDNN 9, ~1,9 GB) sunt
 # ÎMPACHETATE în kitul offline: programul le folosește local, fără nicio descărcare
@@ -73,6 +74,7 @@ a = Analysis(
         'faster_whisper', 'ctranslate2', 'av', 'sounddevice', 'numpy', 'imageio_ffmpeg',
         'onnxruntime', 'tokenizers', 'huggingface_hub',
         'dictare_transcriere_romana.pregatire',
+        'tkinter', 'tkinter.filedialog',
         'torch',          # kit offline complet: pachetele cerute, chiar dacă programul
         'whisper',        # folosește faster-whisper; incluse pentru reproducere exactă
         'customtkinter',
@@ -81,7 +83,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'tkinter', 'tkinter.ttk', 'tkinter.font',
         'PyQt5', 'PyQt6', 'matplotlib', 'scipy', 'pandas',
         # 'nvidia' nu mai e exclus: bibliotecile CUDA sunt împachetate în kitul offline.
     ],
