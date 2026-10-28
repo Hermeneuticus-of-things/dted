@@ -241,11 +241,42 @@ def restaureaza(nume: str, versiune: str) -> bool:
     return True
 
 
+def _despacheteaza_corect(pachet: Path, tinta: Path) -> bool:
+    """Extrage arhiva și aduce pachetul la rădăcina „tinta”, oricare ar fi structura.
+
+    zip-ul oficial conține „dictare_transcriere_romana/...” la rădăcină. Dacă din
+    greșeală arhiva are un (sau mai mulți) foldere-părinte în plus (bug de
+    packaging de la 0.6.7/0.6.8: „OpenCode/...”), pachetul se găsește recursiv
+    și doar el se copiază — niciodată foldere străine lângă program.
+    """
+    import zipfile
+
+    tinta.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(pachet, "r") as arhiva:
+        arhiva.extractall(tinta)
+    pachet_extras = tinta / NUME_PACHET
+    if (pachet_extras / "__init__.py").is_file():
+        return True  # structura corectă
+    # caută pachetul în subfoldere (structură stricată)
+    gasit = list(tinta.rglob(NUME_PACHET / "__init__.py"))
+    if not gasit:
+        shutil.rmtree(tinta, ignore_errors=True)
+        return False
+    sursa = gasit[0].parent
+    temporar = tinta.parent / (tinta.name + "-nou")
+    shutil.rmtree(temporar, ignore_errors=True)
+    shutil.copytree(sursa, temporar)
+    shutil.rmtree(tinta, ignore_errors=True)
+    temporar.rename(tinta)
+    return True
+
+
 def aplica(nume: str, versiune_noua: str, pachet_descarcat: Path) -> bool:
     """Backup la vechea versiune, apoi înlocuiește componenta cu cea descărcată.
 
     Acceptă atât un dosar deja despachetat, cât și o arhivă ``.zip`` descărcată
-    de pe GitHub Releases.
+    de pe GitHub Releases. La schimbări prea mari (componenta veche lipsește ori
+    e complet altfel), componenta veche se TAIE și se instalează curat cea nouă.
     """
     import zipfile
 
@@ -257,13 +288,22 @@ def aplica(nume: str, versiune_noua: str, pachet_descarcat: Path) -> bool:
     if tinta.exists():
         shutil.rmtree(tinta, ignore_errors=True)
     if pachet_descarcat.is_dir():
-        shutil.copytree(pachet_descarcat, tinta)
+        # dosar despachetat: dacă el deja ÎNCEPE cu pachetul, copiem direct;
+        # altfel căutăm pachetul în el (structuri împachetate greșit)
+        if (pachet_descarcat / NUME_PACHET / "__init__.py").is_file():
+            shutil.copytree(pachet_descarcat, tinta)
+        else:
+            gasit = list(pachet_descarcat.rglob(NUME_PACHET / "__init__.py"))
+            if not gasit:
+                return False
+            shutil.copytree(gasit[0].parent, tinta)
     elif pachet_descarcat.is_file() and zipfile.is_zipfile(pachet_descarcat):
-        tinta.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(pachet_descarcat, "r") as arhiva:
-            arhiva.extractall(tinta)
+        if not _despacheteaza_corect(pachet_descarcat, tinta):
+            return False
     else:
         return False
+    if not (tinta / NUME_PACHET / "__init__.py").is_file():
+        return False  # ultima plasă de siguranță: fără pachet valid, nu marchezi update-ul
     instalate[nume] = {"versiune": versiune_noua}
     scrie_versiuni(instalate)
     return True
