@@ -32,6 +32,10 @@ validare. Nu crea manual arhiva de update. Urmează integral
 [`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md); acesta descrie și verificarea
 descărcării publice după publicare.
 
+PyAV este ignorat de Dependabot deoarece versiunea lui trebuie să rămână
+compatibilă cu motorul de transcriere și cu kitul Windows; schimbarea se face
+numai împreună cu actualizarea verificărilor de compatibilitate.
+
 ## Raportarea problemelor
 
 Folosește formularul Bug sau funcția de raportare din aplicație. Nu publica
