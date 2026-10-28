@@ -278,6 +278,9 @@ TORCH_INDEX_CUDA = "https://download.pytorch.org/whl/cu130"
 #: Manifestul actualizărilor pe componente (cerința 8 / N-2): aceeași formă ca
 #: „versiuni.json” din folderul de instalare (versiune, dimensiune, adresă,
 #: sumă SHA-256). Se citește DOAR la apăsarea butonului „Caută actualizări”.
+#: Adresa proiectului (folosită în „Despre” și în rapoarte).
+REPO_URL = "https://github.com/Hermeneuticus-of-things/dted"
+
 URL_MANIFEST_ACTUALIZARI = (
     "https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/versiuni.json"
 )

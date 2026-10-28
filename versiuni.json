@@ -1,9 +1,9 @@
 {
   "program": {
-    "versiune": "0.6.8",
-    "url": "https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.8/program-0.6.8.zip",
-    "sha256": "f14ae8f9e471f2068a5c86fb90b4462502cc6c6ffee926ed12dde7cfd620c957",
-    "dimensiune": 1263673
+    "versiune": "0.6.9",
+    "url": "https://github.com/Hermeneuticus-of-things/dted/releases/download/v0.6.9/program-0.6.9.zip",
+    "sha256": "dba9a354d2faee58943ea67cfa431deed043455f2ed7c250ea7a083b96e3d36c",
+    "dimensiune": 1257899
   },
   "model": {
     "versiune": "whisper-turbo-ro-en-ct2"

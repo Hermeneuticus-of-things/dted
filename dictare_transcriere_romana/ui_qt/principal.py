@@ -920,6 +920,8 @@ class Aplicatie(QMainWindow):
     def _despre(self) -> None:
         from html import escape
 
+        from ..constante import REPO_URL, VERSIUNE_COMPLETA
+
         # Text bogat (HTML): „&” se scrie &amp;, deci apare corect în etichetă.
         comun.anunta(
             self,
@@ -929,11 +931,14 @@ class Aplicatie(QMainWindow):
             "<div style='font-size:8pt; color:gray'>Inspirat de Express Dictate și Express Scribe "
             "(NCH Software). D&amp;TED nu este afiliat cu NCH Software; mărcile aparțin "
             "proprietarilor lor.</div><br>"
-            "Versiunea 1.0.0<br><br>"
+            f"<div style='font-size:11pt; font-weight:bold'>Versiunea {escape(VERSIUNE_COMPLETA)}</div>"
+            f"<div style='font-size:8pt; color:gray'>sursă: {escape(REPO_URL)}</div><br>"
             "Program de dictare și transcriere text, 100% local,<br>"
             "cu modelul Whisper large-v3-turbo.<br><br>"
             "Toate prelucrările se fac pe calculatorul tău.<br>"
-            "Nicio informație nu este trimisă pe internet.",
+            "Nicio informație nu este trimisă pe internet.<br><br>"
+            f"<a href='{REPO_URL}'>Hermeneuticus-of-things/dted — pagina proiectului</a><br>"
+            "<a href='https://buymeacoffee.com/'>☕ Buy me a beer</a> — sprijină proiectul",
         )
 
     def _deschide_folderul(self) -> None:
