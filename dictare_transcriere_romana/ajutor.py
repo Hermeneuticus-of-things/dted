@@ -37,8 +37,10 @@ class Ghid:
 
 ECRANE: dict[str, Ghid] = {
     "noutati": Ghid(
-        titlu="Ce e nou în v0.6.3",
+        titlu=f"Ce e nou în v{VERSIUNE}",
         ce_vezi=[
+            "Programul pornește corect după instalare sau actualizare, fără să te trimită din greșeală la asistentul de instalare.",
+            "Poți verifica actualizările din același loc, direct din program.",
             "Textul dictat apare pe ecran cuvânt cu cuvânt, pe măsură ce vorbești; partea gri se confirmă în câteva secunde.",
             "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”, „⏎ P alineat” și „⇥ I alineat”.",
             "Modelul de transcriere se încarcă singur în fundal, imediat după pornirea programului.",

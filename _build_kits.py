@@ -60,7 +60,7 @@ with zipfile.ZipFile(RADACINA / f"program-{VERSIUNE}.zip") as z:
         raise SystemExit(f"EROARE packaging: intrări în afara pachetului: {stricate[:5]}")
     if f"{NUME_PACHET}/__init__.py" not in nume:
         raise SystemExit("EROARE packaging: lipsește __init__.py la rădăcină")
-print("ZIP-UPDATE-OK (structură verificată)", flush=True)
+print("ZIP-UPDATE-OK (structura verificata)", flush=True)
 
 # Numele versionat rămâne pentru arhiva istorică; aplicația folosește mereu
 # aceeași cale din release-ul marcat „latest”.

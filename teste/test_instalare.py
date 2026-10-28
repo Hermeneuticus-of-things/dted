@@ -19,6 +19,11 @@ def test_pyav_este_fixat_la_o_versiune_compatibila():
     assert constante.PACHET_PYAV in constante.PACHETE
 
 
+def test_dependenta_pyav_din_build_coincide_cu_pachetul_instalat():
+    dependente = (RADACINA / "requirements.txt").read_text(encoding="utf-8").splitlines()
+    assert constante.PACHET_PYAV in {linie.strip() for linie in dependente}
+
+
 def test_verificarea_versiunii_pyav_accepta_doar_versiuni_sub_18():
     assert instalare.pyav_compatibil("17.1.0")
     assert not instalare.pyav_compatibil("18.0.0")

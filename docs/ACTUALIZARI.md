@@ -64,9 +64,10 @@ bootstrap-ului.
 Release-ul existent `v0.6.9` rămâne nemodificat: nu are asset-ul fix
 `program.zip`, iar codul său de update are un defect de aplicare. Manifestul
 public rămâne pe URL-ul versionat existent până la publicarea unei versiuni noi.
-Sursa pregătită pentru `v0.6.10` repară validarea și generează aliasul stabil;
-după ce kiturile `v0.6.10` sunt construite și publicate, workflow-ul verifică
-asset-urile și activează automat URL-ul stabil în manifestul `main`.
+`v0.6.10` a reparat aplicarea update-urilor și a activat aliasul stabil.
+`v0.6.11` fixează și dependența PyAV la versiunea compatibilă cu motorul de
+transcriere și include Tkinter pentru ruta de instalare de rezervă; nu modifica
+asset-urile deja publicate pentru `v0.6.10`.
 
 Bootstrap-ul este deja dinamic și nu depinde de tag-ul sau amprentele scrise
 manual în script.
