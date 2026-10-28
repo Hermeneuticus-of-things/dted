@@ -6,9 +6,10 @@ import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 RADACINA = Path(__file__).resolve().parents[1]
@@ -23,6 +24,7 @@ def test_build_kits_publica_alias_stabil_si_manifest_coerent():
         pachet.mkdir()
         (pachet / "__init__.py").write_text("# pachet de test\n", encoding="utf-8")
         (pachet / "actualizare.py").write_text("# modul de test\n", encoding="utf-8")
+        (tmp / "README.md").write_text("Documentație de test\n", encoding="utf-8")
 
         dist = tmp / "dist-v9.8.7" / "DTED"
         dist.mkdir(parents=True)
@@ -57,3 +59,13 @@ def test_build_kits_publica_alias_stabil_si_manifest_coerent():
         )
         assert program["sha256"] == hashlib.sha256(arhiva_stabila.read_bytes()).hexdigest()
         assert program["dimensiune"] == arhiva_stabila.stat().st_size
+
+        with tarfile.open(tmp / "dted-9.8.7-linux.tar.gz", "r:gz") as arhiva:
+            nume_linux = arhiva.getnames()
+        assert "README.md" in nume_linux
+        assert all(
+            not PurePosixPath(n).is_absolute()
+            and not PureWindowsPath(n).is_absolute()
+            and ".." not in PurePosixPath(n).parts
+            for n in nume_linux
+        )
