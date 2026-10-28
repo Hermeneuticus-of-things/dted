@@ -12,7 +12,7 @@ fără internet, fără cont, fără cloud.
 ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?logo=windows11)
 ![100% local](https://img.shields.io/badge/procesare-100%25%20local%C4%83-16a34a)
 
-**[⬇️ Descarcă](#-instalare)** · [Ce face](#-ce-este) · [Cum lucrezi](#-cum-lucrezi) · [Întrebări](#-întrebări-frecvente) · [Raportează](#-găsești-o-problemă-raportează-dintrun-clic)
+**[⬇️ Descarcă](#-instalare)** · [Ce este](#ce-este) · [Pentru cine](#pentru-cine) · [Ce face](#ce-face) · [Cum lucrezi](#-cum-lucrezi) · [Ce urmează](#ce-s-a-făcut-și-ce-urmează)
 
 </div>
 
@@ -27,7 +27,7 @@ fără internet, fără cont, fără cloud.
 Bara de jos se schimbă cu contextul: la dictare vezi **doar butoanele de dictare**,
 când există o înregistrare **doar butoanele de redare** — nimic care să te încurce.
 
-## 💡 Ce este
+## Ce este
 
 **D&TED e un program de dictare în română**, gândit pentru volume: dictezi capitole
 întregi non-stop, textul curge pe ecran **cuvânt cu cuvânt, pe măsură ce vorbești**,
@@ -35,22 +35,25 @@ când există o înregistrare **doar butoanele de redare** — nimic care să te
 (DOCX, ODT, PDF, TXT…). Transcrie și **fișiere audio** gata înregistrate.
 Totul rulează local, pe calculatorul tău.
 
-**Pentru cine:** autori de cărți · licențe, dizertații, articole · cei care nu pot sau nu
-vor să bată la tastatură ore în șir · text sensibil care nu are ce căuta în cloud.
+## Pentru cine
 
-## 🏆 De ce e diferit
+Pentru autori de cărți, studenți și cercetători care scriu lucrări lungi, pentru
+cei cărora le este greu să tasteze mult și pentru oricine preferă ca documentele
+personale să rămână pe propriul calculator.
+
+## Ce face
 
 | | |
 |---|---|
-| **Live adevărat** | microfonul și modelul lucrează pe fire separate: captura nu se oprește cât timp modelul scrie — nu se adună întârziere la dictare non-stop |
-| **Calitate măsurată** | model optimizat pentru română (eek whisper-turbo-ro): **5,4% WER pe text de carte**, față de 12,2% la modelul standard |
-| **Alineate ca în cărți** | „⏎ P alineat” (F6) — paragraf nou de la margine (stil web); „⇥ I alineat” (Shift+F6) — paragraf nou cu tab (stil tipărit). Le alegi tu; nu le amestecă niciodată |
-| **Pauzele structurează textul** | peste 4 s de liniște → rând nou; peste 8 s → paragraf nou — automat |
-| **Învață de la tine** | corectezi un cuvânt o dată — îl scrie corect de atunci |
-| **Privat până la capăt** | transcriere 100% locală; la cerere taie internetul programului sau al întregului calculator, cu revenire garantată |
+| **Scrie pe măsură ce vorbești** | vezi textul în timp ce dictezi, fără să aștepți terminarea unui capitol |
+| **Te ajută să structurezi textul** | comenzile vocale și pauzele pot adăuga semne de punctuație, rânduri noi și alineate |
+| **Îți păstrează controlul** | corectezi textul, îl asculți și îl exporți în formatul de care ai nevoie |
+| **Ține documentele pe calculatorul tău** | transcrierea se face local, fără cont și fără încărcarea textului în cloud |
 
 ## ⚙️ Cum funcționează
 
+- **Recunoașterea vocii**: programul folosește un model de transcriere care rulează
+  pe calculatorul tău. Poate folosi o placă video NVIDIA sau procesorul.
 - **Motor**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) peste
   [CTranslate2](https://github.com/OpenNMT/CTranslate2) — pe placă video NVIDIA (CUDA, float16,
   ~20× mai repede decât timpul real) sau pe procesor (CPU, float32, aceeași calitate).
@@ -98,7 +101,7 @@ F6 P alineat · Shift+F6 I alineat · Ctrl+B semn.
 comandă îți folosește acum — cu „↻” pentru alt sfat și „×” dacă vrei liniște (revin din
 Setări → Aspect).
 
-## 🧰 Funcțiile, pe rând
+## Funcțiile, pe rând
 
 - Dictare pentru text de carte · transcriere de fișiere (MP3/WAV/M4A/OGG/FLAC/Opus, în rând)
 - Listă „Dictările mele” (Dată, Oră, Durată, Prioritate, Nume, notițe) · Coș de reciclare
@@ -111,6 +114,13 @@ Setări → Aspect).
 <div align="center">
 <img src="docs/img/taste-rapide-v064.png" alt="Setări → Taste rapide: fiecare comandă are un buton în care apeși combinația dorită, cu revenire la valorile din fabrică" width="640">
 </div>
+
+## Cum lucrăm împreună
+
+Tu dictezi și decizi ce rămâne în document; programul îți arată textul, comenzile și
+corecturile pentru a-l ajuta să se potrivească felului tău de lucru. Textul și corecturile
+rămân pe calculatorul tău. Dacă alegi să trimiți un raport de eroare, acesta nu include
+textul documentului sau căile personale de pe calculator.
 
 ### 🆕 Ce e nou în v0.6.6
 
@@ -132,10 +142,17 @@ Setări → Aspect).
 
 - **Pornire mai sigură după instalare sau actualizare** — aplicația este gata de folosit, iar asistentul de instalare rămâne disponibil dacă ai nevoie de el.
 
-## 🗺 Ce urmează
+## Ce s-a făcut și ce urmează
+
+### Deja disponibil
+
+- [x] Actualizările se verifică dintr-o adresă stabilă, iar pachetul este verificat înainte de aplicare.
+- [x] Pornirea după instalare sau actualizare este reparată.
+
+### În plan
 
 - [ ] **Aplicație pentru macOS** — aceeași experiență de dictare, nativ pe Mac
-- [ ] **Aplicație pentru Android** — dictare în română și pe telefon
+- [ ] **Aplicație nativă pentru Android OS** — aceeași experiență de dictare, direct pe telefon
 - [ ] **Motoare de transcriere mai bune, în mai multe limbi** — pe măsură ce apar modele de calitate superioară, intră ca opțiuni, cu măsurători publicate
 - [ ] **Corecția textului, îmbunătățită** — dicționar mai deștept, sugestii în context, corectări în timp real
 - [ ] **Textele salvate, criptate din oficiu** — pe disc nu se poate citi nimic din afara aplicației, chiar fără parolă; textul iese doar prin Export sau Salvează
@@ -191,12 +208,13 @@ fără căi personale** (anonimizate automat).
 git clone https://github.com/Hermeneuticus-of-things/dted.git
 cd dted
 python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt pytest
-.venv\Scripts\python -m pytest -q teste      # 129 teste
+.venv\Scripts\python -m pip install -r requirements.txt pytest
+.venv\Scripts\python scripts\check_release_contract.py
+.venv\Scripts\python -m pytest -q teste
 .venv\Scripts\python pornire.py               # pornește aplicația
 ```
 
-**129 de teste automate** · CI pe Windows și Linux la fiecare commit ·
+Testele rulează automat pe Windows și Linux la fiecare commit ·
 [`docs/MODELE_ROMANA.md`](docs/MODELE_ROMANA.md) pentru măsurători · [`LINUX.md`](LINUX.md) pentru nucleul pe Linux.
 
 <div align="center">
@@ -205,6 +223,6 @@ python -m venv .venv
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;ED v0.6.11 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;TED v0.6.11 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>

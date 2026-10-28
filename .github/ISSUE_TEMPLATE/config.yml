@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Raportează o vulnerabilitate de securitate
+    url: https://github.com/Hermeneuticus-of-things/dted/security/advisories/new
+    about: Nu publica detalii despre vulnerabilități într-un issue public.

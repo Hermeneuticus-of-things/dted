@@ -44,12 +44,15 @@ bootstrap-ului.
    recunoască drept „latest”.
 5. Publicarea release-ului stabil declanșează automat
    `.github/workflows/release-update-manifest.yml`. Workflow-ul descarcă
-   `program.zip`, arhiva versionată și `SHA256SUMS.txt` din același tag,
-   verifică egalitatea arhivelor, checksum-urile și structura ZIP, apoi
-   publică manifestul corect pe `main`. Dacă oricare condiție pică, manifestul
-   nu se schimbă și workflow-ul se oprește cu eroare. Repository-ul trebuie să
-   permită workflow-urilor GitHub Actions permisiunea `contents: write` și
-   push-ul pe `main`; dacă regulile de branch îl blochează, execuția eșuează
+   asset-urile aceluiași tag și metadatele lor de la GitHub. Validatorul
+   `scripts/validate_release_assets.py` cere kiturile pentru versiunea din tag,
+   compară mărimile și amprentele GitHub cu `SHA256SUMS.txt`, descarcă și
+   verifică arhivele de program și Linux, confirmă că `program.zip` este copia
+   identică a arhivei versionate și respinge căi străine în arhive. Abia apoi
+   workflow-ul publică manifestul pe `main`. Dacă oricare condiție pică,
+   manifestul nu se schimbă și workflow-ul se oprește cu eroare. Repository-ul
+   trebuie să permită workflow-urilor GitHub Actions permisiunea `contents: write`
+   și push-ul pe `main`; dacă regulile de branch îl blochează, execuția eșuează
    vizibil și manifestul vechi rămâne activ.
 6. Verifică rezultatul automat și URL-urile publice:
    - descarcă `.../releases/latest/download/program.zip`;
@@ -59,15 +62,25 @@ bootstrap-ului.
    - verifică tag-ul/asset-urile returnate de `/releases/latest` și probează
      bootstrap-ul; confirmă după instalare și repornire versiunea din „Despre”.
 
-## Migrarea de la v0.6.9
+Validatorul de asset-uri poate fi rulat local dacă ai un director cu fișierele
+release-ului, un JSON cu metadatele asset-urilor returnate de GitHub și
+`SHA256SUMS.txt`:
 
-Release-ul existent `v0.6.9` rămâne nemodificat: nu are asset-ul fix
-`program.zip`, iar codul său de update are un defect de aplicare. Manifestul
-public rămâne pe URL-ul versionat existent până la publicarea unei versiuni noi.
-`v0.6.10` a reparat aplicarea update-urilor și a activat aliasul stabil.
-`v0.6.11` fixează și dependența PyAV la versiunea compatibilă cu motorul de
-transcriere și include Tkinter pentru ruta de instalare de rezervă; nu modifica
-asset-urile deja publicate pentru `v0.6.10`.
+```powershell
+python scripts\validate_release_assets.py v<versiune> <director-release> <asset-metadata.json>
+```
+
+## Istoric de compatibilitate
+
+Release-ul `v0.6.9` a rămas nemodificat și nu are aliasul fix `program.zip`.
+Începând cu `v0.6.10`, release-urile stabile publică `program.zip` alături de
+arhiva versionată, iar actualizatorul folosește adresa stabilă din manifestul
+public de pe `main`. `v0.6.11` a fixat și dependența PyAV și a inclus Tkinter
+pentru asistentul de instalare de rezervă.
+
+Pentru versiunea publică actuală, verifică întotdeauna tag-ul `latest` și
+manifestul public, nu presupune că ultima intrare din această secțiune de istoric
+este versiunea publicată.
 
 Bootstrap-ul este deja dinamic și nu depinde de tag-ul sau amprentele scrise
 manual în script.
