@@ -77,8 +77,10 @@ Orice agent care lucrează la acest repo le urmează fără să ceară permisiun
 
 ## Contribuții și administrarea repo-ului
 
-- Modificările obișnuite se trimit prin pull request către `main`; manifestul live
-  este singura excepție automatizată și este publicat după validarea release-ului.
+- Modificările se trimit prin pull request către `main`; după validarea release-ului,
+  workflow-ul deschide un PR pentru manifestul live și rulează CI pe ramura acelui PR.
+- `main` cere PR și status checks Windows/Linux verzi; nu permite push direct,
+  force-push sau ștergerea branch-ului. Nu adăuga bypass pentru GitHub Actions.
 - Înainte de merge: verifică testele Windows/Linux și contractul de release.
 - Nu alege sau inventa o licență. În prezent repo-ul nu are un fișier `LICENSE`;
   licența trebuie decisă explicit de titularul drepturilor.

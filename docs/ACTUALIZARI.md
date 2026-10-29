@@ -49,18 +49,25 @@ bootstrap-ului.
    compară mărimile și amprentele GitHub cu `SHA256SUMS.txt`, descarcă și
    verifică arhivele de program și Linux, confirmă că `program.zip` este copia
    identică a arhivei versionate și respinge căi străine în arhive. Abia apoi
-   workflow-ul publică manifestul pe `main`. Dacă oricare condiție pică,
-   manifestul nu se schimbă și workflow-ul se oprește cu eroare. Repository-ul
-   trebuie să permită workflow-urilor GitHub Actions permisiunea `contents: write`
-   și push-ul pe `main`; dacă regulile de branch îl blochează, execuția eșuează
-   vizibil și manifestul vechi rămâne activ.
-6. Verifică rezultatul automat și URL-urile publice:
+   workflow-ul creează o ramură de automatizare și deschide un pull request
+   pentru manifest; nu scrie direct în `main`. Declanșează CI pe ramura PR-ului
+   prin `workflow_dispatch`, astfel încât status checks obligatorii să existe
+   chiar dacă PR-ul a fost creat cu `GITHUB_TOKEN`. Manifestul nou devine public
+   doar după integrarea PR-ului. Dacă oricare condiție pică, manifestul public
+   rămâne nemodificat, iar execuția se oprește vizibil.
+6. Revizuiește și integrează PR-ul automat de manifest după ce verificările
+   obligatorii Windows și Linux sunt verzi. Apoi verifică rezultatul public:
    - descarcă `.../releases/latest/download/program.zip`;
    - prima intrare ZIP trebuie să fie `dictare_transcriere_romana/...`, să
      existe `dictare_transcriere_romana/__init__.py`, iar SHA-256 și dimensiunea
      să coincidă cu `versiuni.json`;
    - verifică tag-ul/asset-urile returnate de `/releases/latest` și probează
      bootstrap-ul; confirmă după instalare și repornire versiunea din „Despre”.
+
+`main` este protejat: schimbările se integrează numai prin PR, după verificările
+`Teste ubuntu-latest` și `Teste windows-latest`; force-push-ul și ștergerea
+branch-ului sunt dezactivate. Nu este impusă aprobarea unui reviewer, iar
+workflow-urile Actions nu au bypass pentru regulile branch-ului.
 
 Validatorul de asset-uri poate fi rulat local dacă ai un director cu fișierele
 release-ului, un JSON cu metadatele asset-urilor returnate de GitHub și

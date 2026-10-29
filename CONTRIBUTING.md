@@ -27,8 +27,9 @@ livrat și ce rămâne planificat.
 ## Publicarea unui release
 
 Un release stabil necesită un tag `v<major>.<minor>.<patch>`, kiturile versionate,
-aliasul `program.zip`, sumele SHA-256 și manifestul actualizat automat după
-validare. Nu crea manual arhiva de update. Urmează integral
+aliasul `program.zip` și sumele SHA-256. După validare, workflow-ul deschide un PR
+pentru manifestul live; manifestul devine activ numai după ce PR-ul trece CI și
+este integrat în `main`. Nu crea manual arhiva de update. Urmează integral
 [`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md); acesta descrie și verificarea
 descărcării publice după publicare.
 

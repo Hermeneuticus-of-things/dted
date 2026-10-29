@@ -177,7 +177,9 @@ detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
 
 **Ai deja D&TED?** → **📦 Actualizări** în program. Aplicația citește manifestul fix
 `main/versiuni.json`, verifică SHA-256 și păstrează backup pentru revenire. La fiecare
-release, `program.zip` este publicat în aceeași cale stabilă; vezi
+release, `program.zip` este publicat în aceeași cale stabilă. Manifestul nou se
+activează după validarea asset-urilor și integrarea PR-ului automat de manifest în
+`main`; vezi
 [`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
 
 **Linux (x86_64)?** → descarcă ultima arhivă `dted-<versiune>-linux.tar.gz` din
