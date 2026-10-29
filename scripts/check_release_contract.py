@@ -77,6 +77,7 @@ def check_repository(root: Path) -> list[str]:
     if not re.search(rf"D&amp;TED v{re.escape(version)}\b", readme):
         issues.append("README.md footer version does not match the app version.")
     required_section_order = (
+        "## ⬇️ Instalare",
         "## Ce este",
         "## Pentru cine",
         "## Ce face",
@@ -85,7 +86,6 @@ def check_repository(root: Path) -> list[str]:
         "## Funcțiile, pe rând",
         "## Cum lucrăm împreună",
         "## Ce s-a făcut și ce urmează",
-        "## ⬇️ Instalare",
         "### ❓ Întrebări frecvente",
         "### 🐞 Găsești o problemă?",
         "### ⚙️ Detalii tehnice",
