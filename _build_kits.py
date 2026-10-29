@@ -81,6 +81,29 @@ with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "w:gz") as t:
         p = RADACINA / nume
         if p.exists():
             t.add(p, arcname=p.relative_to(RADACINA).as_posix())
+
+# APĂRARE (bug 0.6.11): dacă build-ul rulează pe Windows cu checkout CRLF,
+# install.sh intra cu \r în arhivă și eșua pe Linux la prima linie de `set`.
+# Fișierele .sh/.py se scriu în arhivă cu LF garantat, indiferent de disk.
+import io
+tar_nou = RADACINA / f"dted-{VERSIUNE}-linux.tar.gz.nou"
+with tarfile.open(tar_nou, "w:gz") as t2:
+    with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "r:gz") as vechi:
+        for m in vechi:
+            date = vechi.extractfile(m).read() if m.isreg() else None
+            if date is not None and m.name.endswith((".sh", ".py")):
+                date = date.replace(b"\r\n", b"\n")
+                m.size = len(date)
+            buf = io.BytesIO(date) if date is not None else None
+            t2.addfile(m, buf)
+tar_nou.replace(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz")
+with tarfile.open(RADACINA / f"dted-{VERSIUNE}-linux.tar.gz", "r:gz") as verificare:
+    for m in verificare:
+        if m.name == "install.sh":
+            if b"\r" in verificare.extractfile(m).read():
+                raise SystemExit("EROARE packaging: install.sh are încă CRLF în arhiva Linux")
+            break
+print("LINUX-EOL-OK (install.sh cu LF)", flush=True)
 print("LINUX-OK", flush=True)
 
 # 4) manifestul actualizărilor (versiuni.json)

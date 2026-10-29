@@ -88,13 +88,31 @@ toate cele 6 teste trec).
 
 ## Cum se instalează / rulează (Linux)
 
+Cea mai scurtă cale — o singură linie, care găsește release-ul „latest”,
+verifică SHA-256 și instalează tot:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.sh | bash
+```
+
+Sau manual, din arhiva `dted-<versiune>-linux.tar.gz`:
+
 ```bash
 ./install.sh          # mediu Python + lansator + intrare în meniu + modelul
 ~/.local/bin/dted     # lansatorul creat de install.sh
 ```
 
-> Instrucțiunile de mai sus au fost verificate static (citit `install.sh`), nu
-> rulate efectiv pe Linux.
+`install.sh` (de la 0.6.12): se auto-corectează dacă arhiva conține linii
+Windows (CRLF — defectul kitului 0.6.11), instalează la cerere biblioteca
+PortAudio (necesară dictării de la microfon; pe Debian/Ubuntu `libportaudio2`,
+Fedora `portaudio`, Arch `portaudio`) și pune dependențele la versiunile
+testate, cu trecere automată pe versiuni compatibile dacă Pythonul local
+nu are roți pentru ele.
+
+> Notă istorică: până la repararea din PR #29, aceste instrucțiuni fuseseră
+> verificate doar static (citit `install.sh`). Instalarea completă a fost
+> rulată efectiv pe Arch Linux (x86_64, Python 3.11) cu scenariul kitului
+> CRLF-stricat — instalare completă, exit 0.
 
 ## Verificare rapidă a backend-ului (din sursă)
 

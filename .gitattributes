@@ -1,0 +1,26 @@
+# Forțează line endings corecte oriunde s-ar clona repo-ul (inclusiv pe Windows,
+# de unde se construiesc kiturile). Fără asta, install.sh ajungea cu CRLF în
+# arhiva Linux și eșua imediat („set: pipefail: invalid option name”).
+* text=auto
+
+# Scripturi și surse: mereu LF
+*.sh   text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.spec text eol=lf
+
+# Fișiere Windows: mereu CRLF
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+*.isl  text eol=crlf
+*.iss  text eol=crlf
+
+# Binare
+*.ico binary
+*.png binary
+*.zip binary
+*.gz  binary

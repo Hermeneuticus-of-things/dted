@@ -180,8 +180,22 @@ detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
 release, `program.zip` este publicat în aceeași cale stabilă; vezi
 [`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
 
-**Linux (x86_64)?** → descarcă ultima arhivă `dted-<versiune>-linux.tar.gz` din
+**Linux (x86_64)?** → o singură linie, ca pe Windows — descarcă ultimul release,
+verifică SHA-256 și instalează tot:
+`curl -fsSL https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.sh | bash`
+Sau manual: descarcă arhiva `dted-<versiune>-linux.tar.gz` din
 [Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest) → `tar -xzf …` → `./install.sh`.
+
+Instalarea pe Linux în câteva cuvinte: scriptul își face singur un mediu Python
+propriu (fără drepturi de administrator și fără să atinge Pythonul sistemului),
+instalează bibliotecile de transcriere la versiunile testate (faster-whisper +
+CTranslate2, fără PyTorch), copiază programul, pune comanda `dted` și o
+scurtătură în meniul de aplicații, apoi descarcă și verifică modelul (~1,6 GB).
+Îți cere doar două lucruri: Python 3.10–3.12 cu `venv`, iar la microfon
+biblioteca PortAudio — pe care scriptul o poate instala singur, cu acordul tău
+(`sudo apt install libportaudio2` / `dnf install portaudio` / `pacman -S portaudio`).
+Cu placă NVIDIA, bibliotecile CUDA se descarcă opțional, din program
+(Verificare → „Descarcă bibliotecile pentru placa video”). Detalii: [`LINUX.md`](LINUX.md).
 
 Toate fișierele și sumele SHA-256 sunt în release-ul cel mai nou de pe
 [GitHub Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest).
