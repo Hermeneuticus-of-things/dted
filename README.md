@@ -180,7 +180,10 @@ detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
 release, `program.zip` este publicat în aceeași cale stabilă; vezi
 [`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
 
-**Linux (x86_64)?** → descarcă ultima arhivă `dted-<versiune>-linux.tar.gz` din
+**Linux (x86_64)?** → o singură linie, ca pe Windows — descarcă ultimul release,
+verifică SHA-256 și instalează tot:
+`curl -fsSL https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.sh | bash`
+Sau manual: descarcă arhiva `dted-<versiune>-linux.tar.gz` din
 [Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest) → `tar -xzf …` → `./install.sh`.
 
 Instalarea pe Linux în câteva cuvinte: scriptul își face singur un mediu Python
