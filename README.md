@@ -183,6 +183,17 @@ release, `program.zip` este publicat în aceeași cale stabilă; vezi
 **Linux (x86_64)?** → descarcă ultima arhivă `dted-<versiune>-linux.tar.gz` din
 [Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest) → `tar -xzf …` → `./install.sh`.
 
+Instalarea pe Linux în câteva cuvinte: scriptul își face singur un mediu Python
+propriu (fără drepturi de administrator și fără să atinge Pythonul sistemului),
+instalează bibliotecile de transcriere la versiunile testate (faster-whisper +
+CTranslate2, fără PyTorch), copiază programul, pune comanda `dted` și o
+scurtătură în meniul de aplicații, apoi descarcă și verifică modelul (~1,6 GB).
+Îți cere doar două lucruri: Python 3.10–3.12 cu `venv`, iar la microfon
+biblioteca PortAudio — pe care scriptul o poate instala singur, cu acordul tău
+(`sudo apt install libportaudio2` / `dnf install portaudio` / `pacman -S portaudio`).
+Cu placă NVIDIA, bibliotecile CUDA se descarcă opțional, din program
+(Verificare → „Descarcă bibliotecile pentru placa video”). Detalii: [`LINUX.md`](LINUX.md).
+
 Toate fișierele și sumele SHA-256 sunt în release-ul cel mai nou de pe
 [GitHub Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest).
 Cerințe: Windows 10/11 pe 64 de biți · 8 GB RAM recomandate · ~4 GB disc.
