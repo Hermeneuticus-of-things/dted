@@ -12,7 +12,7 @@ fără internet, fără cont, fără cloud.
 ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?logo=windows11)
 ![100% local](https://img.shields.io/badge/procesare-100%25%20local%C4%83-16a34a)
 
-**[⬇️ Descarcă](#-instalare)** · [Ce este](#ce-este) · [Pentru cine](#pentru-cine) · [Ce face](#ce-face) · [Cum lucrezi](#-cum-lucrezi) · [Ce urmează](#ce-s-a-făcut-și-ce-urmează)
+**[⬇️ Descarcă](#instalare)** · [Ce este](#ce-este) · [Pentru cine](#pentru-cine) · [Ce face](#ce-face) · [Cum lucrezi](#-cum-lucrezi) · [Ce urmează](#ce-s-a-făcut-și-ce-urmează)
 
 </div>
 
@@ -26,6 +26,58 @@ fără internet, fără cont, fără cloud.
 
 Bara de jos se schimbă cu contextul: la dictare vezi **doar butoanele de dictare**,
 când există o înregistrare **doar butoanele de redare** — nimic care să te încurce.
+
+<a id="instalare"></a>
+
+## ⬇️ Instalare
+
+**Windows (10/11, x64) — alege UNA din variante:**
+
+| Vrei… | Apasă aici | Apoi… |
+|---|---|---|
+| **Cel mai simplu** | **[⬇️ Ultimul instalator](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | alege `Setup.DTED-<versiune>.exe`; totul inclus, dublu clic → Next |
+| **Fără instalare** | **[⬇️ Ultima versiune portabilă](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | descarcă arhiva `portabil-DTED-<versiune>.zip`, dezarhivezi → `DTED.exe` |
+| **Totul automat** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | găsește release-ul „latest”, verifică SHA-256 și instalează |
+
+**Linux (x86_64) — alege UNA din variante, la fel ca la Windows:**
+
+| Vrei… | Rulează în terminal | Apoi… |
+|---|---|---|
+| **Totul automat (recomandat)** | `curl -fsSL https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.sh \| bash` | găsește release-ul „latest”, verifică SHA-256 și instalează tot |
+| **Manual** | descarcă `dted-<versiune>-linux.tar.gz` din [Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest), apoi `tar -xzf …` și `./install.sh` | mediu Python propriu + comanda `dted` + intrare în meniu + modelul |
+
+Instalarea pe Linux în câteva cuvinte: scriptul își face singur un mediu Python
+propriu (fără drepturi de administrator și fără să atinge Pythonul sistemului),
+instalează bibliotecile de transcriere la versiunile testate (faster-whisper +
+CTranslate2, fără PyTorch), copiază programul, pune comanda `dted` și o
+scurtătură în meniul de aplicații, apoi descarcă și verifică modelul (~1,6 GB).
+Îți cere doar două lucruri: Python 3.10–3.12 cu `venv`, iar la microfon
+biblioteca PortAudio — pe care scriptul o poate instala singur, cu acordul tău
+(`sudo apt install libportaudio2` / `dnf install portaudio` / `pacman -S portaudio`).
+Cu placă NVIDIA, bibliotecile CUDA se descarcă opțional, din program
+(Verificare → „Descarcă bibliotecile pentru placa video”). Detalii: [`LINUX.md`](LINUX.md).
+
+**Ai deja D&TED?** → **📦 Actualizări** în program. Aplicația citește manifestul fix
+`main/versiuni.json`, verifică SHA-256 și păstrează backup pentru revenire. La fiecare
+release, `program.zip` este publicat în aceeași cale stabilă; vezi
+[`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
+
+### 🗺️ Alte platforme — pe viitor (de nu uitat)
+
+| Platformă | Stare | Ce lipsește pentru lansare |
+|---|---|---|
+| **macOS** | **nu există încă** — nucleul e Python cross-platform, deci portarea e realistă | instalează `.pkg`/`install.sh` pentru macOS, bibliotecile ARM (CTranslate2 are roți `arm64`), microfon (PortAudio din Homebrew), notarizare/app bundle |
+| **Android** | **nu există încă** — necesită efort serios de portare | UI mobil (PySide6 nu merge pe Android; se ia în calcul un frontend separat), motorul prin CTranslate2 Android sau server local, microfon din API-ul Android |
+
+La fiecare pas făcut spre aceste platforme, actualizează acest tabel și
+[`LINUX.md`](LINUX.md) (viitor: `MACOS.md` / `ANDROID.md`).
+
+Toate fișierele și sumele SHA-256 sunt în release-ul cel mai nou de pe
+[GitHub Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest).
+Cerințe: Windows 10/11 x64 sau Linux x86_64 (Python 3.10–3.12) · 8 GB RAM
+recomandate · ~4 GB disc (+ ~1,9 GB în plus dacă vrei CUDA pe NVIDIA).
+
+---
 
 ## Ce este
 
@@ -164,54 +216,6 @@ textul documentului sau căile personale de pe calculator.
 
 **Limite oneste:** criptarea fișierelor e doar Windows (CNG); nucleul merge pe Linux, cu
 detaliile din [`LINUX.md`](LINUX.md); comenzi vocale avansate — în lucru.
-
-## ⬇️ Instalare
-
-**Windows (10/11, x64) — alege UNA din variante:**
-
-| Vrei… | Apasă aici | Apoi… |
-|---|---|---|
-| **Cel mai simplu** | **[⬇️ Ultimul instalator](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | alege `Setup.DTED-<versiune>.exe`; totul inclus, dublu clic → Next |
-| **Fără instalare** | **[⬇️ Ultima versiune portabilă](https://github.com/Hermeneuticus-of-things/dted/releases/latest)** | descarcă arhiva `portabil-DTED-<versiune>.zip`, dezarhivezi → `DTED.exe` |
-| **Totul automat** | PowerShell: `irm https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.ps1 \| iex` | găsește release-ul „latest”, verifică SHA-256 și instalează |
-
-**Linux (x86_64) — alege UNA din variante, la fel ca la Windows:**
-
-| Vrei… | Rulează în terminal | Apoi… |
-|---|---|---|
-| **Totul automat (recomandat)** | `curl -fsSL https://raw.githubusercontent.com/Hermeneuticus-of-things/dted/main/dted-bootstrap.sh \| bash` | găsește release-ul „latest”, verifică SHA-256 și instalează tot |
-| **Manual** | descarcă `dted-<versiune>-linux.tar.gz` din [Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest), apoi `tar -xzf …` și `./install.sh` | mediu Python propriu + comanda `dted` + intrare în meniu + modelul |
-
-Instalarea pe Linux în câteva cuvinte: scriptul își face singur un mediu Python
-propriu (fără drepturi de administrator și fără să atinge Pythonul sistemului),
-instalează bibliotecile de transcriere la versiunile testate (faster-whisper +
-CTranslate2, fără PyTorch), copiază programul, pune comanda `dted` și o
-scurtătură în meniul de aplicații, apoi descarcă și verifică modelul (~1,6 GB).
-Îți cere doar două lucruri: Python 3.10–3.12 cu `venv`, iar la microfon
-biblioteca PortAudio — pe care scriptul o poate instala singur, cu acordul tău
-(`sudo apt install libportaudio2` / `dnf install portaudio` / `pacman -S portaudio`).
-Cu placă NVIDIA, bibliotecile CUDA se descarcă opțional, din program
-(Verificare → „Descarcă bibliotecile pentru placa video”). Detalii: [`LINUX.md`](LINUX.md).
-
-**Ai deja D&TED?** → **📦 Actualizări** în program. Aplicația citește manifestul fix
-`main/versiuni.json`, verifică SHA-256 și păstrează backup pentru revenire. La fiecare
-release, `program.zip` este publicat în aceeași cale stabilă; vezi
-[`docs/ACTUALIZARI.md`](docs/ACTUALIZARI.md) pentru procedura de publicare.
-
-### 🗺️ Alte platforme — pe viitor (de nu uitat)
-
-| Platformă | Stare | Ce lipsește pentru lansare |
-|---|---|---|
-| **macOS** | **nu există încă** — nucleul e Python cross-platform, deci portarea e realistă | instalează `.pkg`/`install.sh` pentru macOS, bibliotecile ARM (CTranslate2 are roți `arm64`), microfon (PortAudio din Homebrew), notarizare/app bundle |
-| **Android** | **nu există încă** — necesită efort serios de portare | UI mobil (PySide6 nu merge pe Android; se ia în calcul un frontend separat), motorul prin CTranslate2 Android sau server local, microfon din API-ul Android |
-
-La fiecare pas făcut spre aceste platforme, actualizează acest tabel și
-[`LINUX.md`](LINUX.md) (viitor: `MACOS.md` / `ANDROID.md`).
-
-Toate fișierele și sumele SHA-256 sunt în release-ul cel mai nou de pe
-[GitHub Releases](https://github.com/Hermeneuticus-of-things/dted/releases/latest).
-Cerințe: Windows 10/11 x64 sau Linux x86_64 (Python 3.10–3.12) · 8 GB RAM
-recomandate · ~4 GB disc (+ ~1,9 GB în plus dacă vrei CUDA pe NVIDIA).
 
 ### ❓ Întrebări frecvente
 
