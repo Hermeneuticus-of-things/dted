@@ -231,7 +231,19 @@ def citeste_marcaj() -> dict[str, str] | None:
 
 
 def proces_viu(pid: int) -> bool:
-    """Adevărat dacă procesul cu ``pid`` este încă în viață (Windows)."""
+    """Adevărat dacă procesul cu ``pid`` este încă în viață (Windows sau Linux)."""
+    if not cai.este_windows():
+        # Pe Linux: semnalul 0 nu trimite nimic, doar verifică drepturile și
+        # existența procesului (ESRCH = nu există, EPERM = există, dar e al altcuiva).
+        try:
+            os.kill(int(pid), 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        except Exception:  # pragma: no cover
+            return False
     try:
         import ctypes
 

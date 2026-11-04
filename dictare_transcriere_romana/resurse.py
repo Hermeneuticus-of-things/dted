@@ -303,7 +303,19 @@ def verifica(director: Path | None = None) -> Raport:
     c = raport.cerinte
 
     # --- 1. Sistem de operare -------------------------------------------------
-    if not cai.este_windows():
+    if platform.system() == "Linux":
+        # Varianta de Linux: sistemul de operare Linux pe 64 de biți îndeplinește
+        # cerința (kernel modern + glibc, microfonul și sunetul merg prin ALSA/PipeWire).
+        c.append(
+            Cerinta(
+                "os",
+                "Sistem de operare",
+                "Linux pe 64 de biți (varianta de Linux a programului)",
+                platform.platform(),
+                "ok",
+            )
+        )
+    elif not cai.este_windows():
         c.append(
             Cerinta(
                 "os",

@@ -77,14 +77,50 @@ toate cele 6 teste trec).
 * **Teste unitare cross-platform** (fără dependență de hardware sau de Windows),
   rulată pe Windows — raportul exact e în mesajul commit-ului / la sfârșitul
   acestei lucrări.
-* **NU s-a testat rularea efectivă pe Linux.** Pe mașina de dezvoltare nu există un
-  mediu Linux funcțional: WSL este **dezactivat** (`Wsl/ERROR_SERVICE_DISABLED`) și
-  Docker lipsește. **Nu le-am activat/instalat** (ar fi cerut confirmare explicită).
-  Prin urmare:
-  - comportamentul la rulare pe Linux este **netestat**;
-  - calea CUDA este **netestată pe placă reală**;
-  - analiza de mai sus (importuri/pornire) este **statică**, din citirea codului, nu
-    dintr-o rulare Linux.
+
+### Rulare reală pe Linux — CONFIRMATĂ (04.11.2026)
+
+Prima rulare efectivă pe un calculator Linux real (Omarchy / Arch, Python 3.11.17,
+NVIDIA RTX PRO 4000, 16 GB VRAM). Metodă **divergent → convergent**:
+
+**Faza divergentă** — baleiere completă a codului: **91 de apeluri Windows**
+(`ctypes.windll`/`WinDLL`, `winreg`, `os.startfile`, PowerShell) în 30 de fișiere,
+clasate în: păzite corect cu `este_windows()`/`sys.platform`; irelevante pe Linux
+(instalator Inno, firewall, criptare CNG — documentate ca neportate); și
+**negărdite în fluxul normal de pe Linux**.
+
+**Faza convergentă** — bug-uri reale găsite, root-cause și reparare:
+
+| # | Bug (root-cause) | Fișier | Reparare |
+|---|---|---|---|
+| 1 | Verificarea cerințelor respingea Linux-ul („Lipsește Windows 10/11") | `resurse.py` | cerința „os" raportează „Linux pe 64 de biți — ✔" pe platforma Linux |
+| 2 | „Driverele și componentele Windows sunt în regulă" + `verifica()` rula PowerShell pe Linux | `drivere.py` | pe Linux verificarea sunetului merge prin ALSA/PipeWire (`sounddevice`); mesaj neutru („sistemului") |
+| 3 | „Deschide folderul/fișierul" pică tăcut: `os.startfile` nu există pe Linux | `sisteme.py` | `_deschide_cu_sistemul()`: `xdg-open` prin `Popen`, fără așteptare (ca `startfile`) |
+| 4 | „Șterge (Ctrl+Delete)" nu făcea nimic: `muta_la_gunoi` întorcea `False` pe non-Windows | `sisteme.py` | Coșul XDG Trash (`~/.local/share/Trash/files` + `.trashinfo`), recuperabil; fallback `shutil.move` între discuri |
+| 5 | `proces_viu` considera orice proces „mort" pe Linux (`ctypes.windll` → `AttributeError` prins tăcut) | `blocare.py` | ramură Linux cu `os.kill(pid, 0)` (EPERM = viu, ESRCH = mort) |
+| 6 | Instanța unică (cerința 44) inactivă pe Linux — mutex-ul Windows oprit de `except Exception` | `__main__.py` | blocare `flock` pe `dted-single-instance.lock` (`XDG_RUNTIME_DIR`/tmp), semantica mutex-ului |
+
+Verificate suplimentar și **sane** (păzite deja): hotkey global, tema (fallback
+„luminos"), DPI, `parola` (stub), `ui_drag` (neimportat — cod doar Windows),
+`nivele`, `serviciu`.
+
+**Rezultate măsurate pe calculatorul real:**
+* Suita de teste: **98 passed, 4 skipped** (înainte de reparare: `test_marcaj` picat).
+* Backend: `python -m linux.suport_linux` → „CUDA, placă NVIDIA detectată" — calea
+  CUDA **confirmată pe placă reală** (RTX PRO 4000, float16; modelul
+  `large-v3-turbo-ct2` încărcat pe GPU).
+* Transcriere reală: 18 s de audio în limba română transcrise în ~1 s pe GPU.
+* Microfon și redare: testate live (înregistrare + redare OK; microfonul sistemului
+  era la 17% volum — crescut la 100%).
+* Fereastra principală: pornire + captură (`DTED_CAPTURA`) — aranjament corect.
+* „Deschide folder"/„Deschide fișier": testate live pe Linux (`xdg-open`) → OK.
+
+**Rămas neportat, prin design** (ridică eroare clară, nu pice): criptarea AES
+(CNG), firewall-ul, blocarea Bluetooth/USB, driverele Windows, instalatorul Inno.
+
+**Avertisment rămas (nu blochează programul instalat):** verificarea cerințelor
+raportează spațiu liber sub minim (7,9 GB < 10 GB) și LibreOffice fără componentele
+românești (meniuri + dicționar).
 
 ## Cum se instalează / rulează (Linux)
 

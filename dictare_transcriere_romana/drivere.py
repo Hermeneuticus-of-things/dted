@@ -104,8 +104,8 @@ class StareDrivere:
 
     def rezumat(self) -> str:
         if self.totul_ok:
-            return "Driverele și componentele Windows sunt în regulă."
-        return f"{len(self.lipsuri)} lucruri lipsesc pentru sunet, video sau componentele Windows."
+            return "Driverele și componentele sistemului sunt în regulă."
+        return f"{len(self.lipsuri)} lucruri lipsesc pentru sunet, video sau componentele sistemului."
 
 
 # --------------------------------------------------------------------------- citiri Windows
@@ -323,6 +323,48 @@ def verifica() -> StareDrivere:
     transcrierea (recunoscute după ID-ul hardware, nu doar după nume). O placă
     Intel sau AMD fără driver nu blochează nimic, deci nu se raportează.
     """
+    if not cai.este_windows():
+        # Linux: driverele de sunet se verifică prin ALSA/PipeWire (sounddevice);
+        # interogările Windows (PowerShell, registru) nu au sens aici.
+        stare = StareDrivere()
+        try:
+            import sounddevice as sd  # type: ignore[import-not-found]
+
+            dispozitive = sd.query_devices()
+            stare.dispozitive_sunet = sum(
+                1
+                for dispozitiv in dispozitive
+                if int(dispozitiv.get("max_input_channels", 0) or 0) > 0
+            )
+            stare.detalii_tehnice = (
+                f"sunet: {stare.dispozitive_sunet} intrări, "
+                f"{len(dispozitive)} dispozitive ALSA/PipeWire"
+            )
+            if stare.dispozitive_sunet == 0:
+                stare.sunet_ok = False
+                stare.lipsuri.append(
+                    Lipsa(
+                        cheie="sunet",
+                        dispozitiv="microfon",
+                        ce_nu_merge="dictarea",
+                        sursa="setările de sunet ale sistemului (PipeWire/ALSA)",
+                        poate_instala_automat=False,
+                        detalii="niciun dispozitiv de intrare găsit de sounddevice",
+                    )
+                )
+        except Exception as exc:
+            stare.sunet_ok = False
+            stare.lipsuri.append(
+                Lipsa(
+                    cheie="sunet",
+                    dispozitiv="sistem de sunet",
+                    ce_nu_merge="dictarea și redarea",
+                    sursa="pachetul de sistem pentru ALSA/PipeWire",
+                    poate_instala_automat=False,
+                    detalii=str(exc),
+                )
+            )
+        return stare
     stare = StareDrivere()
     date = _citeste_sistemul()
 
