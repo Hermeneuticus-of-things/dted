@@ -27,6 +27,38 @@ from .comun import Buton, fonturi, seteaza_rol
 SECUNDE_PROBA = 5
 
 
+def _alege_microfon_proba(microfoane: list) -> object | None:
+    """Microfonul pentru probă: cel implicit al sistemului, nu primul din listă.
+
+    Pe Linux lista începe adesea cu dispozitive ALSA „brute” (``hw:N,M``), care
+    pot refuza rata cerută; dispozitivul implicit (PipeWire) merge oricând.
+    """
+    if not microfoane:
+        return None
+    for dispozitiv in microfoane:
+        if "default" in dispozitiv.cheie or "pipewire" in dispozitiv.cheie:
+            return dispozitiv
+    return microfoane[0]
+
+
+def _alege_iesire_proba(ieșiri: list) -> object | None:
+    """Ieșirea pentru probă: difuzoare reale, nu monitoare HDMI.
+
+    Sunetul trimis spre un monitor HDMI nu se aude (monitoarele fără boxe tăc),
+    deci punem ieșirea implicită sau una non-HDMI înaintea HDMI-ului.
+    """
+    if not ieșiri:
+        return None
+    for dispozitiv in ieșiri:
+        jos = dispozitiv.cheie.lower()
+        if "default" in jos or "pipewire" in jos:
+            return dispozitiv
+    for dispozitiv in ieșiri:
+        if "hdmi" not in dispozitiv.cheie.lower():
+            return dispozitiv
+    return ieșiri[0]
+
+
 class FereastraSunet(QWidget):
     """Verificarea sunetului: microfon, difuzor și căști (cerința 7 / H.23)."""
 
@@ -119,9 +151,9 @@ class FereastraSunet(QWidget):
         casti = dispozitive.casti()
         difuzoare = [d for d in iesiri if d not in casti]
 
-        self._microfon = microfoane[0] if microfoane else None
-        self._difuzor = difuzoare[0] if difuzoare else (iesiri[0] if iesiri else None)
-        self._casti = casti[0] if casti else None
+        self._microfon = _alege_microfon_proba(microfoane)
+        self._difuzor = _alege_iesire_proba(difuzoare)
+        self._casti = casti[0] if casti else self._difuzor
 
         self._arata_dispozitiv("microfon", self._microfon)
         self._arata_dispozitiv("difuzor", self._difuzor)
@@ -223,7 +255,14 @@ class FereastraSunet(QWidget):
         self._arata_stare("microfon", "merge")
         iesire = self._difuzor or self._casti
         try:
-            inregistrare.reda(inregistrat, dispozitiv=iesire, asteapta=False)
+            # `opreste()` întoarce un obiect `Inregistrare` (pcm + rată), nu un
+            # tablou: redăm din câmpurile lui, altfel redarea pică întotdeauna.
+            inregistrare.reda(
+                getattr(inregistrat, "pcm", inregistrat),
+                getattr(inregistrat, "rata", inregistrare.RATA_WHISPER),
+                dispozitiv=iesire,
+                asteapta=False,
+            )
         except Exception as exc:
             jurnal.atentionare(f"Redarea probei microfonului a eșuat: {exc}")
 
