@@ -928,9 +928,6 @@ class Aplicatie(QMainWindow):
             f"Despre {NUME_SCURT}",
             f"<div style='font-size:15pt; font-weight:bold'>{escape(NUME_AFISAT)} ({escape(NUME_SCURT)})</div>"
             f"<div style='font-size:10pt'>{escape(SUBTITLU_RO)}</div>"
-            "<div style='font-size:8pt; color:gray'>Inspirat de Express Dictate și Express Scribe "
-            "(NCH Software). D&amp;TED nu este afiliat cu NCH Software; mărcile aparțin "
-            "proprietarilor lor.</div><br>"
             f"<div style='font-size:11pt; font-weight:bold'>Versiunea {escape(VERSIUNE_COMPLETA)}</div>"
             f"<div style='font-size:8pt; color:gray'>sursă: {escape(REPO_URL)}</div><br>"
             "Program de dictare și transcriere text, 100% local,<br>"

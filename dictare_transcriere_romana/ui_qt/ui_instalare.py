@@ -356,11 +356,36 @@ class FereastraInstalare(QWidget):
                 self._reporneste_programul()
 
     def _reporneste_programul(self) -> None:
+        import os
         import sys
-        from PySide6.QtCore import QProcess
+        from PySide6.QtCore import QProcess, QProcessEnvironment
 
         try:
-            QProcess.startDetached(sys.executable, sys.argv)
+            if sys.platform != "win32":
+                # Pe Linux, `sys.argv[0]` e calea către `__main__.py`, care nu
+                # poate rula ca script (importuri relative). Repornim ca modul,
+                # cu folderul `program` pe PYTHONPATH, ca lansatorul `dted`.
+                from .. import cai
+
+                program = str(cai.director_instalare() / "program")
+                mediu = QProcessEnvironment.systemEnvironment()
+                mediu.insert(
+                    "PYTHONPATH",
+                    program
+                    + (
+                        os.pathsep + os.environ.get("PYTHONPATH", "")
+                        if os.environ.get("PYTHONPATH")
+                        else ""
+                    ),
+                )
+                proces = QProcess()
+                proces.setProgram(sys.executable)
+                proces.setArguments(["-m", "dictare_transcriere_romana"])
+                proces.setProcessEnvironment(mediu)
+                proces.setWorkingDirectory(program)
+                QProcess.startDetached(proces)
+            else:
+                QProcess.startDetached(sys.executable, sys.argv)
             if self.aplicatie is not None and hasattr(self.aplicatie, "close"):
                 self.aplicatie.close()
         except Exception:
