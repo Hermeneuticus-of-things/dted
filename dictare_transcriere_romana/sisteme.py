@@ -281,22 +281,34 @@ def _dimensiune_kb() -> int:
 # --------------------------------------------------------------------------- sistem
 
 
-def deschide_fisier(cale: Path) -> bool:
-    """Deschide un fișier cu programul potrivit din Windows."""
-    try:
-        os.startfile(str(cale))  # type: ignore[attr-defined]
+def _deschide_cu_sistemul(tinta: str) -> bool:
+    """Deschide un fișier sau un folder cu programul implicit al sistemului."""
+    if cai.este_windows():
+        os.startfile(tinta)  # type: ignore[attr-defined]
         return True
+    # Ca os.startfile: pornim programul și nu așteptăm după el.
+    subprocess.Popen(
+        ["xdg-open", tinta],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return True
+
+
+def deschide_fisier(cale: Path) -> bool:
+    """Deschide un fișier cu programul potrivit din sistem."""
+    try:
+        return _deschide_cu_sistemul(str(cale))
     except Exception as exc:
         jurnal.atentionare(f"Nu am putut deschide {cale}: {exc}")
         return False
 
 
 def deschide_folder(cale: Path) -> bool:
-    """Deschide un folder în Explorer."""
+    """Deschide un folder în managerul de fișiere."""
     try:
         Path(cale).mkdir(parents=True, exist_ok=True)
-        os.startfile(str(cale))  # type: ignore[attr-defined]
-        return True
+        return _deschide_cu_sistemul(str(cale))
     except Exception as exc:
         jurnal.atentionare(f"Nu am putut deschide folderul {cale}: {exc}")
         return False
@@ -338,16 +350,58 @@ def deschide_dispozitive_sunet() -> bool:
     return _deschide_setare("ms-settings:sound-devices")
 
 
+def _muta_la_gunoi_linux(cale: Path) -> bool:
+    """Trimite un fișier la Coșul XDG (``~/.local/share/Trash``), pe Linux.
+
+    Pașii respectă specificația freedesktop: fișierul intră în ``files/`` iar
+    o fișier-pereche în ``info/`` păstrează calea și data ștergerii, ca să-l
+    poată recupera managerul de fișiere.
+    """
+    import time
+
+    cale = Path(cale)
+    if not cale.exists():
+        return False
+    gunoi = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
+    baza = Path(gunoi) / "Trash"
+    try:
+        (baza / "files").mkdir(parents=True, exist_ok=True)
+        (baza / "info").mkdir(parents=True, exist_ok=True)
+        destinatie = baza / "files" / cale.name
+        nr = 0
+        while destinatie.exists():
+            nr += 1
+            destinatie = baza / "files" / f"{cale.stem}.{nr}{cale.suffix}"
+        try:
+            os.rename(cale, destinatie)
+        except OSError:
+            # Folders diferite (discuri diferite): mutarea se face prin copiere + ștergere.
+            import shutil
+
+            shutil.move(str(cale), str(destinatie))
+        (baza / "info" / (destinatie.name + ".trashinfo")).write_text(
+            "[Trash Info]\n"
+            f"Path={cale.resolve().as_uri()}\n"
+            f"DeletionDate={time.strftime('%Y-%m-%dT%H:%M:%S')}\n",
+            encoding="utf-8",
+        )
+        jurnal.info(f"Fișier trimis la Coșul XDG: {cale.name}")
+        return True
+    except OSError as exc:
+        jurnal.atentionare(f"Nu am putut trimite la Coșul XDG: {cale} — {exc}")
+        return False
+
+
 def muta_la_gunoi(cale: Path) -> bool:
     """Trimite un fișier la Coșul de reciclare (nu-l șterge definitiv).
 
-    Se folosește chiar funcția Windows pentru Coșul de reciclare, așa că
-    utilizatorul își poate recupera fișierul dacă a greșit. Dacă Windows nu
-    poate trimite fișierul la Coș (de exemplu, o memorie fără Coș), funcția
-    întoarce ``False`` și spune de ce.
+    Se folosește funcția sistemului pentru Coșul de reciclare (pe Windows
+    `SHFileOperationW`, pe Linux standardul XDG Trash), așa că utilizatorul își
+    poate recupera fișierul dacă a greșit. Dacă sistemul nu poate trimite
+    fișierul la Coș, funcția întoarce ``False`` și spune de ce.
     """
     if not cai.este_windows():
-        return False
+        return _muta_la_gunoi_linux(cale)
     cale = Path(cale)
     if not cale.exists():
         return False

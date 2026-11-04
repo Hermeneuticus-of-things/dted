@@ -209,6 +209,27 @@ def main(argv: list[str] | None = None) -> int:
         return serviciu.ruleaza()
 
     # Cerinta 44: o singura instanta. Daca programul ruleaza deja, iesim.
+    if sys.platform != "win32":
+        # Pe Linux: blocare de fișier ținută cât programul rulează (flock),
+        # echivalentul funcțional al mutex-ului din Windows.
+        import fcntl
+        import tempfile
+
+        director_blocare = os.environ.get("XDG_RUNTIME_DIR", tempfile.gettempdir())
+        cale_blocare = Path(director_blocare) / "dted-single-instance.lock"
+        try:
+            _blocare_instanta = open(cale_blocare, "w")  # noqa: SIM115 — ținută deschisă toată rularea
+            _blocare_instanta.write(str(os.getpid()))
+            _blocare_instanta.flush()
+            fcntl.flock(_blocare_instanta, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            try:
+                from . import ui_comun
+                ui_comun.anunta(None, "Programul este deja deschis",
+                                 "D&TED ruleaza deja. Foloseste fereastra existenta.")
+            except Exception:
+                pass
+            return 1
     try:
         import ctypes
         _mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "DTED_SingleInstance_Mutex_v1")
