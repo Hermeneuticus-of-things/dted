@@ -49,8 +49,8 @@ verifica(f"dist-v{V}" in t and f"output-v{V}" in t, "setup.iss: dist/output pe v
 manifest = json.loads((RADACINA / "versiuni.json").read_text(encoding="utf-8"))
 verifica(manifest["program"]["versiune"] == V, f"versiuni.json: versiune = {V}")
 verifica(
-    manifest["program"]["url"].endswith(f"/v{V}/program-{V}.zip"),
-    "versiuni.json: URL-ul arată la release-ul potrivit",
+    manifest["program"]["url"] == "https://github.com/Hermeneuticus-of-things/dted/releases/latest/download/program.zip",
+    "versiuni.json: URL-ul e calea stabilă „releases/latest/download/program.zip”",
 )
 
 # 4) program-zip: există, valid, structură + hash + dimensiune
@@ -80,14 +80,12 @@ for nume in (f"Setup.DTED-{V}.exe", f"program-{V}.zip", f"portabil-DTED-{V}.zip"
 for nume in (f"portabil-DTED-{V}.zip", f"dted-{V}-linux.tar.gz"):
     verifica((RADACINA / nume).is_file(), f"{nume} există")
 
-# 7) bootstrap
+# 7) bootstrap: versiunea „stable location” — ia „releases/latest” din API și verifică
+#    prin SHA256SUMS.txt din același release (fără tag/sume hardcodate)
 t = (RADACINA / "dted-bootstrap.ps1").read_text(encoding="utf-8")
-verifica(f'$Tag  = "v{V}"' in t or f'$Tag = "v{V}"' in t, f"bootstrap: $Tag = v{V}")
-m = re.search(rf'"Setup\.DTED-{re.escape(V)}\.exe"\s*=\s*"([0-9A-Fa-f]{{64}})"', t)
-verifica(bool(m), "bootstrap: are amprenta exe-ului")
-if m and setup_exe.is_file():
-    suma_exe = hashlib.sha256(setup_exe.read_bytes()).hexdigest().upper()
-    verifica(m.group(1).upper() == suma_exe, "bootstrap: amprenta = SHA-256 real al exe-ului")
+verifica("releases/latest" in t, "bootstrap: folosește „releases/latest” (cale stabilă)")
+verifica("SHA256SUMS.txt" in t, "bootstrap: verifică prin SHA256SUMS.txt din release")
+verifica(f"Setup.DTED-{V}.exe" not in t, "bootstrap: fără nume de fișier hardcodat")
 
 print()
 if esecuri:

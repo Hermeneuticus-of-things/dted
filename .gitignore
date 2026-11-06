@@ -44,3 +44,13 @@ MASTER_TASKS*.md
 # Pachete descărcate (LibreOffice etc.)
 LibreOffice_Install/*.msi
 LibreOffice_Install/*.oxt
+build-v*
+build_log*
+iscc-*log.txt
+program-0.6.*.zip
+portabil-DTED-0.6.*.zip
+dted-0.6.*-linux.tar.gz
+program.zip
+_test_audio_*.mp3
+_test_audio_*.wav
+Setup.DTED-*
