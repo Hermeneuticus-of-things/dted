@@ -190,7 +190,7 @@ textul documentului sau căile personale de pe calculator.
 
 - **Actualizările se găsesc din program**, fără să fie nevoie să cauți manual fișierul potrivit.
 
-### 🆕 Ce e nou în v0.6.11
+### 🆕 Ce e nou în v0.6.12
 
 - **Pornire mai sigură după instalare sau actualizare** — aplicația este gata de folosit, iar asistentul de instalare rămâne disponibil dacă ai nevoie de el.
 
@@ -253,6 +253,6 @@ Testele rulează automat pe Windows și Linux la fiecare commit ·
 
 Cu 🎙 și 🤍 pentru limba română
 
-<sub>D&amp;TED v0.6.11 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
+<sub>D&amp;TED v0.6.12 · Whisper large-v3-turbo (eek, optimizat RO) · CTranslate2 · PySide6 · Inno Setup</sub>
 
 </div>

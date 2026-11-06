@@ -110,8 +110,6 @@ TASTE_RAPIDE: tuple[tuple[str, str], ...] = (
     ("viteza_normala", "Redare cu viteză normală"),
     ("viteza_lenta", "Redare lentă"),
     ("viteza_rapida", "Redare rapidă"),
-    ("de_la_capat", "Ia fraza de la capăt (șterge fraza neterminată)"),
-    ("idee_noua", "Idee nouă (șterge fraza + paragraf cu tab)"),
     ("semn", "Semnul [mm:ss] în text"),
 )
 

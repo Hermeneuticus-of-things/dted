@@ -276,7 +276,7 @@ class Editor(QWidget):
     def paragraf_nou(self, cu_alineat: bool) -> bool:
         """Șterge fraza în curs și deschide un paragraf nou.
 
-        ``cu_alineat=True`` → tab în față (stilul din cărți, „I alineat”);
+        ``cu_alineat=True`` → tab în față (stilul din cărți);
         ``cu_alineat=False`` → paragraful începe de la margine (stilul de pe
         web, „P alineat”). Fiecare idee nouă și fiecare argument nou încep
         cu un alineat — al doilea sistem doar, nu amestecate.

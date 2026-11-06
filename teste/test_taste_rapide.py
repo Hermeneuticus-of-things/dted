@@ -18,8 +18,6 @@ from dictare_transcriere_romana import config as modul_config
 def test_scurtaturi_implicit_si_mesor_potrivit():
     implicite = modul_config.SCURTATURI_IMPLICIT
     assert implicite["dictare"] == "F5"
-    assert implicite["de_la_capat"] == "F6"
-    assert implicite["idee_noua"] == "Shift+F6"
 
     # Config cu o tastă schimbată + o secțiune parțială: restul rămân implicite.
     config = modul_config.Config(scurtaturi={"dictare": "Ctrl+F5", "inventata": "X"})
@@ -45,25 +43,24 @@ def test_pagina_taste_rapide_se_construieste_si_salveaza():
     buton_dictare = getattr(fereastra, "_tasta_dictare")
     assert buton_dictare.secventa == "F5"
 
-    # Captură: apăsarea Shift+F6 pe buton o face combinația aleasă.
-    buton_idee = getattr(fereastra, "_tasta_idee_noua")
+    # Captură: apăsarea Alt+N pe buton o face combinația aleasă.
+    buton_idee = getattr(fereastra, "_tasta_asculta")
     buton_idee._porneste_prinderea()
-    eveniment = QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_F6, Qt.KeyboardModifier.ShiftModifier)
+    eveniment = QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_N, Qt.KeyboardModifier.AltModifier)
     buton_idee.keyPressEvent(eveniment)
-    assert buton_idee.secventa == "Shift+F6"
+    assert buton_idee.secventa == "Alt+N"
 
     # Esc anulează (păstrează valoarea veche).
-    buton_idee.secventa = "Alt+N"
+    buton_idee.secventa = "Alt+M"
     buton_idee._porneste_prinderea()
     eveniment_esc = QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier)
     buton_idee.keyPressEvent(eveniment_esc)
-    assert buton_idee.secventa == "Alt+N"
+    assert buton_idee.secventa == "Alt+M"
 
     # Revenirea la valorile din fabrică.
     getattr(fereastra, "_tasta_dictare").secventa = "Alt+X"
     fereastra._taste_implicit()
     assert getattr(fereastra, "_tasta_dictare").secventa == "F5"
-    assert getattr(fereastra, "_tasta_idee_noua").secventa == "Shift+F6"
 
     # Salvarea scrie alegerile în config (ca _aduna).
     getattr(fereastra, "_tasta_dictare").secventa = "Ctrl+Alt+D2"

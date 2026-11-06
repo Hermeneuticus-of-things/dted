@@ -82,8 +82,6 @@ SCURTATURI_IMPLICIT: dict[str, str] = {
     "viteza_normala": "F10",
     "viteza_lenta": "F11",
     "viteza_rapida": "F12",
-    "de_la_capat": "F6",            # șterge fraza neterminată, o iei de la capăt
-    "idee_noua": "Shift+F6",        # șterge fraza + paragraf nou cu tab
     "semn": "Ctrl+B",               # semnul [mm:ss] la cursor
 }
 
