@@ -410,36 +410,6 @@ class Aplicatie(QMainWindow):
         self.btn_pauza_microfon.setEnabled(False)
         dock_rand.addWidget(self.btn_pauza_microfon)
 
-        # „⏎ P alineat” și „⇥ I alineat” — F6 / Shift+F6 (sau ce a ales
-        # utilizatorul în Setări → „Taste rapide”; scurtătura stă pe buton).
-        from .. import config as modul_config_taste
-
-        _taste = modul_config_taste.scurtaturi(self.configurare)
-        self.btn_de_la_capat = Buton(
-            self._dock_redare,
-            f"⏎ P alineat ({_taste.get('de_la_capat', 'F6')})",
-            self._ia_de_la_capat,
-            latime=170,
-            inaltime=36,
-        )
-        self.btn_de_la_capat.setToolTip(
-            "Șterge fraza dictată neterminată și începe un paragraf nou, "
-            f"fără alineat ({_taste.get('de_la_capat', 'F6')})"
-        )
-        dock_rand.addWidget(self.btn_de_la_capat)
-
-        self.btn_idee_noua = Buton(
-            self._dock_redare,
-            f"⇥ I alineat ({_taste.get('idee_noua', 'Shift+F6')})",
-            self._idee_noua,
-            latime=160,
-            inaltime=36,
-        )
-        self.btn_idee_noua.setToolTip(
-            "Șterge fraza curentă și începe un paragraf nou, cu alineat (tab), "
-            f"ca în cărțile tipărite ({_taste.get('idee_noua', 'Shift+F6')})"
-        )
-        dock_rand.addWidget(self.btn_idee_noua)
 
         btn_inapoi = QToolButton()
         btn_inapoi.setText("⏪")
@@ -497,8 +467,6 @@ class Aplicatie(QMainWindow):
         # Butonul roșu „Dictează” rămâne mereu vizibil — e comanda principală.
         self._grupa_butoane_dictare = [
             self.btn_pauza_microfon,
-            self.btn_de_la_capat,
-            self.btn_idee_noua,
         ]
         self._grupa_butoane_audio = [
             self.btn_transport,
@@ -1067,8 +1035,6 @@ class Aplicatie(QMainWindow):
         sc(tasta.get("asculta", "F9"), self._comanda_asculta)
         sc(tasta.get("inapoi_5", "F7"), lambda: self._sare_redare(-5.0))
         sc(tasta.get("inainte_5", "F8"), lambda: self._sare_redare(+5.0))
-        sc(tasta.get("de_la_capat", "F6"), self._ia_de_la_capat)
-        sc(tasta.get("idee_noua", "Shift+F6"), self._idee_noua)
         sc(tasta.get("stop_asculta", "Shift+Esc"), self._opreste_ascultarea)
         sc(tasta.get("viteza_normala", "F10"), lambda: self._viteza_redare("normal"))
         sc(tasta.get("viteza_lenta", "F11"), lambda: self._viteza_redare("lent"))
@@ -1083,16 +1049,6 @@ class Aplicatie(QMainWindow):
                 self.btn_inregistreaza.set_text(f"⏹ Oprește ({t_dictare})")
             else:
                 self.btn_inregistreaza.set_text(f"⏺ Dictează ({t_dictare})")
-        if hasattr(self, "btn_de_la_capat"):
-            self.btn_de_la_capat.setText(f"⏎ P alineat ({tasta.get('de_la_capat', 'F6')})")
-            self.btn_de_la_capat.setToolTip(
-                f"Șterge fraza dictată neterminată și începe un paragraf nou, fără alineat ({tasta.get('de_la_capat', 'F6')})"
-            )
-        if hasattr(self, "btn_idee_noua"):
-            self.btn_idee_noua.setText(f"⇥ I alineat ({tasta.get('idee_noua', 'Shift+F6')})")
-            self.btn_idee_noua.setToolTip(
-                f"Șterge fraza curentă și începe un paragraf nou, cu alineat (tab), ca în cărțile tipărite ({tasta.get('idee_noua', 'Shift+F6')})"
-            )
 
     def _toggle_dictare(self) -> None:
         """Porneste/oprește dictarea (F5 / Ctrl+Space / ⏺ roșu din transport).
@@ -1130,18 +1086,6 @@ class Aplicatie(QMainWindow):
             buton.setVisible(dictare)
         for buton in self._grupa_butoane_audio:
             buton.setVisible(audio)
-
-    def _ia_de_la_capat(self) -> None:
-        """F6: șterge fraza dictată neterminată, ca să o iei de la capăt."""
-        pagina = self._pagini.get("dictare")
-        if pagina is not None:
-            pagina._ia_de_la_capat()
-
-    def _idee_noua(self) -> None:
-        """Shift+F6: șterge fraza curentă + paragraf nou cu tab înainte."""
-        pagina = self._pagini.get("dictare")
-        if pagina is not None:
-            pagina._idee_noua()
 
     def _actualizeaza_buton_dictare(self) -> None:
         """Schimbă textul și stilul butoanelor de dictare după starea dictării."""

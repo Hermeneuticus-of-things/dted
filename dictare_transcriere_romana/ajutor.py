@@ -42,14 +42,14 @@ ECRANE: dict[str, Ghid] = {
             "Programul pornește corect după instalare sau actualizare, fără să te trimită din greșeală la asistentul de instalare.",
             "Poți verifica actualizările din același loc, direct din program.",
             "Textul dictat apare pe ecran cuvânt cu cuvânt, pe măsură ce vorbești; partea gri se confirmă în câteva secunde.",
-            "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”, „⏎ P alineat” și „⇥ I alineat”.",
+            "În bara de jos, lângă butonul roșu de dictare: „⏸ Pauză microfon”. Paragrafele noi se fac din editor (Enter) sau prin comenzi vocale.",
             "Modelul de transcriere se încarcă singur în fundal, imediat după pornirea programului.",
         ],
         ce_faci=[
             "Dictezi non-stop: apasă butonul roșu (F5) și vorbește — programul scrie în timp ce vorbești, nu te mai așteaptă.",
             "Vorbești cu cineva lângă tine? Apasă „⏸ Pauză microfon”: programul nu mai aude nimic; la reluare, dictarea continuă de unde a rămas.",
-            "Ai rostit o frază greșit? Apasă „⏎ P alineat” (F6): fraza neterminată se șterge, inclusiv cuvintele de pe ecran, și începi un paragraf nou de la margine.",
-            "Începi o idee nouă? Apasă „⇥ I alineat” (Shift+F6): șterge fraza curentă și deschide un paragraf nou, cu alineat (tab), ca în cărțile tipărite.",
+            "Ai rostit o frază greșit? Ștergi cu Backspace sau selectezi și rescrii; programul învață corectura.",
+            "Începi o idee nouă? Rostește „paragraf nou” sau apasă Enter; pauzele lungi de voce pun singure paragraful nou.",
             "Tastele ți se par incomode? Setări → „Taste rapide”: îți alegi singur tastele; butonul „Pune tot la fel ca la început” le aduce pe cele din fabrică.",
         ],
         urmeaza=[
@@ -67,7 +67,7 @@ ECRANE: dict[str, Ghid] = {
         titlu="Comenzi vocale",
         ce_vezi=[
             "Programul recunoaște singur comenzile rostite clar, cu o pauză scurtă înainte și după:",
-            "• Structură: „paragraf nou”, „rând nou” (sau „linie nouă”), „P alineat”/„I alineat” pe butoane.",
+            "• Structură: „paragraf nou”, „rând nou” (sau „linie nouă”); pauzele lungi de voce fac singure rândul/paragraful nou.",
             "• Punctuație: „punct”, „virgulă”, „punct și virgulă”, „două puncte”, „semn de întrebare”, „semnul exclamării”.",
             "• Ghilimele și paranteze: „deschide ghilimele” / „închide ghilimele”, „deschide paranteză” / „închide paranteză”.",
             "• Linii și simboluri: „cratimă”, „linie de dialog”, „linie de pauză”, „procent”, „slash”, „ampersand” (sau „și comercial”).",
@@ -78,7 +78,7 @@ ECRANE: dict[str, Ghid] = {
             "Vorbește natural între comenzi: „Am ajuns acasă punct mâine merg la târg paragraf nou”.",
             "Variantele cu și fără diacritice merg la fel: „semn de întrebare” sau „semn de intrebare”.",
             "Pentru text structurat corect, folosește regulile de alineat: fiecare idee nouă începe cu un alineat",
-            "(„P alineat” de la margine, pentru stilul de pe web; „I alineat” cu tab, pentru cărți) — nu le amesteca.",
+            "Pentru alineat cu tab în fața paragrafului, tastează Tab sau rostește „paragraf nou” și aranjezi în editor.",
         ],
         urmeaza=[
             "Comenzile de selecție, formatare (bold/italic), navigare și controlul dictării pe voce",
@@ -129,15 +129,15 @@ ECRANE: dict[str, Ghid] = {
     "dictare": Ghid(
         titlu="Dictare vocală",
         ce_vezi=[
-            "Jos, în bara de transport: butonul roșu „⏺ Dictează (F5)”, „▶ Ascultă”, „⏹ Stop”, „⏸ Pauză microfon”, „⏎ P alineat” și „⇥ I alineat” — scurtăturile stau scrise pe butoane.",
+            "Jos, în bara de transport: butonul roșu „⏺ Dictează (F5)”, „▶ Ascultă”, „⏹ Stop”, „⏸ Pauză microfon” — scurtăturile stau scrise pe butoane.",
             "Vumetrul se mișcă când vorbești; textul apare în editor cuvânt cu cuvânt, pe măsură ce rostești.",
             "Partea gri a textului e provizorie (se confirmă în câteva secunde); partea neagră e sigură.",
         ],
         ce_faci=[
             "Apasă butonul roșu (sau F5) și vorbește non-stop — nu te opri să aștepți: programul scrie în timp ce vorbești.",
             "Vorbești cu altcineva? Apasă „⏸ Pauză microfon”; apasă-l din nou ca să continui dictarea.",
-            "Fraza nu a ieșit? „⏎ P alineat” (F6) o șterge pe cea neterminată și deschide un paragraf nou, de la margine.",
-            "Idee nouă? „⇥ I alineat” (Shift+F6) șterge fraza curentă și deschide un paragraf nou, cu alineat (tab), ca în cărțile tipărite.",
+            "Fraza nu a ieșit? O ștergi cu Backspace și o redictezi; programul nu se plânge de nimic.",
+            "Idee nouă? Rostește „paragraf nou” sau apasă Enter — și continuă dicția.",
             "„⏱ Semn” (Ctrl+B) pune [mm:ss] la cursor; „▶ Ascultă” (F9) redă bucata de la semn ca să o corectezi.",
             "Apasă din nou butonul roșu când ai terminat; textul și înregistrarea se salvează singure.",
         ],
@@ -687,8 +687,7 @@ def text_citeste_ma() -> str:
         "  „procent”, „slash”, „ampersand” (sau „și comercial”);",
         "• pauzele lungi structurează singure textul: peste 4 secunde de liniște",
         "  → rând nou; peste 8 secunde → paragraf nou;",
-        "• pentru paragrafe, butoanele „P alineat” (de la margine, stil web) și",
-        "  „I alineat” (cu tab, stil de carte) — fiecare idee nouă începe cu alineat.",
+        "• pentru paragrafe: rostește „paragraf nou”, apasă Enter sau lasă o pauză lungă;",
         "\n",
         _linie_titlu("Probleme frecvente", "-"),
     ]

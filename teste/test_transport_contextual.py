@@ -26,16 +26,12 @@ def test_transportul_arata_doar_butoanele_modului():
 
     # La pornire (nimic de ascultat): doar butonul roșu de dictare e vizibil.
     f._seteaza_mod_transport("nimic")
-    assert not f.btn_pauza_microfon.isVisible() or True  # offscreen: folosește setVisible
     assert not f.btn_pauza_microfon.isVisibleTo(f._dock_redare)
     assert not f.btn_transport.isVisibleTo(f._dock_redare)
-    assert not f.btn_de_la_capat.isVisibleTo(f._dock_redare)
 
-    # Mod dictare: pauză, de la capăt, idee nouă vizibile; redarea ascunsă.
+    # Mod dictare: pauza de microfon vizibilă; redarea ascunsă.
     f._seteaza_mod_transport("dictare")
     assert f.btn_pauza_microfon.isVisibleTo(f._dock_redare)
-    assert f.btn_de_la_capat.isVisibleTo(f._dock_redare)
-    assert f.btn_idee_noua.isVisibleTo(f._dock_redare)
     assert not f.btn_transport.isVisibleTo(f._dock_redare)
     assert not f._slider_redare.isVisibleTo(f._dock_redare)
     assert not f._slider_volum.isVisibleTo(f._dock_redare)
@@ -48,5 +44,16 @@ def test_transportul_arata_doar_butoanele_modului():
     assert f._eticheta_redare.isVisibleTo(f._dock_redare)
     assert f._slider_volum.isVisibleTo(f._dock_redare)
     assert not f.btn_pauza_microfon.isVisibleTo(f._dock_redare)
-    assert not f.btn_idee_noua.isVisibleTo(f._dock_redare)
+    f.close()
+
+
+def test_alineatele_raman_din_editor_si_comenzi_vocale():
+    """P/I alineat au fost scoase ca butoane: nu mai există în interfață.
+
+    Paragrafele noi se fac din editor (Enter) și din comenzi vocale
+    („paragraf nou”, „rând nou”) + pauzele lungi configurabile.
+    """
+    f = _fereastra()
+    assert not hasattr(f, "btn_de_la_capat")
+    assert not hasattr(f, "btn_idee_noua")
     f.close()

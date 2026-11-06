@@ -838,8 +838,8 @@ class PaginaDictare(QWidget):
             if fel == "gata" or sunet is None:
                 return
             if predat_la <= self._anulat_pana:
-                # „P alineat”/„I alineat” au șters textul dintre timp: bucata asta
-                # ar re-scrie fraza pe care utilizatorul tocmai a anulat-o.
+                # o ștergere de text între timp (Backspace în editor): bucata asta
+                # ar re-scrie textul pe care utilizatorul tocmai l-a șters.
                 continue
             motor_local = self.aplicatie._motor
             if motor_local is None:
@@ -1005,60 +1005,6 @@ class PaginaDictare(QWidget):
             self._goleste_coada_cuvinte()
 
     # ------------------------------------------------------------------ comenzi
-
-    def _ia_de_la_capat(self) -> None:
-        """F6 — „⏎ P alineat”: șterge fraza neterminată și deschide un paragraf
-        nou care începe direct de la margine, fără alineat (stilul de pe web).
-
-        Merge și în timpul dictării, și după: cuvintele care așteaptă încă în
-        coada de afișare se aruncă, iar bucățile începute între timp sunt
-        anulate pe momentul predării — fraza ștearsă nu mai reapare.
-        """
-        self._anulat_pana = time.monotonic()
-        if getattr(self, "_coada_cuvinte", None):
-            self._coada_cuvinte.clear()
-        if hasattr(self, "editor"):
-            try:
-                self.editor.paragraf_nou(cu_alineat=False)
-            except Exception:
-                pass
-            self.stare.text = self.editor.text()
-            # recuperarea la cădere trebuie să reflecte textul rămas, nu fraza ștearsă
-            self._text_dictare = self.editor.text()
-            try:
-                if self._text_dictare.strip():
-                    biblioteca.scrie_recuperare(
-                        self._text_dictare, getattr(self, "_marca_dictare", "") or "dictare"
-                    )
-            except Exception:
-                pass
-        self.aplicatie.bara_stare.arata(
-            "P alineat", "fraza ștearsă — scrii într-un paragraf nou, fără alineat.", "lucru"
-        )
-
-    def _idee_noua(self) -> None:
-        """Shift+F6 — „⇥ I alineat”: șterge fraza curentă și deschide un paragraf
-        nou cu alineat (tab în față), ca în cărțile tipărite."""
-        self._anulat_pana = time.monotonic()
-        if getattr(self, "_coada_cuvinte", None):
-            self._coada_cuvinte.clear()
-        if hasattr(self, "editor"):
-            try:
-                self.editor.paragraf_nou(cu_alineat=True)
-            except Exception:
-                pass
-            self.stare.text = self.editor.text()
-            self._text_dictare = self.editor.text()
-            try:
-                if self._text_dictare.strip():
-                    biblioteca.scrie_recuperare(
-                        self._text_dictare, getattr(self, "_marca_dictare", "") or "dictare"
-                    )
-            except Exception:
-                pass
-        self.aplicatie.bara_stare.arata(
-            "I alineat", "fraza ștearsă — scrii într-un paragraf nou, cu alineat (tab).", "lucru"
-        )
 
     def salveaza(self) -> None:
         text = self.editor.text()
