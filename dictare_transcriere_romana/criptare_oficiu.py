@@ -133,8 +133,12 @@ def cheie_locala() -> bytes:
     if memo:
         return memo
     if cale.is_file():
-        protejat = cale.read_bytes()
-        cheie = _desprotejeaza_dpapi(protejat)
+        if os.name == "nt":
+            cheie = _desprotejeaza_dpapi(cale.read_bytes())
+        else:
+            # Linux: cheia stă în clar în folderul de instalare (protejat de
+            # permisiunile fișierului); fișierele textelor rămân criptate pe disc.
+            cheie = cale.read_bytes()
         if len(cheie) != 32:
             raise CriptareInvalida("Cheia locală are o lungime greșită.")
         _cheie_memo[str(cale)] = cheie
@@ -143,7 +147,14 @@ def cheie_locala() -> bytes:
 
     cheie = secrets.token_bytes(32)
     cale.parent.mkdir(parents=True, exist_ok=True)
-    cale.write_bytes(_protejeaza_dpapi(cheie))
+    if os.name == "nt":
+        cale.write_bytes(_protejeaza_dpapi(cheie))
+    else:
+        cale.write_bytes(cheie)
+        try:
+            os.chmod(cale, 0o600)
+        except OSError:
+            pass
     _cheie_memo[str(cale)] = cheie
     return cheie
 
