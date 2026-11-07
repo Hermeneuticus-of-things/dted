@@ -1,0 +1,1 @@
+{"title": "Restaurare main: aduce înapoi 0.6.10/0.6.11 (linux fixes, despre, README) peste merge-ul PR #38", "head": "v0.6.13-restore", "base": "main", "body": "PR #38 a fost bazat pe main vechi; merge-ul lui a șters din main commit-urile 0.6.10/0.6.11. Acest PR le aduce înapoi (merge 3ed6125)."}

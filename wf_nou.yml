@@ -1,0 +1,124 @@
+name: Publică manifestul update-ului
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manifest-update-main
+  cancel-in-progress: false
+
+jobs:
+  publicare-manifest:
+    if: github.event.release.prerelease == false && github.event.release.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descarcă sursele main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Descarcă asset-urile release-ului
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "::error::Eticheta release-ului trebuie să fie v<major>.<minor>.<patch>."
+            exit 1
+          fi
+          latest_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          if [[ "$latest_tag" != "$TAG" ]]; then
+            echo "Release-ul $TAG nu mai este latest ($latest_tag); manifestul rămâne neatins."
+            echo "is_latest=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "is_latest=true" >> "$GITHUB_OUTPUT"
+          version="${TAG#v}"
+          mkdir -p "$RUNNER_TEMP/dted-release"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '[.assets[] | {name, size, digest}]' \
+            > "$RUNNER_TEMP/dted-release/release-assets.json"
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/dted-release" \
+            --pattern "program.zip" \
+            --pattern "program-$version.zip" \
+            --pattern "dted-$version-linux.tar.gz" \
+            --pattern "SHA256SUMS.txt"
+
+      - name: Verifică toate asset-urile release-ului
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_DIR: ${{ runner.temp }}/dted-release
+        run: |
+          python scripts/validate_release_assets.py \
+            "$TAG" \
+            "$RELEASE_DIR" \
+            "$RELEASE_DIR/release-assets.json"
+
+      - name: Verifică arhivele și actualizează manifestul
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_DIR: ${{ runner.temp }}/dted-release
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          tag = os.environ["TAG"]
+          version = tag.removeprefix("v")
+          release_dir = Path(os.environ["RELEASE_DIR"])
+          stable = release_dir / "program.zip"
+          stable_bytes = stable.read_bytes()
+          digest = json.loads(
+              (release_dir / "release-assets.json").read_text(encoding="utf-8")
+          )
+          digest = next(
+              asset["digest"].removeprefix("sha256:")
+              for asset in digest
+              if asset["name"] == "program.zip"
+          )
+
+          manifest_path = Path("versiuni.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["program"] = {
+              "versiune": version,
+              "url": "https://github.com/Hermeneuticus-of-things/dted/releases/latest/download/program.zip",
+              "sha256": digest,
+              "dimensiune": len(stable_bytes),
+          }
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Manifestul pentru D&TED {version} a fost validat și actualizat.")
+          PY
+
+      - name: Publică manifestul pe main
+        if: steps.release.outputs.is_latest == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add versiuni.json
+          if git diff --cached --quiet; then
+            echo "Manifestul main este deja actualizat."
+            exit 0
+          fi
+          git commit -m "chore: update live manifest for $TAG"
+          git checkout -b "manifest-$TAG"
+          git push origin "manifest-$TAG"
+          gh pr create --head "manifest-$TAG" --base main             --title "chore: update live manifest for $TAG"             --body "Manifest actualizat automat după validarea release-ului $TAG."
+          gh pr merge --auto --squash "manifest-$TAG"

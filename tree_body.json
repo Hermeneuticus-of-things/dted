@@ -1,0 +1,1 @@
+{"base_tree": "aa1c7b45b9bf5d4a6123bcf089fa819cb1e5597f", "tree": [{"path": "versiuni.json", "mode": "100644", "type": "blob", "sha": "f3973ba852c5f0a295d6c9d798655632cfb0872f"}, {"path": ".github/workflows/release-update-manifest.yml", "mode": "100644", "type": "blob", "sha": "35e87c17e3fac5e1da9a5c710fc0f868d696cec4"}]}

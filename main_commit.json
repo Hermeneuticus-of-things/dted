@@ -1,0 +1,40 @@
+{
+  "sha": "007ff2349a6b32597d6a3969a6cdc6c9a44047eb",
+  "node_id": "C_kwDOVRdGFtoAKDAwN2ZmMjM0OWE2YjMyNTk3ZDZhMzk2OWE2Y2RjNmM5YTQ0MDQ3ZWI",
+  "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/commits/007ff2349a6b32597d6a3969a6cdc6c9a44047eb",
+  "html_url": "https://github.com/Hermeneuticus-of-things/dted/commit/007ff2349a6b32597d6a3969a6cdc6c9a44047eb",
+  "author": {
+    "name": "Things",
+    "email": "thingsofinternet2018@gmail.com",
+    "date": "2026-11-07T05:38:45Z"
+  },
+  "committer": {
+    "name": "GitHub",
+    "email": "noreply@github.com",
+    "date": "2026-11-07T05:38:45Z"
+  },
+  "tree": {
+    "sha": "aa1c7b45b9bf5d4a6123bcf089fa819cb1e5597f",
+    "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/aa1c7b45b9bf5d4a6123bcf089fa819cb1e5597f"
+  },
+  "message": "Merge pull request #40 from Hermeneuticus-of-things/sha256-program-zip\n\nSHA256SUMS cu linia program.zip",
+  "parents": [
+    {
+      "sha": "35ab98696abfbc150964bba9b423a06a77ff510b",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/commits/35ab98696abfbc150964bba9b423a06a77ff510b",
+      "html_url": "https://github.com/Hermeneuticus-of-things/dted/commit/35ab98696abfbc150964bba9b423a06a77ff510b"
+    },
+    {
+      "sha": "b483328a068167303769954aefea391bc8574035",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/commits/b483328a068167303769954aefea391bc8574035",
+      "html_url": "https://github.com/Hermeneuticus-of-things/dted/commit/b483328a068167303769954aefea391bc8574035"
+    }
+  ],
+  "verification": {
+    "verified": true,
+    "reason": "valid",
+    "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJq7rllCRC1aQ7uu5UhlAAAhAsQAF7c30hIk4jN60KFXDXpvNVd\n4jOFGEPMVvbbnBqPusXUMzFQeNQyfoaXVhFcdC+kCfv14Wz8ixtfh9gIQbp7lqsd\nfU/pqz0MJ1bCFuxLCLfRwxlSbYtJjvstaJCEy7wpJRekYN4kbWLtBcK+tAUFEl4G\n7bGGSUsSO1oCgngtA8CpBoQ28MJy/w0lp6YR8MtqfWCISY30WmUEKl7pACDfVPAi\nui7efqBpFltmGETUO7xuOAuVKpPt8VFQMO/a17+dEr9S99K+XMXDHvn919/ersds\nWL+fi4rFo8NK5z+JQfBS2xmoIekPrrnX7wAMmu1D9eAbpTNtS3C6EsS4+PPOjbtz\nhmOwRUh+O3ftjBxRvIGEinTR+HDQPH43n/5QjITfvpS66u7Lg1A8qIkZXYZ5zpZP\nyTfRuzSLuRuj4VqeBybJpsCwFAHbLDo9E7oEhhi+d83Rpqqoqr1DPHZo59xd/Nxp\nsfjfrK/wugunfndoj7ENIMTNrU9SczMsInPqy0bJttt39KY7seRtIFb59CWAJsT8\nvdIbQaPX+19No+naxI1VemhTJxufOQCuI3PkJlMe4PloL349IGY39vyZ0On96+dv\n5ym1BHk9Tw0zp5RRFbGVx+Hi/UZmfPbha95c7r4yw5Ho7xk5fvw3rxPwVmVu+ybR\nfEDZM1drFGO/kZPNVNqI\n=PCbK\n-----END PGP SIGNATURE-----\n",
+    "payload": "tree aa1c7b45b9bf5d4a6123bcf089fa819cb1e5597f\nparent 35ab98696abfbc150964bba9b423a06a77ff510b\nparent b483328a068167303769954aefea391bc8574035\nauthor Things <thingsofinternet2018@gmail.com> 1794029925 +0100\ncommitter GitHub <noreply@github.com> 1794029925 +0100\n\nMerge pull request #40 from Hermeneuticus-of-things/sha256-program-zip\n\nSHA256SUMS cu linia program.zip",
+    "verified_at": "2026-11-07T05:38:45Z"
+  }
+}

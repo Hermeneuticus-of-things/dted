@@ -1,0 +1,230 @@
+{
+  "sha": "ded8a1e5a07a3d556753bfcbb498b1e9cde6d6d0",
+  "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/ded8a1e5a07a3d556753bfcbb498b1e9cde6d6d0",
+  "tree": [
+    {
+      "path": ".gitattributes",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "66297446b3f5c192054c337942b6484cda1e7faa",
+      "size": 615,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/66297446b3f5c192054c337942b6484cda1e7faa"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f2645b73271447fea511f6c0a307dace997bb799",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/f2645b73271447fea511f6c0a307dace997bb799"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "48d4a2d4f116c0dd1e85a201cb6870e585816add",
+      "size": 723,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/48d4a2d4f116c0dd1e85a201cb6870e585816add"
+    },
+    {
+      "path": "AGENTS.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5d98e1c165a8b87cdcf33be30ac1c472898be88",
+      "size": 6031,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/c5d98e1c165a8b87cdcf33be30ac1c472898be88"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "986e3cd3ce8c19f57b7051dd3a69eaa08b8859fe",
+      "size": 1608,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/986e3cd3ce8c19f57b7051dd3a69eaa08b8859fe"
+    },
+    {
+      "path": "LINUX.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "06fcdb9d04fd8a8ea117aaee8ee9635889c2066a",
+      "size": 9156,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/06fcdb9d04fd8a8ea117aaee8ee9635889c2066a"
+    },
+    {
+      "path": "LibreOffice_Install",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "43f6043876d93e0bfc1d81a650b97836474b54c7",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/43f6043876d93e0bfc1d81a650b97836474b54c7"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f51a7ed8278aeb43aedfc48af1a6a45b1d678c5c",
+      "size": 15386,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/f51a7ed8278aeb43aedfc48af1a6a45b1d678c5c"
+    },
+    {
+      "path": "SECURITY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "01758b6c9426adabf5d55ec577500df01deec325",
+      "size": 555,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/01758b6c9426adabf5d55ec577500df01deec325"
+    },
+    {
+      "path": "SHA256SUMS.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d9b709c69fad4a92ce63cb75d1b0a301a896ca8a",
+      "size": 876,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/d9b709c69fad4a92ce63cb75d1b0a301a896ca8a"
+    },
+    {
+      "path": "_build_kits.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9b44ba791adb249889fe84b371990e9cc72a1aec",
+      "size": 5694,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/9b44ba791adb249889fe84b371990e9cc72a1aec"
+    },
+    {
+      "path": "_cross_check.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d903895571f7d0e7f98cd39125aee90093f74482",
+      "size": 4463,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/d903895571f7d0e7f98cd39125aee90093f74482"
+    },
+    {
+      "path": "dictare.spec",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67e3e9e44001ce209c9be1292eac382fae6075f4",
+      "size": 5022,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/67e3e9e44001ce209c9be1292eac382fae6075f4"
+    },
+    {
+      "path": "dictare_transcriere_romana",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6e27fddbe27bdc64806707044f55f618a510e7a7",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/6e27fddbe27bdc64806707044f55f618a510e7a7"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ccbc2f2d4fa739bfe459a2391ed45d3b54e3f3eb",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/ccbc2f2d4fa739bfe459a2391ed45d3b54e3f3eb"
+    },
+    {
+      "path": "download_model.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7b1a541dd2079de2cb3b76ae192b67cde3752e66",
+      "size": 2173,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/7b1a541dd2079de2cb3b76ae192b67cde3752e66"
+    },
+    {
+      "path": "dted-bootstrap.ps1",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3d08f95704c1c960238d92598053ef978845dcd8",
+      "size": 3101,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/3d08f95704c1c960238d92598053ef978845dcd8"
+    },
+    {
+      "path": "dted-bootstrap.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8f84628999bbc3947c28d211539c0109e7a2c3fb",
+      "size": 3339,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/8f84628999bbc3947c28d211539c0109e7a2c3fb"
+    },
+    {
+      "path": "instalator",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e776057ff99db8604435858c4fdbf29d28aec740",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/e776057ff99db8604435858c4fdbf29d28aec740"
+    },
+    {
+      "path": "instaleaza.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8df370b1f6b9022d123d38759b44317f49e5c54",
+      "size": 1282,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/d8df370b1f6b9022d123d38759b44317f49e5c54"
+    },
+    {
+      "path": "install.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "061410967b71432031a6e1b6d5cc215081b059d7",
+      "size": 6145,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/061410967b71432031a6e1b6d5cc215081b059d7"
+    },
+    {
+      "path": "install_libreoffice.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "809c18a52a64c9325c3994cfe4340a73f9ead32e",
+      "size": 1739,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/809c18a52a64c9325c3994cfe4340a73f9ead32e"
+    },
+    {
+      "path": "linux",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2d6eb07c4d97da484caec82afbd7eca3b25dfd40",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/2d6eb07c4d97da484caec82afbd7eca3b25dfd40"
+    },
+    {
+      "path": "pornire.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "865f355c235ee6425455cb7437e4cfb0f1b6ba8b",
+      "size": 4134,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/865f355c235ee6425455cb7437e4cfb0f1b6ba8b"
+    },
+    {
+      "path": "requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8dccb5201cf053a701bb80437cf1c4a18c384533",
+      "size": 420,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/8dccb5201cf053a701bb80437cf1c4a18c384533"
+    },
+    {
+      "path": "scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "883fe3fe5b66cf5dc7b3d9e90cad2f630d66955b",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/883fe3fe5b66cf5dc7b3d9e90cad2f630d66955b"
+    },
+    {
+      "path": "teste",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9124a24c1463acd4c085749f44cfd802941709aa",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/9124a24c1463acd4c085749f44cfd802941709aa"
+    },
+    {
+      "path": "transcriere_locala",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4f74009f70345916b1ca5d7e1b27728fd0c00ecb",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/trees/4f74009f70345916b1ca5d7e1b27728fd0c00ecb"
+    },
+    {
+      "path": "versiuni.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f3973ba852c5f0a295d6c9d798655632cfb0872f",
+      "size": 327,
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/blobs/f3973ba852c5f0a295d6c9d798655632cfb0872f"
+    }
+  ],
+  "truncated": false
+}

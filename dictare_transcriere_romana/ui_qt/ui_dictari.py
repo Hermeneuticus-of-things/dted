@@ -27,6 +27,9 @@ from .comun import fonturi, seteaza_rol
 
 def _durata_wav(cale: Path) -> str:
     """Durata unui WAV, ca text („12 s", „3 min 05 s"); „—" dacă nu se poate."""
+    from .. import biblioteca
+
+    cale = biblioteca.pregateste_citire(Path(cale))
     try:
         with wave.open(str(cale), "rb") as w:
             secunde = w.getnframes() / float(w.getframerate() or 1)
