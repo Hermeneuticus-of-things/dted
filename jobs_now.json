@@ -1,0 +1,221 @@
+{
+  "total_count": 2,
+  "jobs": [
+    {
+      "id": 128359302452,
+      "run_id": 42357696222,
+      "workflow_name": "Testare",
+      "head_branch": "v0.6.14-criptare-oficiu",
+      "run_url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/actions/runs/42357696222",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVRdGFs8AAAAd4s-FNA",
+      "head_sha": "ae4498c388d4256d9b89a3abc5adc0ab75d57eda",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/actions/jobs/128359302452",
+      "html_url": "https://github.com/Hermeneuticus-of-things/dted/actions/runs/42357696222/job/128359302452",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-07T08:58:16Z",
+      "started_at": "2026-11-07T08:58:18Z",
+      "completed_at": "2026-11-07T08:59:44Z",
+      "name": "Teste windows-latest",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-07T08:58:19Z",
+          "completed_at": "2026-11-07T08:58:20Z"
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-07T08:58:20Z",
+          "completed_at": "2026-11-07T08:58:34Z"
+        },
+        {
+          "name": "Set up Python 3.12",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-07T08:58:34Z",
+          "completed_at": "2026-11-07T08:58:34Z"
+        },
+        {
+          "name": "Biblioteci de sistem (doar Linux)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 4,
+          "started_at": "2026-11-07T08:58:34Z",
+          "completed_at": "2026-11-07T08:58:34Z"
+        },
+        {
+          "name": "Instalează dependențele",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-07T08:58:34Z",
+          "completed_at": "2026-11-07T08:59:25Z"
+        },
+        {
+          "name": "Verifică documentația și contractul de release",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-07T08:59:25Z",
+          "completed_at": "2026-11-07T08:59:25Z"
+        },
+        {
+          "name": "Rulează testele",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-07T08:59:25Z",
+          "completed_at": "2026-11-07T08:59:41Z"
+        },
+        {
+          "name": "Post Set up Python 3.12",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-07T08:59:41Z",
+          "completed_at": "2026-11-07T08:59:41Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-07T08:59:41Z",
+          "completed_at": "2026-11-07T08:59:43Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-07T08:59:43Z",
+          "completed_at": "2026-11-07T08:59:43Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/check-runs/128359302452",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000001937,
+      "runner_name": "GitHub Actions 1000001937",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 128359302612,
+      "run_id": 42357696222,
+      "workflow_name": "Testare",
+      "head_branch": "v0.6.14-criptare-oficiu",
+      "run_url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/actions/runs/42357696222",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVRdGFs8AAAAd4s-F1A",
+      "head_sha": "ae4498c388d4256d9b89a3abc5adc0ab75d57eda",
+      "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/actions/jobs/128359302612",
+      "html_url": "https://github.com/Hermeneuticus-of-things/dted/actions/runs/42357696222/job/128359302612",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-11-07T08:58:16Z",
+      "started_at": "2026-11-07T08:58:18Z",
+      "completed_at": "2026-11-07T08:58:50Z",
+      "name": "Teste ubuntu-latest",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-07T08:58:19Z",
+          "completed_at": "2026-11-07T08:58:19Z"
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-07T08:58:19Z",
+          "completed_at": "2026-11-07T08:58:20Z"
+        },
+        {
+          "name": "Set up Python 3.12",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-07T08:58:20Z",
+          "completed_at": "2026-11-07T08:58:20Z"
+        },
+        {
+          "name": "Biblioteci de sistem (doar Linux)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-07T08:58:20Z",
+          "completed_at": "2026-11-07T08:58:29Z"
+        },
+        {
+          "name": "Instalează dependențele",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-07T08:58:29Z",
+          "completed_at": "2026-11-07T08:58:46Z"
+        },
+        {
+          "name": "Verifică documentația și contractul de release",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-07T08:58:46Z",
+          "completed_at": "2026-11-07T08:58:46Z"
+        },
+        {
+          "name": "Rulează testele",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 7,
+          "started_at": "2026-11-07T08:58:46Z",
+          "completed_at": "2026-11-07T08:58:48Z"
+        },
+        {
+          "name": "Post Set up Python 3.12",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13,
+          "started_at": "2026-11-07T08:58:48Z",
+          "completed_at": "2026-11-07T08:58:48Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-07T08:58:48Z",
+          "completed_at": "2026-11-07T08:58:48Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-07T08:58:48Z",
+          "completed_at": "2026-11-07T08:58:48Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/check-runs/128359302612",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000001938,
+      "runner_name": "GitHub Actions 1000001938",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

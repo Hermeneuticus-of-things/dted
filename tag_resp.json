@@ -1,0 +1,10 @@
+{
+  "ref": "refs/tags/v0.6.13",
+  "node_id": "REF_kwDOVRdGFrFyZWZzL3RhZ3MvdjAuNi4xMw",
+  "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/refs/tags/v0.6.13",
+  "object": {
+    "sha": "35ab98696abfbc150964bba9b423a06a77ff510b",
+    "type": "commit",
+    "url": "https://api.github.com/repos/Hermeneuticus-of-things/dted/git/commits/35ab98696abfbc150964bba9b423a06a77ff510b"
+  }
+}

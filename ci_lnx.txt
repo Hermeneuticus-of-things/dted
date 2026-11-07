@@ -1,0 +1,580 @@
+﻿2026-11-07T08:58:19.0752772Z Current runner version: '2.338.2'
+2026-11-07T08:58:19.0779728Z ##[group]Runner Image Provisioner
+2026-11-07T08:58:19.0780998Z Hosted Compute Agent
+2026-11-07T08:58:19.0781603Z Version: 20261028.624
+2026-11-07T08:58:19.0782216Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-07T08:58:19.0782999Z Build Date: 2026-10-28T21:51:42Z
+2026-11-07T08:58:19.0783671Z Worker ID: {1b75bbd6-4a13-48f4-be3d-2793955088a7}
+2026-11-07T08:58:19.0784464Z Region: northcentralus
+2026-11-07T08:58:19.0785069Z Cloud: Azure
+2026-11-07T08:58:19.0785872Z ##[endgroup]
+2026-11-07T08:58:19.0787505Z ##[group]Operating System
+2026-11-07T08:58:19.0788174Z Ubuntu
+2026-11-07T08:58:19.0788784Z 26.04.1
+2026-11-07T08:58:19.0789302Z LTS
+2026-11-07T08:58:19.0789809Z ##[endgroup]
+2026-11-07T08:58:19.0790416Z ##[group]Runner Image
+2026-11-07T08:58:19.0790998Z Image: ubuntu-26.04
+2026-11-07T08:58:19.0791572Z Version: 20261101.186.1
+2026-11-07T08:58:19.0792871Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261101.186/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-07T08:58:19.0794480Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261101.186
+2026-11-07T08:58:19.0795828Z ##[endgroup]
+2026-11-07T08:58:19.0797080Z ##[group]GITHUB_TOKEN Permissions
+2026-11-07T08:58:19.0799011Z Contents: read
+2026-11-07T08:58:19.0799612Z Metadata: read
+2026-11-07T08:58:19.0800441Z ##[endgroup]
+2026-11-07T08:58:19.0802643Z Secret source: Actions
+2026-11-07T08:58:19.0803873Z Cache mode: write
+2026-11-07T08:58:19.0804664Z Prepare workflow directory
+2026-11-07T08:58:19.1221156Z Prepare all required actions
+2026-11-07T08:58:19.1271000Z Getting action download info
+2026-11-07T08:58:19.3181496Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-07T08:58:19.4314010Z Download action repository 'actions/setup-python@v7' (SHA:6d4fd22b20465ccc0f7354476588e8df7c9ca0e0)
+2026-11-07T08:58:19.8158999Z Complete job name: Teste ubuntu-latest
+2026-11-07T08:58:19.9088480Z ##[group]Run actions/checkout@v7
+2026-11-07T08:58:19.9089420Z with:
+2026-11-07T08:58:19.9089916Z   repository: Hermeneuticus-of-things/dted
+2026-11-07T08:58:19.9093841Z   token: ***
+2026-11-07T08:58:19.9094286Z   ssh-strict: true
+2026-11-07T08:58:19.9094736Z   ssh-user: git
+2026-11-07T08:58:19.9095188Z   persist-credentials: true
+2026-11-07T08:58:19.9095876Z   clean: true
+2026-11-07T08:58:19.9096337Z   sparse-checkout-cone-mode: true
+2026-11-07T08:58:19.9096868Z   fetch-depth: 1
+2026-11-07T08:58:19.9097305Z   fetch-tags: false
+2026-11-07T08:58:19.9097767Z   show-progress: true
+2026-11-07T08:58:19.9098218Z   lfs: false
+2026-11-07T08:58:19.9098641Z   submodules: false
+2026-11-07T08:58:19.9099099Z   set-safe-directory: true
+2026-11-07T08:58:19.9099611Z   allow-unsafe-pr-checkout: false
+2026-11-07T08:58:19.9100388Z env:
+2026-11-07T08:58:19.9100837Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:19.9101447Z ##[endgroup]
+2026-11-07T08:58:20.1565536Z Syncing repository: Hermeneuticus-of-things/dted
+2026-11-07T08:58:20.1568300Z ##[group]Getting Git version info
+2026-11-07T08:58:20.1569397Z Working directory is '/home/runner/work/dted/dted'
+2026-11-07T08:58:20.1570978Z [command]/usr/bin/git version
+2026-11-07T08:58:20.1571832Z git version 2.56.0
+2026-11-07T08:58:20.1577783Z ##[endgroup]
+2026-11-07T08:58:20.1585801Z Temporarily overriding HOME='/home/runner/work/_temp/6cf16250-73c8-4179-b81c-a7b79af36977' before making global git config changes
+2026-11-07T08:58:20.1588184Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-07T08:58:20.1591839Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/dted/dted
+2026-11-07T08:58:20.1663380Z Deleting the contents of '/home/runner/work/dted/dted'
+2026-11-07T08:58:20.1668008Z ##[group]Determining repository object format
+2026-11-07T08:58:20.1669867Z ##[endgroup]
+2026-11-07T08:58:20.1671184Z ##[group]Initializing the repository
+2026-11-07T08:58:20.1675158Z [command]/usr/bin/git init /home/runner/work/dted/dted
+2026-11-07T08:58:20.1796464Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-07T08:58:20.1797925Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-07T08:58:20.1798971Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-07T08:58:20.1799999Z hint: call:
+2026-11-07T08:58:20.1800487Z hint:
+2026-11-07T08:58:20.1801083Z hint: 	git config --global init.defaultBranch <name>
+2026-11-07T08:58:20.1801792Z hint:
+2026-11-07T08:58:20.1802466Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-07T08:58:20.1803457Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-07T08:58:20.1804271Z hint:
+2026-11-07T08:58:20.1804771Z hint: 	git branch -m <name>
+2026-11-07T08:58:20.1805558Z hint:
+2026-11-07T08:58:20.1806635Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-07T08:58:20.1816788Z Initialized empty Git repository in /home/runner/work/dted/dted/.git/
+2026-11-07T08:58:20.1834000Z [command]/usr/bin/git remote add origin https://github.com/Hermeneuticus-of-things/dted
+2026-11-07T08:58:20.1891250Z ##[endgroup]
+2026-11-07T08:58:20.1892793Z ##[group]Disabling automatic garbage collection
+2026-11-07T08:58:20.1894372Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-07T08:58:20.1935929Z ##[endgroup]
+2026-11-07T08:58:20.1937578Z ##[group]Setting up auth
+2026-11-07T08:58:20.1938437Z Removing SSH command configuration
+2026-11-07T08:58:20.1942012Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-07T08:58:20.1983599Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-07T08:58:20.2479571Z Removing HTTP extra header
+2026-11-07T08:58:20.2481808Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-07T08:58:20.2526274Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-07T08:58:20.2825003Z Removing includeIf entries pointing to credentials config files
+2026-11-07T08:58:20.2830726Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-07T08:58:20.2869996Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-07T08:58:20.3166938Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-07T08:58:20.3211172Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/dted/dted/.git.path /home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:20.3246940Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/dted/dted/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:20.3284017Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:20.3319377Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:20.3352741Z ##[endgroup]
+2026-11-07T08:58:20.3354059Z ##[group]Fetching the repository
+2026-11-07T08:58:20.3359792Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8a3a8a46957bf94d650b7113f4a52c748f5747e2:refs/remotes/pull/42/merge
+2026-11-07T08:58:20.7347947Z From https://github.com/Hermeneuticus-of-things/dted
+2026-11-07T08:58:20.7350233Z  * [new ref]         8a3a8a46957bf94d650b7113f4a52c748f5747e2 -> pull/42/merge
+2026-11-07T08:58:20.7357007Z ##[endgroup]
+2026-11-07T08:58:20.7359260Z ##[group]Determining the checkout info
+2026-11-07T08:58:20.7361809Z ##[endgroup]
+2026-11-07T08:58:20.7363275Z [command]/usr/bin/git sparse-checkout disable
+2026-11-07T08:58:20.7422039Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-07T08:58:20.7460487Z ##[group]Checking out the ref
+2026-11-07T08:58:20.7465167Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/42/merge
+2026-11-07T08:58:20.7779549Z Note: switching to 'refs/remotes/pull/42/merge'.
+2026-11-07T08:58:20.7780635Z 
+2026-11-07T08:58:20.7781562Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-07T08:58:20.7783766Z changes and commit them, and you can discard any commits you make in this
+2026-11-07T08:58:20.7786872Z state without impacting any branches by switching back to a branch.
+2026-11-07T08:58:20.7788770Z 
+2026-11-07T08:58:20.7790474Z If you want to create a new branch to retain commits you create, you may
+2026-11-07T08:58:20.7793351Z do so (now or later) by using -c with the switch command. Example:
+2026-11-07T08:58:20.7795072Z 
+2026-11-07T08:58:20.7795950Z   git switch -c <new-branch-name>
+2026-11-07T08:58:20.7797079Z 
+2026-11-07T08:58:20.7797827Z Or undo this operation with:
+2026-11-07T08:58:20.7799012Z 
+2026-11-07T08:58:20.7799723Z   git switch -
+2026-11-07T08:58:20.7800595Z 
+2026-11-07T08:58:20.7802236Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-07T08:58:20.7804434Z 
+2026-11-07T08:58:20.7807445Z HEAD is now at 8a3a8a4 Merge ae4498c388d4256d9b89a3abc5adc0ab75d57eda into 93f9f022e5ea4b0041d695b781c6c6fe62d792af
+2026-11-07T08:58:20.7814779Z ##[endgroup]
+2026-11-07T08:58:20.7854872Z [command]/usr/bin/git log -1 --format=%H
+2026-11-07T08:58:20.7887506Z 8a3a8a46957bf94d650b7113f4a52c748f5747e2
+2026-11-07T08:58:20.8306275Z ##[group]Run actions/setup-python@v7
+2026-11-07T08:58:20.8307547Z with:
+2026-11-07T08:58:20.8308380Z   python-version: 3.12
+2026-11-07T08:58:20.8309352Z   check-latest: false
+2026-11-07T08:58:20.8319744Z   token: ***
+2026-11-07T08:58:20.8321083Z   mirror: https://raw.githubusercontent.com/actions/python-versions/main
+2026-11-07T08:58:20.8322757Z   update-environment: true
+2026-11-07T08:58:20.8323830Z   allow-prereleases: false
+2026-11-07T08:58:20.8324831Z   freethreaded: false
+2026-11-07T08:58:20.8325862Z env:
+2026-11-07T08:58:20.8326672Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:20.8327672Z ##[endgroup]
+2026-11-07T08:58:20.9562514Z ##[group]Installed versions
+2026-11-07T08:58:20.9685679Z Successfully set up CPython (3.12.16)
+2026-11-07T08:58:20.9688769Z ##[endgroup]
+2026-11-07T08:58:20.9957863Z ##[group]Run sudo apt-get update
+2026-11-07T08:58:20.9959821Z [36;1msudo apt-get update[0m
+2026-11-07T08:58:20.9963397Z [36;1msudo apt-get install -y libportaudio2 libegl1 libgl1 libxkbcommon0 libglib2.0-0t64 libdbus-1-3 libfontconfig1[0m
+2026-11-07T08:58:21.0064700Z shell: /usr/bin/bash -e {0}
+2026-11-07T08:58:21.0066189Z env:
+2026-11-07T08:58:21.0067054Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:21.0068336Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:21.0070197Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib/pkgconfig
+2026-11-07T08:58:21.0071991Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:21.0073589Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:21.0075195Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:21.0077051Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib
+2026-11-07T08:58:21.0078410Z ##[endgroup]
+2026-11-07T08:58:21.1050261Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-07T08:58:21.1214009Z Get:6 https://packages.microsoft.com/ubuntu/26.04/prod resolute InRelease [3964 B]
+2026-11-07T08:58:21.1378646Z Hit:2 http://azure.archive.ubuntu.com/ubuntu resolute InRelease
+2026-11-07T08:58:21.1422663Z Get:3 http://azure.archive.ubuntu.com/ubuntu resolute-updates InRelease [137 kB]
+2026-11-07T08:58:21.1461607Z Get:4 http://azure.archive.ubuntu.com/ubuntu resolute-backports InRelease [137 kB]
+2026-11-07T08:58:21.1501468Z Get:5 http://azure.archive.ubuntu.com/ubuntu resolute-security InRelease [137 kB]
+2026-11-07T08:58:21.1565781Z Get:7 https://packages.microsoft.com/ubuntu/26.04/prod resolute/main arm64 Packages [136 kB]
+2026-11-07T08:58:21.1785868Z Get:8 https://packages.microsoft.com/ubuntu/26.04/prod resolute/main amd64 Packages [149 kB]
+2026-11-07T08:58:21.1936653Z Get:9 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main amd64v3 Packages [845 kB]
+2026-11-07T08:58:21.2010899Z Get:10 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main Translation-en [192 kB]
+2026-11-07T08:58:21.2058489Z Get:11 http://azure.archive.ubuntu.com/ubuntu resolute-updates/universe amd64v3 Packages [377 kB]
+2026-11-07T08:58:21.2166068Z Get:12 http://azure.archive.ubuntu.com/ubuntu resolute-updates/universe Translation-en [118 kB]
+2026-11-07T08:58:21.2171929Z Get:13 http://azure.archive.ubuntu.com/ubuntu resolute-updates/restricted amd64v3 Packages [573 kB]
+2026-11-07T08:58:21.2258412Z Get:14 http://azure.archive.ubuntu.com/ubuntu resolute-updates/restricted Translation-en [119 kB]
+2026-11-07T08:58:21.2355161Z Get:15 http://azure.archive.ubuntu.com/ubuntu resolute-security/main amd64v3 Packages [657 kB]
+2026-11-07T08:58:21.2422083Z Get:16 http://azure.archive.ubuntu.com/ubuntu resolute-security/main Translation-en [148 kB]
+2026-11-07T08:58:21.2447344Z Get:17 http://azure.archive.ubuntu.com/ubuntu resolute-security/universe amd64v3 Packages [208 kB]
+2026-11-07T08:58:21.2480391Z Get:18 http://azure.archive.ubuntu.com/ubuntu resolute-security/universe Translation-en [68.7 kB]
+2026-11-07T08:58:21.2979764Z Get:19 http://azure.archive.ubuntu.com/ubuntu resolute-security/restricted amd64v3 Packages [529 kB]
+2026-11-07T08:58:21.3010827Z Get:20 http://azure.archive.ubuntu.com/ubuntu resolute-security/restricted Translation-en [108 kB]
+2026-11-07T08:58:23.6328465Z Fetched 4644 kB in 0s (11.3 MB/s)
+2026-11-07T08:58:24.3951107Z Reading package lists...
+2026-11-07T08:58:24.4296465Z Reading package lists...
+2026-11-07T08:58:24.6413825Z Building dependency tree...
+2026-11-07T08:58:24.6421862Z Reading state information...
+2026-11-07T08:58:24.6865592Z libgl1 is already the newest version (1.7.0-3).
+2026-11-07T08:58:24.6866783Z libgl1 set to manually installed.
+2026-11-07T08:58:24.6867563Z libxkbcommon0 is already the newest version (1.13.1-1).
+2026-11-07T08:58:24.6868615Z libxkbcommon0 set to manually installed.
+2026-11-07T08:58:24.6869488Z libglib2.0-0t64 is already the newest version (2.88.0-1ubuntu0.1).
+2026-11-07T08:58:24.6870975Z libglib2.0-0t64 set to manually installed.
+2026-11-07T08:58:24.6871647Z libdbus-1-3 is already the newest version (1.16.2-2ubuntu4).
+2026-11-07T08:58:24.6872344Z libdbus-1-3 set to manually installed.
+2026-11-07T08:58:24.6873039Z libfontconfig1 is already the newest version (2.17.1-3ubuntu1).
+2026-11-07T08:58:24.6873717Z libfontconfig1 set to manually installed.
+2026-11-07T08:58:24.7561505Z Solving dependencies...
+2026-11-07T08:58:24.8666623Z The following additional packages will be installed:
+2026-11-07T08:58:24.8667714Z   libasyncns0 libegl-mesa0 libflac14 libjack-jackd2-0 libmp3lame0
+2026-11-07T08:58:24.8676733Z   libmpg123-0t64 libopus0 libpulse0 libsamplerate0 libsndfile1 libvorbisenc2
+2026-11-07T08:58:24.8686424Z Suggested packages:
+2026-11-07T08:58:24.8687028Z   jackd2 opus-tools pulseaudio
+2026-11-07T08:58:24.8909126Z The following NEW packages will be installed:
+2026-11-07T08:58:24.8909959Z   libasyncns0 libegl-mesa0 libegl1 libflac14 libjack-jackd2-0 libmp3lame0
+2026-11-07T08:58:24.8913836Z   libmpg123-0t64 libopus0 libportaudio2 libpulse0 libsamplerate0 libsndfile1
+2026-11-07T08:58:24.8920163Z   libvorbisenc2
+2026-11-07T08:58:24.9159306Z 0 upgraded, 13 newly installed, 0 to remove and 31 not upgraded.
+2026-11-07T08:58:24.9160048Z Need to get 6528 kB of archives.
+2026-11-07T08:58:24.9160668Z After this operation, 11.3 MB of additional disk space will be used.
+2026-11-07T08:58:24.9161979Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-07T08:58:24.9570933Z Get:2 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libasyncns0 amd64 0.8-7 [12.5 kB]
+2026-11-07T08:58:24.9811136Z Get:3 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main amd64v3 libegl-mesa0 amd64 26.0.8-1ubuntu0.3 [134 kB]
+2026-11-07T08:58:25.0053805Z Get:4 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libflac14 amd64 1.5.0+ds-5 [172 kB]
+2026-11-07T08:58:25.0287818Z Get:5 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libopus0 amd64 1.6.1-1 [3557 kB]
+2026-11-07T08:58:25.0780905Z Get:6 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libsamplerate0 amd64 0.2.2-4build2 [1342 kB]
+2026-11-07T08:58:25.1114224Z Get:7 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libjack-jackd2-0 amd64 1.9.22~dfsg-5build1 [294 kB]
+2026-11-07T08:58:25.1413265Z Get:8 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libmpg123-0t64 amd64 1.33.3-2 [180 kB]
+2026-11-07T08:58:25.1663404Z Get:9 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main amd64v3 libmp3lame0 amd64 3.101~svn6525+dfsg-2ubuntu0.1 [123 kB]
+2026-11-07T08:58:25.1910015Z Get:10 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libvorbisenc2 amd64 1.3.7-3build2 [79.9 kB]
+2026-11-07T08:58:25.2138298Z Get:11 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libsndfile1 amd64 1.2.2-4 [229 kB]
+2026-11-07T08:58:25.2388609Z Get:12 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libpulse0 amd64 1:17.0+dfsg1-2ubuntu4 [295 kB]
+2026-11-07T08:58:25.2631843Z Get:13 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 libportaudio2 amd64 19.7.0+git20260206.e1b70d33-0ubuntu1 [78.9 kB]
+2026-11-07T08:58:25.2859672Z Get:14 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 libegl1 amd64 1.7.0-3 [29.8 kB]
+2026-11-07T08:58:25.6160978Z Fetched 6528 kB in 0s (17.0 MB/s)
+2026-11-07T08:58:25.6392533Z Selecting previously unselected package libasyncns0:amd64.
+2026-11-07T08:58:25.6642291Z (Reading database ... 
+2026-11-07T08:58:25.6643257Z (Reading database ... 5%
+2026-11-07T08:58:25.6643835Z (Reading database ... 10%
+2026-11-07T08:58:25.6644372Z (Reading database ... 15%
+2026-11-07T08:58:25.6644830Z (Reading database ... 20%
+2026-11-07T08:58:25.6645509Z (Reading database ... 25%
+2026-11-07T08:58:25.6646029Z (Reading database ... 30%
+2026-11-07T08:58:25.6646422Z (Reading database ... 35%
+2026-11-07T08:58:25.6646665Z (Reading database ... 40%
+2026-11-07T08:58:25.6646949Z (Reading database ... 45%
+2026-11-07T08:58:25.6647378Z (Reading database ... 50%
+2026-11-07T08:58:25.7636755Z (Reading database ... 55%
+2026-11-07T08:58:25.9316467Z (Reading database ... 60%
+2026-11-07T08:58:26.1190047Z (Reading database ... 65%
+2026-11-07T08:58:26.2286488Z (Reading database ... 70%
+2026-11-07T08:58:26.4156106Z (Reading database ... 75%
+2026-11-07T08:58:26.5903877Z (Reading database ... 80%
+2026-11-07T08:58:26.7727937Z (Reading database ... 85%
+2026-11-07T08:58:26.8966075Z (Reading database ... 90%
+2026-11-07T08:58:27.0685985Z (Reading database ... 95%
+2026-11-07T08:58:27.0686545Z (Reading database ... 100%
+2026-11-07T08:58:27.0687272Z (Reading database ... 213197 files and directories currently installed.)
+2026-11-07T08:58:27.0729802Z Preparing to unpack .../00-libasyncns0_0.8-7_amd64v3.deb ...
+2026-11-07T08:58:27.0765193Z Unpacking libasyncns0:amd64 (0.8-7) ...
+2026-11-07T08:58:27.1002480Z Selecting previously unselected package libegl-mesa0:amd64.
+2026-11-07T08:58:27.1137587Z Preparing to unpack .../01-libegl-mesa0_26.0.8-1ubuntu0.3_amd64v3.deb ...
+2026-11-07T08:58:27.1146148Z Unpacking libegl-mesa0:amd64 (26.0.8-1ubuntu0.3) ...
+2026-11-07T08:58:27.1402737Z Selecting previously unselected package libflac14:amd64.
+2026-11-07T08:58:27.1538312Z Preparing to unpack .../02-libflac14_1.5.0+ds-5_amd64v3.deb ...
+2026-11-07T08:58:27.1547556Z Unpacking libflac14:amd64 (1.5.0+ds-5) ...
+2026-11-07T08:58:27.1782481Z Selecting previously unselected package libopus0:amd64.
+2026-11-07T08:58:27.1916088Z Preparing to unpack .../03-libopus0_1.6.1-1_amd64v3.deb ...
+2026-11-07T08:58:27.1923425Z Unpacking libopus0:amd64 (1.6.1-1) ...
+2026-11-07T08:58:27.2343045Z Selecting previously unselected package libsamplerate0:amd64.
+2026-11-07T08:58:27.2480880Z Preparing to unpack .../04-libsamplerate0_0.2.2-4build2_amd64v3.deb ...
+2026-11-07T08:58:27.2489553Z Unpacking libsamplerate0:amd64 (0.2.2-4build2) ...
+2026-11-07T08:58:27.2797601Z Selecting previously unselected package libjack-jackd2-0:amd64.
+2026-11-07T08:58:27.2937791Z Preparing to unpack .../05-libjack-jackd2-0_1.9.22~dfsg-5build1_amd64v3.deb ...
+2026-11-07T08:58:27.2948689Z Unpacking libjack-jackd2-0:amd64 (1.9.22~dfsg-5build1) ...
+2026-11-07T08:58:27.3252747Z Selecting previously unselected package libmpg123-0t64:amd64.
+2026-11-07T08:58:27.3392011Z Preparing to unpack .../06-libmpg123-0t64_1.33.3-2_amd64v3.deb ...
+2026-11-07T08:58:27.3400895Z Unpacking libmpg123-0t64:amd64 (1.33.3-2) ...
+2026-11-07T08:58:27.3660974Z Selecting previously unselected package libmp3lame0:amd64.
+2026-11-07T08:58:27.3803081Z Preparing to unpack .../07-libmp3lame0_3.101~svn6525+dfsg-2ubuntu0.1_amd64v3.deb ...
+2026-11-07T08:58:27.3812130Z Unpacking libmp3lame0:amd64 (3.101~svn6525+dfsg-2ubuntu0.1) ...
+2026-11-07T08:58:27.4067451Z Selecting previously unselected package libvorbisenc2:amd64.
+2026-11-07T08:58:27.4209640Z Preparing to unpack .../08-libvorbisenc2_1.3.7-3build2_amd64v3.deb ...
+2026-11-07T08:58:27.4218411Z Unpacking libvorbisenc2:amd64 (1.3.7-3build2) ...
+2026-11-07T08:58:27.4483268Z Selecting previously unselected package libsndfile1:amd64.
+2026-11-07T08:58:27.4626824Z Preparing to unpack .../09-libsndfile1_1.2.2-4_amd64v3.deb ...
+2026-11-07T08:58:27.4635785Z Unpacking libsndfile1:amd64 (1.2.2-4) ...
+2026-11-07T08:58:27.4915191Z Selecting previously unselected package libpulse0:amd64.
+2026-11-07T08:58:27.5057188Z Preparing to unpack .../10-libpulse0_1%3a17.0+dfsg1-2ubuntu4_amd64v3.deb ...
+2026-11-07T08:58:27.5066155Z Unpacking libpulse0:amd64 (1:17.0+dfsg1-2ubuntu4) ...
+2026-11-07T08:58:27.5370573Z Selecting previously unselected package libportaudio2:amd64.
+2026-11-07T08:58:27.5514448Z Preparing to unpack .../11-libportaudio2_19.7.0+git20260206.e1b70d33-0ubuntu1_amd64v3.deb ...
+2026-11-07T08:58:27.5524132Z Unpacking libportaudio2:amd64 (19.7.0+git20260206.e1b70d33-0ubuntu1) ...
+2026-11-07T08:58:27.5796983Z Selecting previously unselected package libegl1:amd64.
+2026-11-07T08:58:27.5943584Z Preparing to unpack .../12-libegl1_1.7.0-3_amd64v3.deb ...
+2026-11-07T08:58:27.5954020Z Unpacking libegl1:amd64 (1.7.0-3) ...
+2026-11-07T08:58:27.6397825Z Setting up libmpg123-0t64:amd64 (1.33.3-2) ...
+2026-11-07T08:58:27.6426290Z Setting up libegl-mesa0:amd64 (26.0.8-1ubuntu0.3) ...
+2026-11-07T08:58:27.6444898Z Setting up libopus0:amd64 (1.6.1-1) ...
+2026-11-07T08:58:27.6464124Z Setting up libflac14:amd64 (1.5.0+ds-5) ...
+2026-11-07T08:58:27.6483986Z Setting up libasyncns0:amd64 (0.8-7) ...
+2026-11-07T08:58:27.6504080Z Setting up libegl1:amd64 (1.7.0-3) ...
+2026-11-07T08:58:27.6525013Z Setting up libsamplerate0:amd64 (0.2.2-4build2) ...
+2026-11-07T08:58:27.6544885Z Setting up libmp3lame0:amd64 (3.101~svn6525+dfsg-2ubuntu0.1) ...
+2026-11-07T08:58:27.6565717Z Setting up libvorbisenc2:amd64 (1.3.7-3build2) ...
+2026-11-07T08:58:27.6586638Z Setting up libjack-jackd2-0:amd64 (1.9.22~dfsg-5build1) ...
+2026-11-07T08:58:27.6606279Z Setting up libsndfile1:amd64 (1.2.2-4) ...
+2026-11-07T08:58:27.6627539Z Setting up libpulse0:amd64 (1:17.0+dfsg1-2ubuntu4) ...
+2026-11-07T08:58:27.6654833Z Setting up libportaudio2:amd64 (19.7.0+git20260206.e1b70d33-0ubuntu1) ...
+2026-11-07T08:58:27.6679359Z Processing triggers for libc-bin (2.43-2ubuntu2.4) ...
+2026-11-07T08:58:28.3135229Z 
+2026-11-07T08:58:28.3136119Z Running kernel seems to be up-to-date.
+2026-11-07T08:58:28.3136603Z 
+2026-11-07T08:58:28.3136784Z Restarting services...
+2026-11-07T08:58:28.3235255Z 
+2026-11-07T08:58:28.3235848Z Service restarts being deferred:
+2026-11-07T08:58:28.3238957Z  systemctl restart hosted-compute-agent.service
+2026-11-07T08:58:28.3239350Z 
+2026-11-07T08:58:28.3240094Z No containers need to be restarted.
+2026-11-07T08:58:28.3240427Z 
+2026-11-07T08:58:28.3240629Z No user sessions are running outdated binaries.
+2026-11-07T08:58:28.3240996Z 
+2026-11-07T08:58:28.3241318Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-11-07T08:58:29.3480879Z ##[group]Run python -m pip install --upgrade pip
+2026-11-07T08:58:29.3481309Z [36;1mpython -m pip install --upgrade pip[0m
+2026-11-07T08:58:29.3481648Z [36;1mpip install -r requirements.txt pytest[0m
+2026-11-07T08:58:29.3535933Z shell: /usr/bin/bash -e {0}
+2026-11-07T08:58:29.3536205Z env:
+2026-11-07T08:58:29.3536416Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:29.3536731Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:29.3537168Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib/pkgconfig
+2026-11-07T08:58:29.3537591Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:29.3537985Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:29.3538357Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:29.3538762Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib
+2026-11-07T08:58:29.3539103Z ##[endgroup]
+2026-11-07T08:58:29.9892828Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages (26.2.2)
+2026-11-07T08:58:30.0617619Z Collecting pip
+2026-11-07T08:58:30.0861779Z   Downloading pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+2026-11-07T08:58:30.0941677Z Downloading pip-26.3-py3-none-any.whl (2.0 MB)
+2026-11-07T08:58:30.1323054Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 71.2 MB/s  0:00:00
+2026-11-07T08:58:30.1762277Z Installing collected packages: pip
+2026-11-07T08:58:30.1763400Z   Attempting uninstall: pip
+2026-11-07T08:58:30.1781776Z     Found existing installation: pip 26.2.2
+2026-11-07T08:58:30.2455913Z     Uninstalling pip-26.2.2:
+2026-11-07T08:58:30.2520925Z       Successfully uninstalled pip-26.2.2
+2026-11-07T08:58:31.3033740Z Successfully installed pip-26.3
+2026-11-07T08:58:31.7643150Z Collecting pytest
+2026-11-07T08:58:31.7851562Z   Downloading pytest-9.2.0-py3-none-any.whl.metadata (7.9 kB)
+2026-11-07T08:58:31.8120506Z Collecting PySide6==6.8.0 (from -r requirements.txt (line 5))
+2026-11-07T08:58:31.8160632Z   Downloading PySide6-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+2026-11-07T08:58:31.8299276Z Collecting faster-whisper==1.2.1 (from -r requirements.txt (line 6))
+2026-11-07T08:58:31.8332658Z   Downloading faster_whisper-1.2.1-py3-none-any.whl.metadata (16 kB)
+2026-11-07T08:58:31.9401099Z Collecting ctranslate2==4.8.3 (from -r requirements.txt (line 7))
+2026-11-07T08:58:31.9451996Z   Downloading ctranslate2-4.8.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (11 kB)
+2026-11-07T08:58:31.9936773Z Collecting av==17.1.0 (from -r requirements.txt (line 8))
+2026-11-07T08:58:31.9988688Z   Downloading av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl.metadata (4.6 kB)
+2026-11-07T08:58:32.1970032Z Collecting numpy==2.5.4 (from -r requirements.txt (line 9))
+2026-11-07T08:58:32.2003619Z   Downloading numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+2026-11-07T08:58:32.2211393Z Collecting sounddevice==0.5.6 (from -r requirements.txt (line 10))
+2026-11-07T08:58:32.2244791Z   Downloading sounddevice-0.5.6-py3-none-any.whl.metadata (1.4 kB)
+2026-11-07T08:58:32.2402446Z Collecting imageio-ffmpeg==0.6.0 (from -r requirements.txt (line 11))
+2026-11-07T08:58:32.2438860Z   Downloading imageio_ffmpeg-0.6.0-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+2026-11-07T08:58:32.2589147Z Collecting soundfile (from -r requirements.txt (line 12))
+2026-11-07T08:58:32.2621474Z   Downloading soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl.metadata (18 kB)
+2026-11-07T08:58:32.2857876Z Collecting shiboken6==6.8.0 (from PySide6==6.8.0->-r requirements.txt (line 5))
+2026-11-07T08:58:32.2906583Z   Downloading shiboken6-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (2.5 kB)
+2026-11-07T08:58:32.3112663Z Collecting PySide6-Essentials==6.8.0 (from PySide6==6.8.0->-r requirements.txt (line 5))
+2026-11-07T08:58:32.3150766Z   Downloading PySide6_Essentials-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+2026-11-07T08:58:32.3383984Z Collecting PySide6-Addons==6.8.0 (from PySide6==6.8.0->-r requirements.txt (line 5))
+2026-11-07T08:58:32.3432230Z   Downloading PySide6_Addons-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (4.0 kB)
+2026-11-07T08:58:32.3910892Z Collecting huggingface-hub>=0.21 (from faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.3946018Z   Downloading huggingface_hub-2.4.0-py3-none-any.whl.metadata (16 kB)
+2026-11-07T08:58:32.5333219Z Collecting tokenizers<1,>=0.13 (from faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.5367159Z   Downloading tokenizers-0.23.3-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.8 kB)
+2026-11-07T08:58:32.6014417Z Collecting onnxruntime<2,>=1.14 (from faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.6046226Z   Downloading onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (5.8 kB)
+2026-11-07T08:58:32.6340757Z Collecting tqdm (from faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.6372554Z   Downloading tqdm-4.70.1-py3-none-any.whl.metadata (57 kB)
+2026-11-07T08:58:32.6780886Z Collecting pyyaml<7,>=5.3 (from ctranslate2==4.8.3->-r requirements.txt (line 7))
+2026-11-07T08:58:32.6816071Z   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-11-07T08:58:32.8053854Z Collecting cffi (from sounddevice==0.5.6->-r requirements.txt (line 10))
+2026-11-07T08:58:32.8087764Z   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+2026-11-07T08:58:32.8234974Z Collecting flatbuffers (from onnxruntime<2,>=1.14->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.8268982Z   Downloading flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+2026-11-07T08:58:32.8443229Z Collecting packaging (from onnxruntime<2,>=1.14->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.8479405Z   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-11-07T08:58:32.9932847Z Collecting protobuf>=4.25.8 (from onnxruntime<2,>=1.14->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:32.9967040Z   Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+2026-11-07T08:58:33.0234713Z Collecting click<9.0.0,>=8.4.2 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.0270756Z   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+2026-11-07T08:58:33.0532022Z Collecting filelock>=3.10.0 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.0565210Z   Downloading filelock-4.2.9-py3-none-any.whl.metadata (2.3 kB)
+2026-11-07T08:58:33.0767402Z Collecting fsspec>=2023.5.0 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.0805818Z   Downloading fsspec-2026.9.0-py3-none-any.whl.metadata (10 kB)
+2026-11-07T08:58:33.1386156Z Collecting hf-xet<2.0.0,>=1.6.0 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.1422016Z   Downloading hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+2026-11-07T08:58:33.1549332Z Collecting httpx2<3,>=2.0.0 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.1580268Z   Downloading httpx2-2.16.0-py3-none-any.whl.metadata (10 kB)
+2026-11-07T08:58:33.1813549Z Collecting typing-extensions>=4.1.0 (from huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.1844639Z   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+2026-11-07T08:58:33.2026504Z Collecting anyio>=4.10 (from httpx2<3,>=2.0.0->huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.2059870Z   Downloading anyio-4.16.0-py3-none-any.whl.metadata (4.7 kB)
+2026-11-07T08:58:33.2177642Z Collecting httpcore2==2.16.0 (from httpx2<3,>=2.0.0->huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.2210700Z   Downloading httpcore2-2.16.0-py3-none-any.whl.metadata (27 kB)
+2026-11-07T08:58:33.2358385Z Collecting idna>=3.18 (from httpx2<3,>=2.0.0->huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.2389564Z   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+2026-11-07T08:58:33.2513543Z Collecting truststore>=0.10 (from httpx2<3,>=2.0.0->huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.2543669Z   Downloading truststore-0.10.5-py3-none-any.whl.metadata (4.5 kB)
+2026-11-07T08:58:33.2671281Z Collecting h11>=0.16 (from httpcore2==2.16.0->httpx2<3,>=2.0.0->huggingface-hub>=0.21->faster-whisper==1.2.1->-r requirements.txt (line 6))
+2026-11-07T08:58:33.2726354Z   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-11-07T08:58:33.2839430Z Collecting iniconfig>=2 (from pytest)
+2026-11-07T08:58:33.2870246Z   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+2026-11-07T08:58:33.2989296Z Collecting pluggy<2,>=1.6 (from pytest)
+2026-11-07T08:58:33.3020249Z   Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+2026-11-07T08:58:33.3197978Z Collecting pygments>=2.15 (from pytest)
+2026-11-07T08:58:33.3228615Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-11-07T08:58:33.3386035Z Collecting pycparser (from cffi->sounddevice==0.5.6->-r requirements.txt (line 10))
+2026-11-07T08:58:33.3416236Z   Downloading pycparser-3.12-py3-none-any.whl.metadata (9.7 kB)
+2026-11-07T08:58:33.3562298Z Downloading PySide6-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl (554 kB)
+2026-11-07T08:58:33.3649500Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 554.0/554.0 kB 81.4 MB/s  0:00:00
+2026-11-07T08:58:33.3683690Z Downloading faster_whisper-1.2.1-py3-none-any.whl (1.1 MB)
+2026-11-07T08:58:33.3747539Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 227.5 MB/s  0:00:00
+2026-11-07T08:58:33.3782687Z Downloading ctranslate2-4.8.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (40.3 MB)
+2026-11-07T08:58:33.5091148Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.3/40.3 MB 313.0 MB/s  0:00:00
+2026-11-07T08:58:33.5127064Z Downloading av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl (35.4 MB)
+2026-11-07T08:58:33.6237621Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.4/35.4 MB 324.3 MB/s  0:00:00
+2026-11-07T08:58:33.6271767Z Downloading numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+2026-11-07T08:58:33.6788332Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 336.6 MB/s  0:00:00
+2026-11-07T08:58:33.6822417Z Downloading sounddevice-0.5.6-py3-none-any.whl (32 kB)
+2026-11-07T08:58:33.6878332Z Downloading imageio_ffmpeg-0.6.0-py3-none-manylinux2014_x86_64.whl (29.5 MB)
+2026-11-07T08:58:33.7761599Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 29.5/29.5 MB 341.9 MB/s  0:00:00
+2026-11-07T08:58:33.7834865Z Downloading PySide6_Addons-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl (143.7 MB)
+2026-11-07T08:58:34.2866289Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 143.7/143.7 MB 286.6 MB/s  0:00:00
+2026-11-07T08:58:34.2917418Z Downloading PySide6_Essentials-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl (95.2 MB)
+2026-11-07T08:58:34.6479829Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 95.2/95.2 MB 268.4 MB/s  0:00:00
+2026-11-07T08:58:34.6531912Z Downloading shiboken6-6.8.0-cp39-abi3-manylinux_2_28_x86_64.whl (199 kB)
+2026-11-07T08:58:34.6623528Z Downloading onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl (23.8 MB)
+2026-11-07T08:58:34.7358905Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.8/23.8 MB 331.4 MB/s  0:00:00
+2026-11-07T08:58:34.7396127Z Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+2026-11-07T08:58:34.7453512Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 156.7 MB/s  0:00:00
+2026-11-07T08:58:34.7489762Z Downloading tokenizers-0.23.3-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.4 MB)
+2026-11-07T08:58:34.7614385Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 312.2 MB/s  0:00:00
+2026-11-07T08:58:34.7650367Z Downloading huggingface_hub-2.4.0-py3-none-any.whl (857 kB)
+2026-11-07T08:58:34.7710478Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 857.0/857.0 kB 157.0 MB/s  0:00:00
+2026-11-07T08:58:34.7743130Z Downloading click-8.5.1-py3-none-any.whl (126 kB)
+2026-11-07T08:58:34.7800857Z Downloading hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.3 MB)
+2026-11-07T08:58:34.7949322Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 327.1 MB/s  0:00:00
+2026-11-07T08:58:34.7987554Z Downloading httpx2-2.16.0-py3-none-any.whl (97 kB)
+2026-11-07T08:58:34.8042590Z Downloading httpcore2-2.16.0-py3-none-any.whl (85 kB)
+2026-11-07T08:58:34.8097448Z Downloading pytest-9.2.0-py3-none-any.whl (411 kB)
+2026-11-07T08:58:34.8156816Z Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+2026-11-07T08:58:34.8208622Z Downloading soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl (1.3 MB)
+2026-11-07T08:58:34.8280648Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 234.5 MB/s  0:00:00
+2026-11-07T08:58:34.8312971Z Downloading anyio-4.16.0-py3-none-any.whl (134 kB)
+2026-11-07T08:58:34.8376622Z Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-11-07T08:58:34.8432136Z Downloading filelock-4.2.9-py3-none-any.whl (164 kB)
+2026-11-07T08:58:34.8486313Z Downloading fsspec-2026.9.0-py3-none-any.whl (221 kB)
+2026-11-07T08:58:34.8540525Z Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-11-07T08:58:34.8588638Z Downloading idna-3.20-py3-none-any.whl (69 kB)
+2026-11-07T08:58:34.8639996Z Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+2026-11-07T08:58:34.8686394Z Downloading packaging-26.3-py3-none-any.whl (129 kB)
+2026-11-07T08:58:34.8738786Z Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+2026-11-07T08:58:34.8812037Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-11-07T08:58:34.8880181Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 220.6 MB/s  0:00:00
+2026-11-07T08:58:34.8910865Z Downloading tqdm-4.70.1-py3-none-any.whl (80 kB)
+2026-11-07T08:58:34.8967031Z Downloading truststore-0.10.5-py3-none-any.whl (19 kB)
+2026-11-07T08:58:34.9016342Z Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-11-07T08:58:34.9064128Z Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+2026-11-07T08:58:34.9115674Z Downloading pycparser-3.12-py3-none-any.whl (62 kB)
+2026-11-07T08:58:35.4208123Z Installing collected packages: flatbuffers, typing-extensions, truststore, tqdm, shiboken6, pyyaml, pygments, pycparser, protobuf, pluggy, packaging, numpy, iniconfig, imageio-ffmpeg, idna, hf-xet, h11, fsspec, filelock, click, av, pytest, PySide6-Essentials, onnxruntime, httpcore2, ctranslate2, cffi, anyio, soundfile, sounddevice, PySide6-Addons, httpx2, PySide6, huggingface-hub, tokenizers, faster-whisper
+2026-11-07T08:58:45.9525759Z 
+2026-11-07T08:58:45.9562148Z Successfully installed PySide6-6.8.0 PySide6-Addons-6.8.0 PySide6-Essentials-6.8.0 anyio-4.16.0 av-17.1.0 cffi-2.1.1 click-8.5.1 ctranslate2-4.8.3 faster-whisper-1.2.1 filelock-4.2.9 flatbuffers-25.12.19 fsspec-2026.9.0 h11-0.16.0 hf-xet-1.8.0 httpcore2-2.16.0 httpx2-2.16.0 huggingface-hub-2.4.0 idna-3.20 imageio-ffmpeg-0.6.0 iniconfig-2.3.1 numpy-2.5.4 onnxruntime-1.31.1 packaging-26.3 pluggy-1.7.0 protobuf-7.36.2 pycparser-3.12 pygments-2.21.0 pytest-9.2.0 pyyaml-6.0.3 shiboken6-6.8.0 sounddevice-0.5.6 soundfile-0.14.0 tokenizers-0.23.3 tqdm-4.70.1 truststore-0.10.5 typing-extensions-4.16.0
+2026-11-07T08:58:46.0940772Z ##[group]Run python scripts/check_release_contract.py
+2026-11-07T08:58:46.0941207Z [36;1mpython scripts/check_release_contract.py[0m
+2026-11-07T08:58:46.0990915Z shell: /usr/bin/bash -e {0}
+2026-11-07T08:58:46.0991153Z env:
+2026-11-07T08:58:46.0991357Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:46.0991670Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.0992122Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib/pkgconfig
+2026-11-07T08:58:46.0992560Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.0992935Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.0993335Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.0993720Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib
+2026-11-07T08:58:46.0994036Z ##[endgroup]
+2026-11-07T08:58:46.1564323Z Release contract OK.
+2026-11-07T08:58:46.1647275Z ##[group]Run pytest teste -q
+2026-11-07T08:58:46.1647584Z [36;1mpytest teste -q[0m
+2026-11-07T08:58:46.1697220Z shell: /usr/bin/bash -e {0}
+2026-11-07T08:58:46.1697472Z env:
+2026-11-07T08:58:46.1697673Z   QT_QPA_PLATFORM: offscreen
+2026-11-07T08:58:46.1697985Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.1698415Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib/pkgconfig
+2026-11-07T08:58:46.1698841Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.1699229Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.1699623Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-07T08:58:46.1700008Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib
+2026-11-07T08:58:46.1700324Z ##[endgroup]
+2026-11-07T08:58:47.9527902Z 
+2026-11-07T08:58:47.9528509Z ==================================== ERRORS ====================================
+2026-11-07T08:58:47.9529263Z __________________ ERROR collecting teste/test_coada_audio.py __________________
+2026-11-07T08:58:47.9529806Z teste/test_coada_audio.py:14: in <module>
+2026-11-07T08:58:47.9530355Z     from dictare_transcriere_romana import biblioteca, cai, codecuri, config
+2026-11-07T08:58:47.9530837Z dictare_transcriere_romana/biblioteca.py:21: in <module>
+2026-11-07T08:58:47.9531323Z     from .criptare_oficiu import citeste_criptat, este_criptat_oficiu, scrie_criptat
+2026-11-07T08:58:47.9531837Z dictare_transcriere_romana/criptare_oficiu.py:30: in <module>
+2026-11-07T08:58:47.9532326Z     from .criptare import CriptareInvalida, decripteaza_bytes, cripteaza_bytes
+2026-11-07T08:58:47.9532804Z dictare_transcriere_romana/criptare.py:39: in <module>
+2026-11-07T08:58:47.9533187Z     _bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+2026-11-07T08:58:47.9533512Z               ^^^^^^^^^^^^^
+2026-11-07T08:58:47.9533818Z E   AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9534285Z ____________________ ERROR collecting teste/test_dictare.py ____________________
+2026-11-07T08:58:47.9534692Z teste/test_dictare.py:18: in <module>
+2026-11-07T08:58:47.9536074Z     from dictare_transcriere_romana.ui_qt.ui_dictare import PaginaDictare, _gata_de_transcris
+2026-11-07T08:58:47.9536639Z dictare_transcriere_romana/ui_qt/ui_dictare.py:35: in <module>
+2026-11-07T08:58:47.9537146Z     from .. import biblioteca, erori, jurnal, motor, stare as stare_modul, text_ro
+2026-11-07T08:58:47.9537633Z dictare_transcriere_romana/biblioteca.py:21: in <module>
+2026-11-07T08:58:47.9538117Z     from .criptare_oficiu import citeste_criptat, este_criptat_oficiu, scrie_criptat
+2026-11-07T08:58:47.9538633Z dictare_transcriere_romana/criptare_oficiu.py:30: in <module>
+2026-11-07T08:58:47.9539122Z     from .criptare import CriptareInvalida, decripteaza_bytes, cripteaza_bytes
+2026-11-07T08:58:47.9539597Z dictare_transcriere_romana/criptare.py:39: in <module>
+2026-11-07T08:58:47.9539990Z     _bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+2026-11-07T08:58:47.9540315Z               ^^^^^^^^^^^^^
+2026-11-07T08:58:47.9540628Z E   AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9541095Z __________________ ERROR collecting teste/test_setari_noi.py ___________________
+2026-11-07T08:58:47.9541505Z teste/test_setari_noi.py:17: in <module>
+2026-11-07T08:58:47.9541958Z     from dictare_transcriere_romana.ui_qt.ui_setari import SECTIUNI, FereastraSetari
+2026-11-07T08:58:47.9542468Z dictare_transcriere_romana/ui_qt/ui_setari.py:46: in <module>
+2026-11-07T08:58:47.9542814Z     from .. import (
+2026-11-07T08:58:47.9543090Z dictare_transcriere_romana/biblioteca.py:21: in <module>
+2026-11-07T08:58:47.9543567Z     from .criptare_oficiu import citeste_criptat, este_criptat_oficiu, scrie_criptat
+2026-11-07T08:58:47.9544070Z dictare_transcriere_romana/criptare_oficiu.py:30: in <module>
+2026-11-07T08:58:47.9544550Z     from .criptare import CriptareInvalida, decripteaza_bytes, cripteaza_bytes
+2026-11-07T08:58:47.9545276Z dictare_transcriere_romana/criptare.py:39: in <module>
+2026-11-07T08:58:47.9545830Z     _bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+2026-11-07T08:58:47.9546167Z               ^^^^^^^^^^^^^
+2026-11-07T08:58:47.9546466Z E   AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9546921Z __________________ ERROR collecting teste/test_ux_roadmap.py ___________________
+2026-11-07T08:58:47.9547328Z teste/test_ux_roadmap.py:19: in <module>
+2026-11-07T08:58:47.9547703Z     from dictare_transcriere_romana.ui_qt.principal import Aplicatie
+2026-11-07T08:58:47.9548159Z dictare_transcriere_romana/ui_qt/principal.py:39: in <module>
+2026-11-07T08:58:47.9548511Z     from .. import (
+2026-11-07T08:58:47.9548788Z dictare_transcriere_romana/biblioteca.py:21: in <module>
+2026-11-07T08:58:47.9549261Z     from .criptare_oficiu import citeste_criptat, este_criptat_oficiu, scrie_criptat
+2026-11-07T08:58:47.9549769Z dictare_transcriere_romana/criptare_oficiu.py:30: in <module>
+2026-11-07T08:58:47.9550257Z     from .criptare import CriptareInvalida, decripteaza_bytes, cripteaza_bytes
+2026-11-07T08:58:47.9550720Z dictare_transcriere_romana/criptare.py:39: in <module>
+2026-11-07T08:58:47.9551104Z     _bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+2026-11-07T08:58:47.9551426Z               ^^^^^^^^^^^^^
+2026-11-07T08:58:47.9551706Z E   AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9552081Z =========================== short test summary info ============================
+2026-11-07T08:58:47.9552581Z ERROR teste/test_coada_audio.py - AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9553171Z ERROR teste/test_dictare.py - AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9553729Z ERROR teste/test_setari_noi.py - AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9554294Z ERROR teste/test_ux_roadmap.py - AttributeError: module 'ctypes' has no attribute 'WinDLL'
+2026-11-07T08:58:47.9554800Z !!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+2026-11-07T08:58:47.9555151Z 3 skipped, 4 errors in 1.23s
+2026-11-07T08:58:48.0239515Z ##[error]Process completed with exit code 2.
+2026-11-07T08:58:48.0388753Z Post job cleanup.
+2026-11-07T08:58:48.1324847Z [command]/usr/bin/git version
+2026-11-07T08:58:48.1375647Z git version 2.56.0
+2026-11-07T08:58:48.1418936Z Temporarily overriding HOME='/home/runner/work/_temp/73c976f2-d630-4c68-a191-4b24eb0feedb' before making global git config changes
+2026-11-07T08:58:48.1420455Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-07T08:58:48.1424394Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/dted/dted
+2026-11-07T08:58:48.1469212Z Removing SSH command configuration
+2026-11-07T08:58:48.1477950Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-07T08:58:48.1526410Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-07T08:58:48.1884970Z Removing HTTP extra header
+2026-11-07T08:58:48.1890996Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-07T08:58:48.1939479Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-07T08:58:48.2285989Z Removing includeIf entries pointing to credentials config files
+2026-11-07T08:58:48.2294787Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-07T08:58:48.2327290Z includeif.gitdir:/home/runner/work/dted/dted/.git.path
+2026-11-07T08:58:48.2328117Z includeif.gitdir:/home/runner/work/dted/dted/.git/worktrees/*.path
+2026-11-07T08:58:48.2328864Z includeif.gitdir:/github/workspace/.git.path
+2026-11-07T08:58:48.2329670Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-07T08:58:48.2339270Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/dted/dted/.git.path
+2026-11-07T08:58:48.2367341Z /home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:48.2381576Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/dted/dted/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-e2c36996\-4a16\-4f5f\-a767\-8c2ed1f53b2e\.config
+2026-11-07T08:58:48.2438512Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/dted/dted/.git/worktrees/*.path
+2026-11-07T08:58:48.2468716Z /home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:48.2482450Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/dted/dted/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-e2c36996\-4a16\-4f5f\-a767\-8c2ed1f53b2e\.config
+2026-11-07T08:58:48.2525190Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-07T08:58:48.2554898Z /github/runner_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:48.2566456Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-e2c36996\-4a16\-4f5f\-a767\-8c2ed1f53b2e\.config
+2026-11-07T08:58:48.2606824Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-07T08:58:48.2632976Z /github/runner_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config
+2026-11-07T08:58:48.2644324Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-e2c36996\-4a16\-4f5f\-a767\-8c2ed1f53b2e\.config
+2026-11-07T08:58:48.2684977Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-07T08:58:48.2988899Z Removing credentials config '/home/runner/work/_temp/git-credentials-e2c36996-4a16-4f5f-a767-8c2ed1f53b2e.config'
+2026-11-07T08:58:48.3177672Z Cleaning up orphan processes

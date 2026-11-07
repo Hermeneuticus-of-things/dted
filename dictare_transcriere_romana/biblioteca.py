@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import cai, jurnal, sisteme, text_ro
+from .criptare_oficiu import citeste_criptat, este_criptat_oficiu, scrie_criptat
 
 #: Subfolderele din folderul programului.
 FOLDER_AUDIO = "Audio"
@@ -161,11 +162,11 @@ def copiaza_audio(sursa: Path, radacina_aleasa: Path | None = None) -> Path:
 
 
 def scrie_text(text: str, marca: str, radacina_aleasa: Path | None = None) -> Path:
-    """Scrie textul transcris („Text transcris/….txt”)."""
+    """Scrie textul transcris criptat din oficiu („Text transcris/….txt”)."""
     cale = nume_unic(folder("text", radacina_aleasa), nume_legat(marca, ".txt"))
     try:
-        cale.write_text(text, encoding="utf-8", newline="\r\n")
-        jurnal.info(f"Text salvat în {cale}")
+        scrie_criptat(cale, text.replace("\r\n", "\n").replace("\n", "\r\n").encode("utf-8"))
+        jurnal.info(f"Text criptat salvat în {cale}")
         return cale
     except OSError as exc:
         jurnal.atentionare(f"Nu am putut salva textul în {cale}: {exc}")
@@ -177,35 +178,58 @@ def scrie_text_legat(text: str, marca: str, radacina_aleasa: Path | None = None)
 
     Se folosește la salvarea automată: la fiecare 30 de secunde textul este
     pus în același fișier, nu într-o grămadă de fișiere cu „(2)”, „(3)”.
+    Scriere criptată din oficiu.
     """
     cale = folder("text", radacina_aleasa) / nume_legat(marca, ".txt")
     try:
-        cale.write_text(text, encoding="utf-8", newline="\r\n")
+        scrie_criptat(cale, text.replace("\r\n", "\n").replace("\n", "\r\n").encode("utf-8"))
         return cale
     except OSError as exc:
         jurnal.atentionare(f"Nu am putut salva textul în {cale}: {exc}")
         return cale
 
 
+def pregateste_citire(cale: Path) -> Path:
+    """Întoarce o cale lizibilă pentru un fișier al programului.
+
+    Fișierele criptate din oficiu („DTED2”) se decriptează într-un fișier
+    temporar lângă original; celelalte se întorc ca atare. Apelantul citește
+    calea întoarsă și o șterge când termină.
+    """
+    cale = Path(cale)
+    if not este_criptat_oficiu(cale):
+        return cale
+    try:
+        temporar = cale.with_suffix(cale.suffix + ".decriptat")
+        temporar.write_bytes(citeste_criptat(cale))
+        return temporar
+    except Exception as exc:
+        jurnal.atentionare(f"Nu am putut decripta {cale}: {exc}")
+        return cale
+
+
 def scrie_audio(pcm, marca: str, radacina_aleasa: Path | None = None) -> Path | None:
-    """Scrie o dictare în folderul „Audio” (fișier ``.wav``, 16 kHz mono)."""
+    """Scrie o dictare criptată în folderul „Audio” (fișier ``.wav``, 16 kHz mono)."""
     try:
         import wave
 
         import numpy as np  # type: ignore[import-not-found]
 
         cale = nume_unic(folder("audio", radacina_aleasa), nume_legat(marca, ".wav"))
+        temporar = cale.with_suffix(".tmp.wav")
         date = np.asarray(pcm, dtype="float32")
         if date.ndim > 1:
             date = date.mean(axis=1)
         bucati = np.clip(date, -1.0, 1.0)
         intregi = (bucati * 32767.0).astype("<i2")
-        with wave.open(str(cale), "wb") as fisier:
+        with wave.open(str(temporar), "wb") as fisier:
             fisier.setnchannels(1)
             fisier.setsampwidth(2)
             fisier.setframerate(16000)
             fisier.writeframes(intregi.tobytes())
-        jurnal.info(f"Sunet salvat în {cale}")
+        scrie_criptat(cale, temporar.read_bytes())  # criptat din oficiu
+        temporar.unlink(missing_ok=True)
+        jurnal.info(f"Sunet criptat salvat în {cale}")
         return cale
     except Exception as exc:
         jurnal.atentionare(f"Nu am putut salva sunetul: {exc}")
@@ -213,9 +237,19 @@ def scrie_audio(pcm, marca: str, radacina_aleasa: Path | None = None) -> Path | 
 
 
 def citeste(cale: Path) -> str:
-    """Citește un fișier text al programului (fără să strice diacriticele)."""
+    """Citește un fișier text al programului (fără să strice diacriticele).
+
+    Fișierele criptate din oficiu (antet „DTED2”) se decriptează transparent.
+    """
+    cale = Path(cale)
+    if este_criptat_oficiu(cale):
+        try:
+            return citeste_criptat(cale).decode("utf-8", errors="replace")
+        except Exception as exc:
+            jurnal.atentionare(f"Nu am putut decripta {cale}: {exc}")
+            return ""
     try:
-        return Path(cale).read_text(encoding="utf-8", errors="replace")
+        return cale.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
         jurnal.atentionare(f"Nu am putut citi {cale}: {exc}")
         return ""
@@ -447,9 +481,9 @@ def citeste_recuperare_audio() -> Path | None:
 
 
 def scrie_recuperare(text: str, marca: str = "", detalii: str = "") -> bool:
-    """Păstrează o copie de siguranță a textului de pe ecran."""
+    """Păstrează o copie de siguranță criptată a textului de pe ecran."""
     try:
-        fisier_recuperare_text().write_text(text, encoding="utf-8", newline="\r\n")
+        scrie_criptat(fisier_recuperare_text(), text.replace("\r\n", "\n").replace("\n", "\r\n").encode("utf-8"))
         fisier_recuperare_info().write_text(
             json.dumps(
                 {

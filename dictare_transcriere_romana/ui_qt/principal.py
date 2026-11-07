@@ -1422,7 +1422,10 @@ class Aplicatie(QMainWindow):
             try:
                 import soundfile as sf
 
-                sunet, rata = sf.read(str(cale_audio), dtype="float32")
+                cale_audio_lizibil = biblioteca.pregateste_citire(Path(cale_audio))
+                sunet, rata = sf.read(str(cale_audio_lizibil), dtype="float32")
+                if cale_audio_lizibil != cale_audio:
+                    Path(cale_audio_lizibil).unlink(missing_ok=True)
                 if sunet.ndim > 1:
                     sunet = sunet.mean(axis=1)
                 self.primeste_inregistrarea(
