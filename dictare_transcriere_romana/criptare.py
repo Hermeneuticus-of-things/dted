@@ -36,7 +36,10 @@ class CriptareInvalida(Exception):
 
 # --------------------------------------------------------------------------- CNG (bcrypt.dll)
 
-_bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+if os.name == "nt":
+    _bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
+else:
+    _bcrypt = None  # bcrypt.dll e doar Windows; funcțiile de aici nu se apelează pe Linux
 
 BCRYPT_AES_ALGORITHM = "AES"
 BCRYPT_CHAINING_MODE = "ChainingMode"

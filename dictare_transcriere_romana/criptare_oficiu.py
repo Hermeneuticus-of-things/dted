@@ -166,15 +166,24 @@ def reseteaza_cheie_locala_memo() -> None:
 
 # ------------------------------------------------------------------ pachete
 
+_WINDOWS = os.name == "nt"
+
+
 def cripteaza_automatic(text_curat: bytes) -> bytes:
-    """Criptează cu cheia locală; antet „DTED2" + pachet AES-256-GCM."""
+    """Criptează cu cheia locală; antet „DTED2" + pachet AES-256-GCM.
+
+    Doar Windows (CNG/bcrypt). Pe Linux fișierele rămân în clar — documentat
+    în LINUX.md — iar antetul „DTED2" lipsește, ca citirea să fie transparentă.
+    """
+    if not _WINDOWS:
+        return text_curat
     return MAGIC + cripteaza_bytes(cheie_locala(), text_curat, aad=MAGIC)
 
 
 def decripteaza_automatic(pachet: bytes) -> bytes:
     """Decriptează un fișier „din oficiu"; ridică CriptareInvalida dacă e stricat."""
     if not pachet.startswith(MAGIC):
-        raise CriptareInvalida("Fișierul nu este criptat din oficiu (antet lipsă).")
+        return pachet  # necriptat (Linux) — se întoarce ca atare
     return decripteaza_bytes(cheie_locala(), pachet[len(MAGIC):], aad=MAGIC)
 
 
