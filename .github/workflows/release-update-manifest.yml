@@ -107,6 +107,7 @@ jobs:
         if: steps.release.outputs.is_latest == 'true'
         env:
           TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -117,4 +118,7 @@ jobs:
             exit 0
           fi
           git commit -m "chore: update live manifest for $TAG"
-          git push origin HEAD:main
+          git checkout -b "manifest-$TAG"
+          git push origin "manifest-$TAG"
+          gh pr create --head "manifest-$TAG" --base main             --title "chore: update live manifest for $TAG"             --body "Manifest actualizat automat după validarea release-ului $TAG."
+          gh pr merge --auto --squash "manifest-$TAG"
