@@ -42,7 +42,7 @@ def test_release_contract_rejects_stale_readme_version(tmp_path):
     readme_path = tmp_path / "README.md"
     readme = readme_path.read_text(encoding="utf-8")
     readme_path.write_text(
-        readme.replace("Ce e nou în v0.6.13", "Ce e nou în v0.6.10", 1),
+        readme.replace("Ce e nou în v0.6.14", "Ce e nou în v0.6.10", 1),
         encoding="utf-8",
     )
 
