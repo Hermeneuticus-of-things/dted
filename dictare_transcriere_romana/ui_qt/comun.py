@@ -263,6 +263,10 @@ def _aplica_qss_central() -> None:
             border-radius: 4px;
             padding: 3px;
         }}
+        QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus, QListWidget:focus {{
+            border: 2px solid {c.principal_accent};
+            padding: 2px;
+        }}
         QPlainTextEdit#editor, QTextEdit#editor {{
             border-radius: 6px;
             padding: 8px;
@@ -438,6 +442,7 @@ def _aplica_qss_central() -> None:
             padding: 4px 12px;
         }}
         QPushButton:hover {{ background-color: {c.dezactivat_fundal}; }}
+        QPushButton:focus {{ border: 2px solid {c.principal_accent}; }}
         QPushButton:pressed {{ background-color: {c.chenar}; }}
         QPushButton:disabled {{
             background-color: {c.dezactivat_fundal};
@@ -1129,3 +1134,63 @@ class VumetruDb(QWidget):
                 aliniere = 2 if db > -50 else -12
                 painter.drawText(poz + aliniere, inaltime - 2, eticheta)
         painter.end()
+
+
+# ------------------------------------------------------------------ accesibilitate
+
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSlider,
+    QSpinBox,
+    QTextEdit,
+    QToolButton,
+)
+
+_CLASE_CONTROL = (
+    QPushButton, QToolButton, QCheckBox, QComboBox, QSlider, QSpinBox,
+    QLineEdit, QPlainTextEdit, QTextEdit, QListWidget, QProgressBar,
+)
+
+
+def nume_accesibil(widget) -> str:
+    """Numele lizibil de screen reader pentru un control (text/tooltip/placeholder)."""
+    for getter in ("text", "toolTip", "placeholderText", "currentText"):
+        try:
+            valoare = getattr(widget, getter)()
+        except Exception:
+            continue
+        if isinstance(valoare, str) and valoare.strip():
+            return valoare.strip()
+    return ""
+
+
+def completeaza_accesibilitate(rădăcină) -> int:
+    """Dă nume accesibile tuturor controalelor fără nume (ADL §8: screen reader).
+
+    Trece recursiv prin copiii lui ``rădăcină`` și setează accessibleName din
+    text / tooltip / placeholder, acolo unde lipsește. Întoarce câte controale
+    au primit nume acum.
+    """
+    completate = 0
+    pentru_toți = []
+    for clasă in _CLASE_CONTROL:
+        pentru_toți.extend(rădăcină.findChildren(clasă))
+    for widget in pentru_toți:
+        if widget.accessibleName():
+            continue
+        nume = nume_accesibil(widget)
+        if not nume:
+            continue
+        # curăță sufixele de scurtătură afișate („(F5)”) — SR le citește prost
+        if " (" in nume and nume.endswith(")"):
+            nume = nume[: nume.index(" (")]
+        widget.setAccessibleName(nume)
+        completate += 1
+    return completate

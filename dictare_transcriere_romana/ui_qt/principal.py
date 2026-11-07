@@ -135,6 +135,20 @@ class Aplicatie(QMainWindow):
         # Scurtături tastatură. Cele principale se pot schimba din Setări → „Taste rapide”.
         self._scurtaturi_config: list = []
         self._inregistreaza_scurtaturi()
+        # ADL §2: motorul de focus — editorul e suprafața activă la pornire
+        from . import focus_motor
+
+        self.focus_motor = focus_motor.FocusMotor()
+        self.focus_motor.inregistreaza(
+            "editor.document",
+            nivel="suprafață",
+            parinte="fereastra.principal",
+        )
+        self.focus_motor.inregistreaza(
+            "fereastra.principal",
+            nivel="fereastră",
+        )
+        self.focus_motor.apasa("editor.document")
         QShortcut(QKeySequence("Ctrl+D"), self, self._toggle_dictare)
         QShortcut(QKeySequence("Ctrl+T"), self, lambda: self.arata_ecran("transcriere"))
         QShortcut(QKeySequence("Ctrl++"), self, self.mareste_scrisul)
@@ -384,6 +398,7 @@ class Aplicatie(QMainWindow):
         self.btn_inregistreaza = Buton(
             self._dock_redare, "⏺ Dictează (F5)", self._toggle_dictare, fel="pericol", latime=150, inaltime=36
         )
+        self.btn_inregistreaza.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         dock_rand.addWidget(self.btn_inregistreaza)
 
         self.btn_transport = Buton(
@@ -399,6 +414,8 @@ class Aplicatie(QMainWindow):
         dock_rand.addWidget(self.btn_transport_stop)
         self.btn_transport.setEnabled(False)
         self.btn_transport_stop.setEnabled(False)
+        for _b in (self.btn_transport, self.btn_transport_stop):
+            _b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # Pauză de microfon: vorbești cu cineva, programul nu scrie (revenire instant).
         self.btn_pauza_microfon = Buton(
@@ -408,6 +425,7 @@ class Aplicatie(QMainWindow):
             "Pauză de microfon în timpul dictării: programul nu mai ascultă până la reluare"
         )
         self.btn_pauza_microfon.setEnabled(False)
+        self.btn_pauza_microfon.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         dock_rand.addWidget(self.btn_pauza_microfon)
 
 
@@ -478,6 +496,8 @@ class Aplicatie(QMainWindow):
             self._slider_volum,
         ]
         self._seteaza_mod_transport("nimic")
+        # ADL §8: nume accesibile pe toate controalele (screen reader)
+        comun.completeaza_accesibilitate(self)
         QTimer.singleShot(1200, self._da_sfat)  # primul sfat, după ce s-a așezat interfața
 
         # Bara de sfaturi inteligente: învață utilizatorul programul, în funcție
@@ -664,6 +684,7 @@ class Aplicatie(QMainWindow):
         pagina.show()
         self._zona_pagini.show()
         self._pagina_aleasa = nume
+        self.focus_motor.apasa(f"ecran.{nume}")
 
         # Ecranele utilitare ocupă tot spațiul central ca să nu se calce cu editorul;
         # ecranele de lucru (dictare, transcriere, principal) păstrează editorul vizibil jos,
@@ -1595,6 +1616,8 @@ class Aplicatie(QMainWindow):
         # Modelul se încarcă singur în fundal: prima dictare pornește instant,
         # fără așteptarea de zeci de secunde până se citește modelul.
         QTimer.singleShot(1000, self._preincarca_motor_in_fundal)
+        # ADL §3: funcția de bază (editorul) e activă imediat la pornire
+        QTimer.singleShot(150, self.editor.setFocus)
 
     def _preincarca_motor_in_fundal(self) -> None:
         """Încarcă modelul de transcriere în fundal, imediat după pornire."""

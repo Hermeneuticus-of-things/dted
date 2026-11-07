@@ -317,6 +317,18 @@ class FereastraSetari(QDialog):
         layout.addLayout(jos)
 
         self._arata_toate()
+        # ADL §2/§8: dialog modal în motorul de focus + nume accesibile
+        parinte_real = self.parent() if self.parent() is not None else None
+        motor = getattr(parinte_real, "focus_motor", None) if parinte_real is not None else None
+        if motor is not None:
+            motor.inregistreaza(
+                "dialog.setari", nivel="dialog", parinte="fereastra.principal",
+                modal=True, comenzi={"salvează": self._salveaza, "închide": self.reject},
+            )
+            motor.apasa("dialog.setari")
+        from .comun import completeaza_accesibilitate
+
+        completeaza_accesibilitate(self)
 
     # ------------------------------------------------------------------ construcție rânduri
 

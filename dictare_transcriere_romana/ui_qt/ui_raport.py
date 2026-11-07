@@ -139,6 +139,9 @@ class FereastraRaport(QDialog):
         self.et_stare.setWordWrap(True)
         layout.addWidget(self.et_stare)
 
+        from .comun import completeaza_accesibilitate
+
+        completeaza_accesibilitate(self)
         rand = QHBoxLayout()
         rand.addStretch(1)
         rand.addWidget(Buton(self, "Copiază raportul", self._copiaza, latime=190, inaltime=40))

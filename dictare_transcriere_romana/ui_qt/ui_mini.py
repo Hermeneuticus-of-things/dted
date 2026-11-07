@@ -75,6 +75,9 @@ class FereastraMini(QWidget):
         rand_butoane.addWidget(self.buton_pauza)
         layout.addLayout(rand_butoane)
 
+        from .comun import completeaza_accesibilitate
+
+        completeaza_accesibilitate(self)
         self._timer = QTimer(self)
         self._timer.setInterval(60)
         self._timer.timeout.connect(self._actualizeaza)
