@@ -2,7 +2,7 @@
 # Versiuni fixe, cele folosite la dezvoltare (Windows 10/11, Python 3.12) și
 # cele instalate de install.sh pe Linux (testat pe Arch, Python 3.11).
 # Pe Linux, soundfile se adaugă în plus (folosită de transcrierea fișierelor).
-PySide6==6.8.0
+PySide6==6.12.0
 faster-whisper==1.2.1
 ctranslate2==4.8.3
 av==17.1.0
